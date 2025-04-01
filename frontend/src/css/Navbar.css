@@ -1,0 +1,33 @@
+.menu-button {
+  display: none;
+}
+nav ul {
+  display: flex;
+  gap: 1.5rem;
+  color: #7c7b7b;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+  .menu-button {
+    display: block;
+  }
+
+  .menu-open {
+    display: flex;
+    background-color: #ebeaea;
+    gap: 1.5rem;
+    padding: 30px 20px;
+    position: absolute;
+    top: 70px;
+    right: 0;
+    flex-direction: column;
+
+    width: 100vw;
+  }
+
+  .menu-hidden {
+    display: none;
+  }
+}
