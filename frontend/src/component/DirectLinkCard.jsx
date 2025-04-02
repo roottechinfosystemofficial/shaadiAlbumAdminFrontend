@@ -30,7 +30,7 @@ const DirectLinkCard = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-[50px] p-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-[2%] p-4">
       {cardData.map((card, index) => (
         <div
           key={index}

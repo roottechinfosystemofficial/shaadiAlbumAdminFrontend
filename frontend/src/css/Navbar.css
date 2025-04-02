@@ -12,6 +12,7 @@ nav ul {
 @media (max-width: 768px) {
   .menu-button {
     display: block;
+    position: absolute;
   }
 
   .menu-open {
@@ -30,4 +31,5 @@ nav ul {
   .menu-hidden {
     display: none;
   }
+
 }
