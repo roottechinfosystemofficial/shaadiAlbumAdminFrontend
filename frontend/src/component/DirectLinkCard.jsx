@@ -30,18 +30,18 @@ const DirectLinkCard = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-4 mb-[210px]">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-[50px] p-4">
       {cardData.map((card, index) => (
         <div
           key={index}
-          className="bg-white shadow-lg rounded-lg p-4 flex flex-col items-center justify-between text-center"
+          className="bg-white shadow-lg rounded-lg px-4 py-10 flex flex-col items-center justify-between text-center"
         >
           <img
             src={card.imgSrc}
             alt={card.title}
             className="w-100 h-40 object-contain rounded-md"
           />
-          <h2 className="text-xl font-bold mt-4">{card.title}</h2>
+          <h2 className="text-xl font-bold mt-4 max-w-[70%]">{card.title}</h2>
           <p className="text-gray-600 mt-2">{card.description}</p>
           <button
             className="mt-4 bg-blue-500 text-white w-1/2 py-2 rounded-lg hover:bg-blue-600"

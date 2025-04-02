@@ -2,9 +2,9 @@ import React from "react";
 
 const BusinessSetting = () => {
   return (
-    <div className="bg-white mt-5 p-6 shadow-[0_-5px_10px_rgba(0,0,0,0.1),0_5px_10px_rgba(0,0,0,0.1)]  ">
-      <h2 className="text-2xl font-semibold mb-6 ">Business Settings</h2>
-      <form className="grid grid-cols-[1fr_1fr_1fr_0.5fr] gap-6">
+    <div className="bg-white mt-5 py-6 px-10 shadow-lg">
+      <h2 className="text-2xl font-semibold mb-6">Business Settings</h2>
+      <form className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_0.5fr] gap-6">
         {/* Support Email Address */}
         <div className="flex flex-col">
           <label htmlFor="supportEmail" className="text-lg font-medium mb-2">
@@ -51,10 +51,10 @@ const BusinessSetting = () => {
         </div>
 
         {/* Submit Button */}
-        <div className=" flex  ">
+        <div className="flex sm:justify-start items-end  w-full ">
           <button
             type="submit"
-            className="bg-blue-500 text-white py-2 px-6 rounded-lg hover:bg-blue-600 transition-all"
+            className="bg-blue-500 text-white h-14 rounded-lg hover:bg-blue-600 transition-all "
           >
             Submit
           </button>
