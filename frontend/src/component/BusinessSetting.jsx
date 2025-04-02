@@ -2,7 +2,7 @@ import React from "react";
 
 const BusinessSetting = () => {
   return (
-    <div className=" mt-5 p-6 shadow-[0_-5px_10px_rgba(0,0,0,0.1),0_5px_10px_rgba(0,0,0,0.1)]  ">
+    <div className="bg-white mt-5 p-6 shadow-[0_-5px_10px_rgba(0,0,0,0.1),0_5px_10px_rgba(0,0,0,0.1)]  ">
       <h2 className="text-2xl font-semibold mb-6 ">Business Settings</h2>
       <form className="grid grid-cols-[1fr_1fr_1fr_0.5fr] gap-6">
         {/* Support Email Address */}

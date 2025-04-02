@@ -8,7 +8,7 @@ import {
 } from "react-icons/fa";
 const Dash1 = () => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 p-4 shadow-[0_-5px_10px_rgba(0,0,0,0.1),0_5px_10px_rgba(0,0,0,0.1)] mt-5">
+    <div className=" bg-white grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 p-4 shadow-[0_-5px_10px_rgba(0,0,0,0.1),0_5px_10px_rgba(0,0,0,0.1)] mt-5">
       <div className="bg-blue-500 text-white p-6 rounded-lg shadow-md flex items-center">
         <FaUsers className="text-4xl mr-4" />
         <div>
