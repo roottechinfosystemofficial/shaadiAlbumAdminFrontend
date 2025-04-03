@@ -4,6 +4,7 @@ import Dashboard from "./pages/Dashboard";
 import Layout from "./component/Layout";
 import LoginPage from "./pages/LoginPage";
 import Signup from "./pages/Signup";
+import Notfound from "./pages/Notfound";
 
 const appRouter = createBrowserRouter([
   {
@@ -21,6 +22,7 @@ const appRouter = createBrowserRouter([
     element: <LoginPage />,
   },
   { path: "/signup", element: <Signup /> },
+  { path: "*", element: <Notfound /> },
 ]);
 
 const App = () => {

@@ -27,7 +27,9 @@ const Navbar = () => {
     <nav className="bg-[#fffefe] flex items-center justify-between px-6 pt-1 relative h-[70px]">
       {/* Logo */}
       <div className="mt-2">
-        <img src={logo} alt="Logo" width={100} />
+        <Link to="/">
+          <img src={logo} alt="Logo" width={100} />
+        </Link>
       </div>
 
       <div className="flex items-center gap-10">
@@ -42,7 +44,7 @@ const Navbar = () => {
           <ul className={`${isMenuOpen ? "menu-open" : "menu-hidden"}`}>
             <li className="flex items-center gap-2 hover:text-[#F36564] cursor-pointer">
               <IoIosHome />
-              <Link to="/dashboard">Dashboard</Link>
+              <Link to="/">Dashboard</Link>
             </li>
 
             <li className="flex items-center gap-2 hover:text-[#F36564] cursor-pointer">

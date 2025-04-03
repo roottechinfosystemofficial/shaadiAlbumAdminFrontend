@@ -54,7 +54,7 @@ const BusinessSetting = () => {
         <div className="flex sm:justify-start items-end  w-full ">
           <button
             type="submit"
-            className="bg-blue-500 text-white h-14 px-5 rounded-lg hover:bg-blue-600 transition-all "
+            className="bg-blue-500 text-white h-12 px-5  rounded-lg hover:bg-blue-600 transition-all "
           >
             Submit
           </button>
