@@ -34,7 +34,11 @@ const Navbar = () => {
 
       <div className="flex items-center gap-10">
         <button
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          onClick={() => {
+            setIsMenuOpen(!isMenuOpen);
+            setIsSettingsOpen(false);
+            setIsProfileOpen(false);
+          }}
           className="menu-button"
         >
           <BiMenu />
@@ -79,7 +83,7 @@ const Navbar = () => {
                     setIsProfileOpen(false);
                   }}
                   onMouseLeave={() => setIsSettingsOpen(false)}
-                  className="absolute flex-col right-[-30px] top-[41px]  w-48 bg-white shadow-2xl rounded-md p-2"
+                  className="absolute z-10 flex-col right-[-30px] top-[41px]  w-48 bg-white shadow-2xl rounded-md p-2"
                 >
                   <li className="p-2 hover:bg-gray-200 rounded-md">
                     <Link to="/email">Email</Link>

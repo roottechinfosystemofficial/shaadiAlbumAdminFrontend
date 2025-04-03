@@ -34,7 +34,7 @@ const LoginPage = () => {
   return (
     <div className="flex h-screen">
       {/* Left Side - Features Section (40%) */}
-      <div className="relative w-[50%] bg-[red] text-white flex flex-col justify-center items-center p-10 overflow-hidden">
+      <div className="relative w-[40%] bg-[red] text-white flex flex-col justify-center items-center p-10 overflow-hidden">
         {/* Features Section with Smooth Transition */}
         <div
           key={featureIndex}
@@ -51,7 +51,7 @@ const LoginPage = () => {
       </div>
 
       {/* Right Side - Login Form (60%) */}
-      <div className="relative w-[50%] flex flex-col justify-center items-center p-10 ">
+      <div className="relative w-[60%] flex flex-col justify-center items-center p-10 ">
         <div
           className="absolute top-0 left-0 h-full w-[100px] bg-[red]"
           style={{ clipPath: "ellipse(100px 50% at 0% 50%)" }}
