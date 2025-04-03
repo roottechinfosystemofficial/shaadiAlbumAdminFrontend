@@ -128,7 +128,7 @@ const Navbar = () => {
             <ul
               onMouseEnter={() => setIsProfileOpen(true)}
               onMouseLeave={() => setIsProfileOpen(false)}
-              className="absolute right-[-20px] flex-col top-[52px]  w-48 bg-white shadow-md rounded-md p-2"
+              className="absolute z-10 right-[-20px] flex-col top-[52px]  w-48 bg-white shadow-md rounded-md p-2"
             >
               <li className="p-2 hover:bg-gray-200 rounded-md">
                 <Link to="/my-profile">My Profile</Link>

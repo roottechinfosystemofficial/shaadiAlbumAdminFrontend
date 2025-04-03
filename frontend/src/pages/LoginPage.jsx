@@ -103,6 +103,9 @@ const LoginPage = () => {
             Login
           </button>
         </form>
+        <button className="text-red-500">
+          Dont Have Account?
+        </button>
       </div>
     </div>
   );
