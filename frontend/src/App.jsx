@@ -5,6 +5,7 @@ import Layout from "./component/Layout";
 import LoginPage from "./pages/LoginPage";
 import Signup from "./pages/Signup";
 import Notfound from "./pages/Notfound";
+import EventlistPage from "./pages/EventlistPage";
 
 const appRouter = createBrowserRouter([
   {
@@ -14,6 +15,10 @@ const appRouter = createBrowserRouter([
       {
         path: "/",
         element: <Dashboard />,
+      },
+      {
+        path: "/event",
+        element: <EventlistPage />,
       },
     ],
   },
