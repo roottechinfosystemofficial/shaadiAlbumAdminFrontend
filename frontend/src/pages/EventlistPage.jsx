@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import EventCard from "../component/EventCard";
+import { Link } from "react-router-dom";
 
 const EventlistPage = () => {
   const [showModal, setShowModal] = useState(false);
@@ -62,9 +63,11 @@ const EventlistPage = () => {
         <div className="flex flex-col md:flex-row items-center justify-between">
           <p className="text-3xl text-center md:text-left">Event List</p>
           <div className="flex flex-col sm:flex-row items-center gap-3 mt-4 md:mt-0 w-full sm:w-auto">
-            <button className="bg-slate-300 px-4 py-2 rounded-md transition hover:bg-slate-400 w-full sm:w-auto">
-              Default Setting
-            </button>
+            <Link to="/setting">
+              <button className="bg-slate-300 px-4 py-2 rounded-md transition hover:bg-slate-400 w-full sm:w-auto">
+                Default Setting
+              </button>
+            </Link>
             <button
               className="bg-green-600 text-white px-4 py-2 rounded-md transition hover:bg-green-700 w-full sm:w-auto"
               onClick={() => setShowModal(true)}

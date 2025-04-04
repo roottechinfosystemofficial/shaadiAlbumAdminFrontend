@@ -6,6 +6,7 @@ import LoginPage from "./pages/LoginPage";
 import Signup from "./pages/Signup";
 import Notfound from "./pages/Notfound";
 import EventlistPage from "./pages/EventlistPage";
+import Setting from "./pages/Setting";
 
 const appRouter = createBrowserRouter([
   {
@@ -19,6 +20,10 @@ const appRouter = createBrowserRouter([
       {
         path: "/event",
         element: <EventlistPage />,
+      },
+      {
+        path: "/setting",
+        element: <Setting />,
       },
     ],
   },

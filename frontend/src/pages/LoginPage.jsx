@@ -27,15 +27,13 @@ const LoginPage = () => {
     const interval = setInterval(() => {
       setFeatureIndex((prevIndex) => (prevIndex + 1) % features.length);
     }, 3000);
-
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="flex h-screen">
-      {/* Left Side - Features Section (40%) */}
-      <div className="relative w-[40%] bg-[red] text-white flex flex-col justify-center items-center p-10 overflow-hidden">
-        {/* Features Section with Smooth Transition */}
+    <div className="flex flex-col md:flex-row h-screen">
+      {/* Left Side - Features Section */}
+      <div className="relative w-full md:w-[40%] bg-red-500 text-white flex flex-col justify-center items-center p-8 md:p-10">
         <div
           key={featureIndex}
           className="text-center transition-all duration-[1500ms] ease-in-out opacity-100 transform scale-105"
@@ -43,27 +41,30 @@ const LoginPage = () => {
           <div className="flex justify-center mb-4">
             {features[featureIndex].icon}
           </div>
-          <h2 className="text-3xl font-bold">{features[featureIndex].title}</h2>
-          <p className="mt-2 text-lg max-w-[80%] mx-auto">
+          <h2 className="text-2xl md:text-3xl font-bold">
+            {features[featureIndex].title}
+          </h2>
+          <p className="mt-2 text-base md:text-lg max-w-[90%] mx-auto">
             {features[featureIndex].description}
           </p>
         </div>
       </div>
 
-      {/* Right Side - Login Form (60%) */}
-      <div className="relative w-[60%] flex flex-col justify-center items-center p-10 ">
+      {/* Right Side - Login Form */}
+      <div className="relative w-full md:w-[60%] flex flex-col justify-center items-center p-6 sm:p-10">
+        {/* Background Clip Only on md and above */}
         <div
-          className="absolute top-0 left-0 h-full w-[100px] bg-[red]"
+          className="hidden md:block absolute top-0 left-0 h-full w-[100px] bg-red-500"
           style={{ clipPath: "ellipse(100px 50% at 0% 50%)" }}
         ></div>
+
         {/* Logo */}
-        <div className="mb-6">
-          <img src={Logo} alt="Logo" className="w-24" />
+        <div className="mb-6 z-10">
+          <img src={Logo} alt="Logo" className="w-20 sm:w-24" />
         </div>
 
         {/* Login Form */}
-        <form className="w-full max-w-sm">
-          {/* Email Input */}
+        <form className="w-full max-w-sm z-10">
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-1">
               Email
@@ -75,7 +76,6 @@ const LoginPage = () => {
             />
           </div>
 
-          {/* Password Input */}
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-1">
               Password
@@ -87,24 +87,23 @@ const LoginPage = () => {
             />
           </div>
 
-          {/* Remember Me & Forgot Password */}
-          <div className="flex justify-between items-center mb-4 text-sm">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 text-sm gap-2 sm:gap-0">
             <label className="flex items-center space-x-2 text-gray-600">
               <input type="checkbox" className="form-checkbox" />
               <span>Remember Me</span>
             </label>
             <a href="/forgot-password" className="text-red-500 hover:underline">
-              Forgot Your Password?
+              Forgot Password?
             </a>
           </div>
 
-          {/* Login Button */}
           <button className="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition-all">
             Login
           </button>
         </form>
-        <button className="text-red-500">
-          Dont Have Account?
+
+        <button className="text-red-500 mt-4 z-10 hover:underline">
+          Don’t Have an Account?
         </button>
       </div>
     </div>
