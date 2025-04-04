@@ -24,7 +24,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-[#ededed] flex items-center justify-between px-6 pt-1 relative h-[70px]">
+    <nav className="bg-[#F5F3F3] flex items-center justify-between px-6 pt-1 relative h-[70px]">
       {/* Logo */}
       <div className="mt-2">
         <Link to="/">
@@ -48,17 +48,23 @@ const Navbar = () => {
           <ul className={`${isMenuOpen ? "menu-open" : "menu-hidden"}`}>
             <li className="flex items-center gap-2 hover:text-[#F36564] cursor-pointer">
               <IoIosHome />
-              <Link to="/">Dashboard</Link>
+              <Link to="/" onClick={() => setIsMenuOpen(false)}>
+                Dashboard
+              </Link>
             </li>
 
             <li className="flex items-center gap-2 hover:text-[#F36564] cursor-pointer">
               <GrGallery />
-              <Link to="/event">Client Gallery</Link>
+              <Link to="/event" onClick={() => setIsMenuOpen(false)}>
+                Client Gallery
+              </Link>
             </li>
 
             <li className="flex items-center gap-2 hover:text-[#F36564] cursor-pointer">
               <FaUser />
-              <Link to="/users">Users</Link>
+              <Link to="/users" onClick={() => setIsMenuOpen(false)}>
+                Users
+              </Link>
             </li>
 
             {/* Settings Dropdown */}
