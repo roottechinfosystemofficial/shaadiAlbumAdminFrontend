@@ -1,6 +1,6 @@
 import React from "react";
 
-const Setting = () => {
+const MainSetting = () => {
   return (
     <div className="max-w-6xl mx-auto bg-white rounded-xl p-4">
       <h2 className="text-2xl font-bold mb-4">Settings</h2>
@@ -71,4 +71,4 @@ const Setting = () => {
   );
 };
 
-export default Setting;
+export default MainSetting;

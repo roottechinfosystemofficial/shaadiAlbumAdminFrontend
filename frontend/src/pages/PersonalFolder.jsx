@@ -1,16 +1,14 @@
 import React from "react";
 import PersonalfolderAside from "../component/PersonalfolderAside";
-
+import PersonalFolderContent from "../component/PersonalFolderContent";
 const PersonalFolder = () => {
   return (
-    <>
-      <aside className=" sm:w-1/5  sm:h-screen  px-2 py-6 ">
+    <div className="flex flex-col sm:flex-row h-full min-h-screen">
+      <aside className="sm:w-1/5 w-full sm:h-screen border-r">
         <PersonalfolderAside />
       </aside>
-      <div className="bg-red-200">
-        
-      </div>
-    </>
+      <PersonalFolderContent />
+    </div>
   );
 };
 

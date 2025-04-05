@@ -1,115 +1,134 @@
 import React, { useState } from "react";
 import boximg from "../assets/box1.png";
-import { Cog, EditIcon, Eye, Folders, Share2, Trash2 } from "lucide-react";
-import FolderPanel from "./FolderPanel";
-import SettingsPanel from "./SettingsPanel";
-import ActivitiesPanel from "./ActivitiesPanel";
+import { EditIcon, Trash2, MoreVertical, Settings2 } from "lucide-react";import { useNavigate } from "react-router-dom";
+
 
 const PersonalfolderAside = () => {
-  const [activePanel, setActivePanel] = useState("folders");
-  const [activeItem, setActiveItem] = useState("");
-
-  const renderPanel = () => {
-    switch (activePanel) {
-      case "folders":
-        return (
-          <FolderPanel activeItem={activeItem} onItemClick={setActiveItem} />
-        );
-      case "settings":
-        return (
-          <SettingsPanel activeItem={activeItem} onItemClick={setActiveItem} />
-        );
-      case "share":
-        return (
-          <ActivitiesPanel
-            activeItem={activeItem}
-            onItemClick={setActiveItem}
-          />
-        );
-      default:
-        return null;
-    }
-  };
+  const [showOptions, setShowOptions] = useState(false);
+  const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col gap-3 text-sm text-gray-800 border-r-2 pr-2 w-full max-w-md sm:max-w-full sm:px-4">
-      <p className="font-semibold text-base sm:text-lg">RAHUL (VPXL8U)</p>
-      <div className="flex justify-between text-xs sm:text-sm">
-        <p>Apr 3rd 2025</p>
-        <p className="text-green-600 font-medium">Published</p>
-      </div>
-      <div className="flex justify-between text-xs sm:text-sm">
-        <p>Total Images:</p>
-        <p>0</p>
+    <aside className="w-full max-w-md sm:max-w-full p-4 bg-white border-r border-gray-200 text-gray-900 space-y-6">
+      {/* Action Buttons */}
+      <div className="grid grid-cols-2 gap-3">
+        <button onClick={()=>navigate('/eventsetting')} className="flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-800 text-white font-medium text-sm py-2 rounded-md shadow-sm">
+          <Settings2 size={18} />
+          
+          Event Settings
+        </button>
+        <button className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-medium py-2 text-sm rounded-md shadow-sm">
+          <Trash2 size={18} />
+          Delete Event
+        </button>
       </div>
 
-      <div className="relative mt-3 border rounded-md overflow-hidden">
-        <img src={boximg} alt="Folder Cover" className="w-full object-cover" />
-        <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/40 opacity-0 hover:opacity-100 transition">
-          <button className="bg-white p-2 rounded-full shadow">
-            <Trash2 size={18} className="text-red-500" />
+      {/* Event Info */}
+      <div className="space-y-1">
+        <h2 className="text-xl font-semibold">RAHUL</h2>
+        <div className="flex justify-between text-sm text-gray-800">
+          <p>Apr 3rd 2025</p>
+          <p className="text-green-600 font-semibold">Published</p>
+        </div>
+        <div className="flex justify-between text-sm text-gray-800">
+          <p>Total Images:</p>
+          <p>0</p>
+        </div>
+      </div>
+
+      {/* Folder Image */}
+      <div className="relative border rounded-lg overflow-hidden shadow-sm">
+        <img
+          src={boximg}
+          alt="Folder Cover"
+          className="w-full h-40 object-cover"
+        />
+        <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/50 opacity-0 hover:opacity-100 transition">
+          <button className="bg-white p-2 rounded-full shadow hover:bg-gray-100">
+            <Trash2 size={18} className="text-red-600" />
           </button>
-          <button className="bg-white p-2 rounded-full shadow">
-            <EditIcon size={18} className="text-blue-500" />
+          <button className="bg-white p-2 rounded-full shadow hover:bg-gray-100">
+            <EditIcon size={18} className="text-blue-600" />
           </button>
         </div>
       </div>
 
-      {/* Icon Tabs */}
-      <div className="py-5 border-b-2 border-gray-800">
-        <ul className="flex justify-around text-gray-600 text-lg">
-          <li
-            onClick={() => {
-              setActivePanel("folders");
-              setActiveItem("");
-            }}
-            className={`cursor-pointer transition ${
-              activePanel === "folders" ? "text-blue-600" : "hover:text-black"
-            }`}
-          >
-            <Folders />
-          </li>
-          <li
-            onClick={() => {
-              setActivePanel("settings");
-              setActiveItem("");
-            }}
-            className={`cursor-pointer transition ${
-              activePanel === "settings" ? "text-blue-600" : "hover:text-black"
-            }`}
-          >
-            <Cog />
-          </li>
-          <li
-            onClick={() => {
-              setActivePanel("share");
-              setActiveItem("");
-            }}
-            className={`cursor-pointer transition ${
-              activePanel === "share" ? "text-blue-600" : "hover:text-black"
-            }`}
-          >
-            <Share2 />
-          </li>
-        </ul>
-      </div>
-
-      {/* Render Selected Panel */}
-      <div className="h-96 overflow-y-auto">{renderPanel()}</div>
-
-      <div className="mb-10 pt-3 border-t-2 border-gray-500 flex flex-wrap gap-3 items-center justify-between sm:justify-around mt-4">
-        <button className="bg-gray-800 text-white px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-200 hover:text-gray-800 transition-colors duration-200 flex items-center gap-2 w-full sm:w-auto justify-center">
-          <Eye size={16} />
-          View
-        </button>
-        <button className="bg-gray-800 text-white px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-200 hover:text-gray-800 transition-colors duration-200 flex items-center gap-2 w-full sm:w-auto justify-center">
-          Share
-        </button>
-        <button className="bg-gray-800 text-white px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-200 hover:text-gray-800 transition-colors duration-200 flex items-center gap-2 w-full sm:w-auto justify-center">
-          Notify To Users
+      {/* Description */}
+      <div className="space-y-2">
+        <textarea
+          placeholder="Add Description (max 250 characters)"
+          maxLength={250}
+          className="w-full p-3 border border-gray-300 rounded-md shadow-sm resize-none bg-white text-gray-800 focus:outline-none focus:border-blue-500 text-sm"
+        />
+        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium shadow">
+          Update
         </button>
       </div>
-    </div>
+
+      {/* Event Details */}
+      <div className="space-y-4 p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div>
+          <p className="text-xs text-gray-500">Event Code:</p>
+          <div className="flex justify-between items-center">
+            <p className="font-semibold text-gray-900">205462</p>
+            <button className="text-blue-600 text-xs hover:underline">
+              Copy
+            </button>
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          <button className="flex-1 bg-gray-100 border text-sm py-1.5 rounded hover:bg-gray-200 font-medium">
+            Preview
+          </button>
+          <button className="flex-1 bg-gray-100 border text-sm py-1.5 rounded hover:bg-gray-200 font-medium">
+            Insights
+          </button>
+        </div>
+
+        {/* Sub Events */}
+        <div className="border-t pt-3">
+          <div className="flex justify-between items-center text-sm font-medium">
+            <p>Sub-Events</p>
+            <button className="text-blue-600 text-xs hover:underline">
+              + Add New
+            </button>
+          </div>
+
+          <div className="mt-2 flex justify-between items-center bg-gray-50 border rounded-md px-3 py-2 shadow-sm">
+            <div className="flex items-center gap-2 text-gray-900">
+              <span className="text-yellow-500">✨</span>
+              <p className="font-medium">Highlights</p>
+              <span className="text-xs bg-gray-200 px-2 py-0.5 rounded-full text-gray-700">
+                4
+              </span>
+            </div>
+
+            <div className="relative">
+              <button onClick={() => setShowOptions(!showOptions)}>
+                <MoreVertical size={18} className="text-gray-500" />
+              </button>
+
+              {showOptions && (
+                <div className="absolute right-0 mt-2 w-44 bg-white text-gray-900 rounded-md shadow-lg z-10 text-sm border">
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100">
+                    Make Private
+                  </button>
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100">
+                    Rename
+                  </button>
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100">
+                    Delete All Images
+                  </button>
+                  <button className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50">
+                    Delete
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
   );
 };
 

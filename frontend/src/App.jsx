@@ -6,8 +6,9 @@ import LoginPage from "./pages/LoginPage";
 import Signup from "./pages/Signup";
 import Notfound from "./pages/Notfound";
 import EventlistPage from "./pages/EventlistPage";
-import Setting from "./pages/Setting";
 import PersonalFolder from "./pages/PersonalFolder";
+import MainSetting from "./pages/MainSetting";
+import EventSetting from "./pages/EventSetting";
 
 const appRouter = createBrowserRouter([
   {
@@ -24,11 +25,15 @@ const appRouter = createBrowserRouter([
       },
       {
         path: "/setting",
-        element: <Setting />,
+        element: <MainSetting />,
       },
       {
         path: "/personalfolder/:folderId",
         element: <PersonalFolder />,
+      },
+      {
+        path: "/eventsetting",
+        element: <EventSetting />,
       },
     ],
   },
