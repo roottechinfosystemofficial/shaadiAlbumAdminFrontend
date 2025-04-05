@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import GeneralTab from "../EventSettingComponent/GeneralTab";
-import CoverImageTab from "../EventSettingComponent/CoverImageTab";
 import GalleryLayoutTab from "../EventSettingComponent/GalleryLayoutTab";
 import DownloadsTab from "../EventSettingComponent/DownloadsTab";
 import SharingTab from "../EventSettingComponent/SharingTab";
+import { CoverImageTab } from "../EventSettingComponent/CoverImageTab";
 
 const tabs = [
   "General",
