@@ -1,14 +1,21 @@
 import React, { useState } from "react";
 import { RefreshCw, MoreVertical, Eye, EyeOff } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const EventCard = ({ event, onEdit, onDelete }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <div className="bg-white shadow-lg rounded-lg overflow-hidden w-full max-w-xs mx-auto relative">
       {/* Event Image & More Options */}
-      <div className="relative">
+      <div
+        className="relative cursor-pointer"
+        onClick={() => {
+          navigate(`/personalfolder/${1}`);
+        }}
+      >
         <img
           src={event.image}
           alt={event.name}
