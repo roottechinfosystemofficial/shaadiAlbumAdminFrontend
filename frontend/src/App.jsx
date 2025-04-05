@@ -9,6 +9,7 @@ import EventlistPage from "./pages/EventlistPage";
 import PersonalFolder from "./pages/PersonalFolder";
 import MainSetting from "./pages/MainSetting";
 import EventSetting from "./pages/EventSetting";
+import Clientview from "./pages/Clientview";
 
 const appRouter = createBrowserRouter([
   {
@@ -40,6 +41,10 @@ const appRouter = createBrowserRouter([
   {
     path: "/login",
     element: <LoginPage />,
+  },
+  {
+    path: "/:id/clientview",
+    element: <Clientview />,
   },
   { path: "/signup", element: <Signup /> },
   { path: "*", element: <Notfound /> },

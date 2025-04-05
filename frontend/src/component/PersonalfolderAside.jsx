@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import boximg from "../assets/box1.png";
-import { EditIcon, Trash2, MoreVertical, Settings2 } from "lucide-react";import { useNavigate } from "react-router-dom";
-
+import { EditIcon, Trash2, MoreVertical, Settings2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const PersonalfolderAside = () => {
   const [showOptions, setShowOptions] = useState(false);
@@ -11,9 +11,11 @@ const PersonalfolderAside = () => {
     <aside className="w-full max-w-md sm:max-w-full p-4 bg-white border-r border-gray-200 text-gray-900 space-y-6">
       {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-3">
-        <button onClick={()=>navigate('/eventsetting')} className="flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-800 text-white font-medium text-sm py-2 rounded-md shadow-sm">
+        <button
+          onClick={() => navigate("/eventsetting")}
+          className="flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-800 text-white font-medium text-sm py-2 rounded-md shadow-sm"
+        >
           <Settings2 size={18} />
-          
           Event Settings
         </button>
         <button className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-medium py-2 text-sm rounded-md shadow-sm">
@@ -77,7 +79,10 @@ const PersonalfolderAside = () => {
         </div>
 
         <div className="flex gap-2">
-          <button className="flex-1 bg-gray-100 border text-sm py-1.5 rounded hover:bg-gray-200 font-medium">
+          <button
+            onClick={() => navigate("/1/clientview")}
+            className="flex-1 bg-gray-100 border text-sm py-1.5 rounded hover:bg-gray-200 font-medium"
+          >
             Preview
           </button>
           <button className="flex-1 bg-gray-100 border text-sm py-1.5 rounded hover:bg-gray-200 font-medium">
