@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Info } from "lucide-react";
+import { Eye, EyeOff, Info } from "lucide-react";
 
 // Toggle switch component
 const ToggleSwitch = ({ enabled, onToggle }) => {
@@ -31,6 +31,7 @@ const GeneralTab = () => {
   const [passwordProtected, setPasswordProtected] = useState(false);
   const [imageShare, setImageShare] = useState(true);
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-4 text-gray-800 bg-white rounded-xl shadow-md">
@@ -107,7 +108,7 @@ const GeneralTab = () => {
           </div>
 
           {/* Password Protection */}
-          <div className="col-span-full space-y-3">
+          <div className=" space-y-3 ">
             <div className="flex justify-between items-center">
               <span className="font-semibold">Password Protection</span>
               <ToggleSwitch
@@ -117,17 +118,34 @@ const GeneralTab = () => {
             </div>
 
             {passwordProtected && (
-              <div className="space-y-2">
+              <div className="space-y-2 ">
                 <p className="text-sm text-green-600 font-medium">
                   Password is enabled for this event
                 </p>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter password"
-                  className="w-full max-w-sm border border-gray-300 px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+
+                <div className="relative  max-w-sm">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password"
+                    className="w-full border border-gray-300 px-3 py-2 pr-10 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                  {password && (
+                    <button className="absolute  right-[10%] top-1/2 -translate-y-1/2 font-bold text-blue-600 hover:text-blue-90000 hover:underline">
+                      Update
+                    </button>
+                  )}
+                </div>
+
                 <p className="text-xs text-gray-500 italic">
                   This password needs to be letters or numbers with a minimum of
                   6 characters
@@ -137,7 +155,7 @@ const GeneralTab = () => {
           </div>
 
           {/* Image Share */}
-          <div className="flex justify-between items-center col-span-full sm:col-span-1">
+          <div className="flex justify-between   sm:col-span-1">
             <span className="font-semibold">Image Share</span>
             <ToggleSwitch
               enabled={imageShare}
@@ -149,7 +167,7 @@ const GeneralTab = () => {
           <div className="col-span-full mt-4">
             <p className="font-semibold">Watermark</p>
             <p className="text-sm text-gray-700">
-              Go to{" "}
+              Go to
               <span className="font-medium text-blue-600 underline cursor-pointer">
                 General Settings
               </span>{" "}
