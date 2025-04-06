@@ -1,101 +1,114 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { setCoverImg, setPosition } from "../Redux/Slices/CoverImgSlice";
 
-const CoverImageUploader = ({ title, imageUrl, onUpload }) => {
-  const [hovered, setHovered] = useState(false);
+const CoverImageTab = () => {
+  const dispatch = useDispatch();
+  const { coverImg, position } = useSelector((state) => state.coverImg);
+  const [mobileImg] = useState(
+    "https://images.unsplash.com/photo-1549989317-c15a2203fd8b?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+  );
+  const [text] = useState("Rahul");
+
+  useEffect(() => {
+    if (!coverImg) {
+      dispatch(setCoverImg("https://picsum.photos/id/1015/800/400"));
+    }
+  }, [coverImg, dispatch]);
+
+  const handlePositionChange = (pos) => {
+    dispatch(setPosition(pos));
+  };
+
+  const getTextPosition = () => {
+    switch (position) {
+      case "left":
+        return "items-center justify-start text-left px-4";
+      case "right":
+        return "items-center justify-end text-right px-4";
+      case "center":
+        return "items-center justify-center text-center px-4";
+      case "bottom":
+        return "items-end justify-center text-center pb-6 px-4";
+      default:
+        return "items-center justify-center text-center px-4";
+    }
+  };
+
+  const CoverContent = () => (
+    <div className="flex flex-col gap-2">
+      <p className="text-xl md:text-2xl font-bold uppercase">{text}</p>
+      <div className="flex flex-wrap gap-2 justify-center">
+        <button className="border border-white text-white text-xs px-3 py-1 rounded-md hover:bg-white hover:text-black transition">
+          View Mine
+        </button>
+        <button className="border border-white text-white text-xs px-3 py-1 rounded-md hover:bg-white hover:text-black transition">
+          View All
+        </button>
+        <button className="border border-white text-white text-xs px-3 py-1 rounded-md hover:bg-white hover:text-black transition">
+          Upload
+        </button>
+      </div>
+    </div>
+  );
 
   return (
-    <div
-      className="relative w-full max-w-md border border-gray-300 rounded-lg overflow-hidden"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      <img src={imageUrl} alt="cover" className="w-full h-48 object-cover" />
+    <div className="p-4 md:p-8">
+      <h2 className="text-xl font-semibold mb-6 text-gray-800">
+        Cover Image Preview
+      </h2>
 
-      {hovered && (
-        <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col justify-center items-center text-white space-y-2">
-          <button className="bg-white text-black px-3 py-1 rounded">
-            View Mine
-          </button>
-          <button className="bg-white text-black px-3 py-1 rounded">
-            View All
-          </button>
-          <label className="cursor-pointer bg-blue-500 px-4 py-1 rounded">
-            Upload
-            <input type="file" className="hidden" onChange={onUpload} />
-          </label>
+      <div className="flex items-center flex-col md:flex-row  gap-4">
+        <div className="relative aspect-[16/9] w-full md:w-[60%]">
+          <img
+            src={coverImg}
+            alt="Desktop Cover"
+            className="object-cover w-full h-full"
+          />
+          <div
+            className={`absolute inset-0 flex ${getTextPosition()} bg-black bg-opacity-40 text-white`}
+          >
+            <CoverContent />
+          </div>
         </div>
-      )}
+
+        <div className="relative aspect-[9/12] w-[50%] md:w-[40%]">
+          <img
+            src={mobileImg}
+            alt="Mobile Cover"
+            className="object-cover w-full h-full"
+          />
+          <div
+            className={`absolute inset-0 flex ${getTextPosition()} bg-black bg-opacity-40 text-white`}
+          >
+            <CoverContent />
+          </div>
+        </div>
+      </div>
+
+      {/* Position Buttons */}
+      <div className="mt-6">
+        <h3 className="font-medium text-gray-700 mb-2">
+          Text & Button Position
+        </h3>
+        <div className="flex flex-wrap gap-3">
+          {["left", "right", "center", "bottom"].map((pos) => (
+            <button
+              key={pos}
+              onClick={() => handlePositionChange(pos)}
+              className={`px-4 py-2 rounded-lg border transition-all text-sm ${
+                position === pos
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              {pos.charAt(0).toUpperCase() + pos.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
 
-export function CoverImageTab() {
-  const [split, setSplit] = useState(false);
-
-  const handleUpload = (e) => {
-    const file = e.target.files[0];
-    console.log("Uploading:", file);
-  };
-
-  return (
-    <div className="p-4 space-y-4">
-      <label className="flex items-center space-x-2">
-        <input
-          type="checkbox"
-          checked={split}
-          onChange={() => setSplit(!split)}
-        />
-        <span>Split</span>
-      </label>
-
-      {split ? (
-        <div className="flex gap-6">
-          {/* Left Side - Image */}
-          <div className="w-1/2">
-            <CoverImageUploader
-              title="Cover Image"
-              imageUrl="/images/sample.jpg"
-              onUpload={handleUpload}
-            />
-          </div>
-
-          {/* Middle Side - Options */}
-          <div className="w-1/2 space-y-4">
-            <label className="block">
-              Label:
-              <input
-                type="text"
-                className="block w-full mt-1 border px-2 py-1 rounded"
-                placeholder="Enter label"
-              />
-            </label>
-
-            <label className="block">
-              Border:
-              <select className="block w-full mt-1 border px-2 py-1 rounded">
-                <option>None</option>
-                <option>Thin</option>
-                <option>Thick</option>
-              </select>
-            </label>
-
-            <label className="block">
-              Corner Style:
-              <select className="block w-full mt-1 border px-2 py-1 rounded">
-                <option>Sharp</option>
-                <option>Rounded</option>
-              </select>
-            </label>
-          </div>
-        </div>
-      ) : (
-        // Normal layout
-        <CoverImageUploader
-          title="Cover Image"
-          imageUrl="/images/sample.jpg"
-          onUpload={handleUpload}
-        />
-      )}
-    </div>
-  );
-}
+export default CoverImageTab;

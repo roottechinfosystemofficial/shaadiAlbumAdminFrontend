@@ -80,11 +80,12 @@ const PersonalfolderAside = () => {
 
         <div className="flex gap-2">
           <button
-            onClick={() => navigate("/1/clientview")}
+            onClick={() => window.open("/1/clientview", "_blank")}
             className="flex-1 bg-gray-100 border text-sm py-1.5 rounded hover:bg-gray-200 font-medium"
           >
             Preview
           </button>
+
           <button className="flex-1 bg-gray-100 border text-sm py-1.5 rounded hover:bg-gray-200 font-medium">
             Insights
           </button>

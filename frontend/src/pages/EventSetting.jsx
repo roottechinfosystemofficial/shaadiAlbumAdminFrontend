@@ -5,7 +5,7 @@ import GeneralTab from "../EventSettingComponent/GeneralTab";
 import GalleryLayoutTab from "../EventSettingComponent/GalleryLayoutTab";
 import DownloadsTab from "../EventSettingComponent/DownloadsTab";
 import SharingTab from "../EventSettingComponent/SharingTab";
-import { CoverImageTab } from "../EventSettingComponent/CoverImageTab";
+import CoverImageTab from "../EventSettingComponent/CoverImageTab";
 
 const tabs = [
   "General",

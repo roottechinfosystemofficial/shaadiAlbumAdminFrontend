@@ -2,20 +2,39 @@ import React from "react";
 import "../css/Clientview.css";
 import {
   ArrowDownToLineIcon,
-  Edit,
   Heart,
   ScanFace,
   Share2,
   ShoppingCart,
   Upload,
 } from "lucide-react";
+import { useSelector } from "react-redux";
 
 const Clientview = () => {
+  const { position } = useSelector((state) => state.coverImg);
+
+  const getPositionClasses = () => {
+    switch (position) {
+      case "left":
+        return "items-center justify-start";
+      case "center":
+        return "items-center justify-center";
+      case "right":
+        return "items-center justify-end";
+      case "bottom":
+        return "items-end justify-center";
+      default:
+        return "items-center justify-start";
+    }
+  };
+
   return (
     <>
-      <div className="pics__header overflow-hidden relative md:h-[100vh] h-[50vh]">
-        <div className="text-white flex items-center justify-start p-4 md:p-8 h-full">
-          <div className="flex flex-col">
+      <div className="pics__header overflow-hidden relative md:h-[100vh] h-[50vh] bg-gray-800">
+        <div
+          className={`absolute inset-0 text-white flex p-4 md:p-8 ${getPositionClasses()}`}
+        >
+          <div className="flex flex-col items-start">
             <p className="text-2xl md:text-3xl uppercase pb-2 md:pb-4 font-extrabold">
               Rahul
             </p>
