@@ -1,18 +1,9 @@
 import React from "react";
 import "../css/Clientview.css";
-import {
-  ArrowDownToLineIcon,
-  Heart,
-  ScanFace,
-  Share2,
-  ShoppingCart,
-  Upload,
-} from "lucide-react";
-import { useSelector } from "react-redux";
+import ClientPhotosView from "../component/ClientPhotosView";
 
 const Clientview = () => {
-  const { position } = useSelector((state) => state.coverImg);
-
+  const position = "center";
   const getPositionClasses = () => {
     switch (position) {
       case "left":
@@ -53,40 +44,7 @@ const Clientview = () => {
         </div>
       </div>
 
-      <div className="max-w-[90%] mx-auto">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between py-6 gap-4">
-          <div>
-            <p className="text-xl md:text-2xl font-bold">RAHUL</p>
-            <span className="text-sm text-gray-600">dyhrf</span>
-          </div>
-          <div className="flex flex-wrap gap-3 md:gap-4">
-            <button className="flex items-center gap-1 md:gap-2 text-sm md:text-base">
-              <ScanFace className="w-4 h-4 md:w-5 md:h-5" /> Face Search
-            </button>
-            <button className="flex items-center gap-1 md:gap-2 text-sm md:text-base">
-              <Heart className="w-4 h-4 md:w-5 md:h-5" /> Favourites
-            </button>
-            <button>
-              <Upload className="w-4 h-4 md:w-5 md:h-5" />
-            </button>
-            <button>
-              <ShoppingCart className="w-4 h-4 md:w-5 md:h-5" />
-            </button>
-            <button>
-              <Share2 className="w-4 h-4 md:w-5 md:h-5" />
-            </button>
-            <button>
-              <ArrowDownToLineIcon className="w-4 h-4 md:w-5 md:h-5" />
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <h1 className="text-xl md:text-3xl py-2 md:py-4 font-semibold">
-            Highlights
-          </h1>
-        </div>
-      </div>
+      <ClientPhotosView />
     </>
   );
 };
