@@ -15,7 +15,7 @@ const Basesetting = () => {
   const [whatsappNumber, setWhatsappNumber] = useState("");
 
   // Custom Domain Settings State
-  const [isPremiumUser, setIsPremiumUser] = useState(false); // Toggle for premium user
+  const [isPremiumUser, setIsPremiumUser] = useState(false); 
   const [customDomain, setCustomDomain] = useState("");
 
   // Handle logo file selection
