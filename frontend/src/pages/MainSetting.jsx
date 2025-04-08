@@ -1,71 +1,58 @@
-import React from "react";
+import React, { useState } from "react";
+import Basesetting from "../../MainSettingComponents/Basesetting";
+import PagesSetting from "../../MainSettingComponents/PagesSetting";
+import FaceRecognizationHistory from "../../MainSettingComponents/FaceRecognizationHistory";
 
 const MainSetting = () => {
+  // State to track the active tab
+  const [activeTab, setActiveTab] = useState("settings");
+
   return (
-    <div className="max-w-6xl mx-auto bg-white rounded-xl p-4">
-      <h2 className="text-2xl font-bold mb-4">Settings</h2>
+    <div className="p-6">
+      {/* Tab Bar */}
+      <div className="flex space-x-8 border-b border-gray-300 pb-4">
+        <button
+          className={`px-4 py-2 text-lg font-semibold ${
+            activeTab === "settings"
+              ? "text-indigo-600 border-b-2 border-indigo-600"
+              : "text-gray-600"
+          }`}
+          onClick={() => setActiveTab("settings")}
+        >
+          Settings
+        </button>
+        <button
+          className={`px-4 py-2 text-lg font-semibold ${
+            activeTab === "pages"
+              ? "text-indigo-600 border-b-2 border-indigo-600"
+              : "text-gray-600"
+          }`}
+          onClick={() => setActiveTab("pages")}
+        >
+          Pages
+        </button>
+        <button
+          className={`px-4 py-2 text-lg font-semibold ${
+            activeTab === "faceRecognition"
+              ? "text-indigo-600 border-b-2 border-indigo-600"
+              : "text-gray-600"
+          }`}
+          onClick={() => setActiveTab("faceRecognition")}
+        >
+          Face Recognition History
+        </button>
+      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6 shadow rounded-lg">
-        <div>
-          <label className="block font-medium mb-1">Business Name *</label>
-          <input
-            type="text"
-            placeholder="Business Name"
-            className="w-full p-2 border rounded"
-          />
-        </div>
+      {/* Content */}
+      <div className="mt-6">
+        {/* Settings Tab Content */}
+        {activeTab === "settings" && <Basesetting />}
 
-        <div>
-          <label className="block font-medium mb-1">
-            Support Email Address *
-          </label>
-          <input
-            type="email"
-            placeholder="youremail@gmail.com"
-            className="w-full p-2 border rounded"
-          />
-        </div>
+        {/* Pages Tab Content */}
+        {activeTab === "pages" && <PagesSetting />}
 
-        <div>
-          <label className="block font-medium mb-1">
-            Support Contact No. *
-          </label>
-          <input
-            type="text"
-            placeholder="9876543210"
-            className="w-full p-2 border rounded"
-          />
-        </div>
-
-        <div>
-          <label className="block font-medium mb-1">Office Address *</label>
-          <input
-            type="text"
-            placeholder="Your Address"
-            className="w-full p-2 border rounded"
-          />
-        </div>
-
-        <div>
-          <label className="block font-medium mb-1">
-            MapLink - Contact Us Page
-          </label>
-          <input
-            type="text"
-            placeholder="Google Map Link"
-            className="w-full p-2 border rounded"
-          />
-        </div>
-
-        <div>
-          <label className="block font-medium mb-1">Logo Image</label>
-          <input type="file" className="w-full p-2 border rounded" />
-        </div>
-        <div className="col-span-full flex justify-end mt-6">
-          <button className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
-            Save Settings
-          </button>
-        </div>
+        {/* Face Recognition History Tab Content */}
+        {activeTab === "faceRecognition" && <FaceRecognizationHistory />}
       </div>
     </div>
   );

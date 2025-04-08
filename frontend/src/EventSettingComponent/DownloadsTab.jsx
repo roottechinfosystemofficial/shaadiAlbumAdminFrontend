@@ -21,7 +21,7 @@ const DownloadsTab = () => {
       <h2 className="text-3xl font-bold text-gray-800">Download Settings</h2>
 
       {/* Download Settings Section */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 md:gap-8">
         {/* Single Image Download */}
         <div className="bg-white p-6 rounded-xl shadow-md space-y-4">
           <div className="flex items-center space-x-3">
@@ -62,7 +62,12 @@ const DownloadsTab = () => {
             <p className="font-medium text-gray-800">Download Sizes</p>
             <div className="flex space-x-4">
               <div className="flex items-center space-x-2">
-                <input type="radio" id="1600px" name="size" className="mr-2" />
+                <input
+                  type="radio"
+                  id="1600px"
+                  name="size"
+                  className="form-radio text-indigo-600 h-5 w-5"
+                />
                 <label htmlFor="1600px" className="text-sm text-gray-700">
                   1600 px
                 </label>
@@ -72,7 +77,7 @@ const DownloadsTab = () => {
                   type="radio"
                   id="original"
                   name="size"
-                  className="mr-2"
+                  className="form-radio text-indigo-600 h-5 w-5"
                 />
                 <label htmlFor="original" className="text-sm text-gray-700">
                   Original
@@ -126,7 +131,7 @@ const DownloadsTab = () => {
                   type="radio"
                   id="1600px-bulk"
                   name="bulk-size"
-                  className="mr-2"
+                  className="form-radio text-indigo-600 h-5 w-5"
                 />
                 <label htmlFor="1600px-bulk" className="text-sm text-gray-700">
                   1600 px
@@ -137,7 +142,7 @@ const DownloadsTab = () => {
                   type="radio"
                   id="original-bulk"
                   name="bulk-size"
-                  className="mr-2"
+                  className="form-radio text-indigo-600 h-5 w-5"
                 />
                 <label
                   htmlFor="original-bulk"
@@ -151,7 +156,7 @@ const DownloadsTab = () => {
                   type="radio"
                   id="both"
                   name="bulk-size"
-                  className="mr-2"
+                  className="form-radio text-indigo-600 h-5 w-5"
                 />
                 <label htmlFor="both" className="text-sm text-gray-700">
                   Both
@@ -190,13 +195,13 @@ const DownloadsTab = () => {
                 Block specific emails from downloading and prevent sub-events
                 from being downloaded.
               </p>
-              <div className="flex space-x-2">
+              <div className="flex space-x-2 ">
                 <input
                   type="email"
                   placeholder="Enter email"
                   value={blockedEmail}
                   onChange={(e) => setBlockedEmail(e.target.value)}
-                  className="p-2 border border-gray-300 rounded-lg"
+                  className="p-2 border border-gray-300 rounded-lg w-[70%]"
                 />
                 <button
                   onClick={handleBlockEmail}
