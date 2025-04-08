@@ -8,13 +8,18 @@ import {
   Upload,
   X,
 } from "lucide-react";
+import { useSelector } from "react-redux";
 
 const ClientPhotosView = () => {
+  const { layout, spacing, thumbnail, background } = useSelector(
+    (state) => state.galleryLayout
+  );
+
   const adminSettings = {
-    spacing: "large",
-    layout: "horizontal", // Change to "horizontal" or "vertical"
-    thumbnailSize: "large",
-    background: "dark",
+    spacing: spacing || "large",
+    layout: layout || "vertical",
+    thumbnail: thumbnail || "large",
+    background: background || "dark",
   };
 
   const [modalImage, setModalImage] = useState(null);
@@ -24,7 +29,7 @@ const ClientPhotosView = () => {
       ? "bg-gray-900 text-white"
       : "bg-gray-100 text-gray-900";
 
-  const sampleImages = Array.from({ length: 20 }, (_, i) => ({
+  const sampleImages = Array.from({ length: 100 }, (_, i) => ({
     id: i,
     url: `https://picsum.photos/seed/${i}/800/600`,
   }));
@@ -100,7 +105,7 @@ const ClientPhotosView = () => {
                 src={img.url}
                 alt={`sample-${img.id}`}
                 className={`w-full object-cover ${
-                  thumbSizeClasses[adminSettings.thumbnailSize]
+                  thumbSizeClasses[adminSettings.thumbnail]
                 }`}
               />
             </div>

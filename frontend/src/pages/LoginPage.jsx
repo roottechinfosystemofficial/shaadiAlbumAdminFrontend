@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { FaUserShield, FaCloudUploadAlt, FaLock } from "react-icons/fa";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 import Logo from "../assets/logo_1.png";
+import { useNavigate } from "react-router-dom";
 
 const features = [
   {
@@ -22,18 +24,20 @@ const features = [
 
 const LoginPage = () => {
   const [featureIndex, setFeatureIndex] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const interval = setInterval(() => {
       setFeatureIndex((prevIndex) => (prevIndex + 1) % features.length);
-    }, 3000);
+    }, 2000);
     return () => clearInterval(interval);
   }, []);
 
   return (
     <div className="flex flex-col md:flex-row h-screen">
       {/* Left Side - Features Section */}
-      <div className="relative w-full md:w-[40%] bg-red-500 text-white flex flex-col justify-center items-center p-8 md:p-10">
+      <div className="relative w-full md:w-[40%] bg-red-700 text-white flex flex-col justify-center items-center p-8 md:p-10">
         <div
           key={featureIndex}
           className="text-center transition-all duration-[1500ms] ease-in-out opacity-100 transform scale-105"
@@ -52,9 +56,8 @@ const LoginPage = () => {
 
       {/* Right Side - Login Form */}
       <div className="relative w-full md:w-[60%] flex flex-col justify-center items-center p-6 sm:p-10">
-        {/* Background Clip Only on md and above */}
         <div
-          className="hidden md:block absolute top-0 left-0 h-full w-[100px] bg-red-500"
+          className="hidden md:block absolute top-0 left-0 h-full w-[100px] bg-red-700"
           style={{ clipPath: "ellipse(100px 50% at 0% 50%)" }}
         ></div>
 
@@ -76,15 +79,22 @@ const LoginPage = () => {
             />
           </div>
 
-          <div className="mb-4">
+          <div className="mb-4 relative">
             <label className="block text-gray-700 text-sm font-bold mb-1">
               Password
             </label>
             <input
-              type="password"
-              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              type={showPassword ? "text" : "password"}
+              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 pr-12"
               placeholder="Enter password"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-[38px] text-gray-500 hover:text-gray-700"
+            >
+              {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
+            </button>
           </div>
 
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 text-sm gap-2 sm:gap-0">
@@ -97,12 +107,15 @@ const LoginPage = () => {
             </a>
           </div>
 
-          <button className="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition-all">
+          <button className="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-700 transition-all">
             Login
           </button>
         </form>
 
-        <button className="text-red-500 mt-4 z-10 hover:underline">
+        <button
+          className="text-red-500 mt-4 z-10 hover:underline"
+          onClick={() => navigate("/signup")}
+        >
           Don’t Have an Account?
         </button>
       </div>

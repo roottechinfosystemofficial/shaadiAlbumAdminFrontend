@@ -1,9 +1,12 @@
 import React from "react";
 import "../css/Clientview.css";
 import ClientPhotosView from "../component/ClientPhotosView";
+import { useSelector } from "react-redux";
 
 const Clientview = () => {
-  const position = "center";
+  const { position } = useSelector((state) => state.coverImg);
+  console.log(position);
+
   const getPositionClasses = () => {
     switch (position) {
       case "left":

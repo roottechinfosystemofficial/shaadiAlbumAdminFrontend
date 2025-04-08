@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setCoverImg, setPosition } from "../Redux/Slices/CoverImgSlice";
+import {
+  MdFormatAlignLeft,
+  MdFormatAlignCenter,
+  MdFormatAlignRight,
+  MdVerticalAlignBottom,
+} from "react-icons/md";
 
 const CoverImageTab = () => {
   const dispatch = useDispatch();
@@ -52,13 +58,27 @@ const CoverImageTab = () => {
     </div>
   );
 
+  const positionIcons = {
+    left: <MdFormatAlignLeft size={20} />,
+    center: <MdFormatAlignCenter size={20} />,
+    right: <MdFormatAlignRight size={20} />,
+    bottom: <MdVerticalAlignBottom size={20} />,
+  };
+
+  const positionLabels = {
+    left: " Left",
+    center: " Center",
+    right: " Right",
+    bottom: " Bottom",
+  };
+
   return (
     <div className="p-4 md:p-8">
       <h2 className="text-xl font-semibold mb-6 text-gray-800">
         Cover Image Preview
       </h2>
 
-      <div className="flex items-center flex-col md:flex-row  gap-4">
+      <div className="flex items-center flex-col md:flex-row gap-4">
         <div className="relative aspect-[16/9] w-full md:w-[60%]">
           <img
             src={coverImg}
@@ -86,23 +106,27 @@ const CoverImageTab = () => {
         </div>
       </div>
 
-      {/* Position Buttons */}
-      <div className="mt-6">
-        <h3 className="font-medium text-gray-700 mb-2">
+      {/* Icon Position Selector */}
+      <div className="mt-10">
+        <h3 className="text-sm font-semibold text-gray-800 mb-4 uppercase tracking-wide">
           Text & Button Position
         </h3>
-        <div className="flex flex-wrap gap-3">
-          {["left", "right", "center", "bottom"].map((pos) => (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {Object.entries(positionIcons).map(([pos, icon]) => (
             <button
               key={pos}
               onClick={() => handlePositionChange(pos)}
-              className={`px-4 py-2 rounded-lg border transition-all text-sm ${
-                position === pos
-                  ? "bg-blue-600 text-white border-blue-600"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+              className={`flex flex-col items-center justify-center gap-2 p-6 rounded-xl border text-sm font-medium shadow-md transition-all
+          ${
+            position === pos
+              ? "bg-blue-600 text-white border-blue-700 scale-105 ring-2 ring-blue-300"
+              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+          }`}
             >
-              {pos.charAt(0).toUpperCase() + pos.slice(1)}
+              <span className="text-3xl">{icon}</span>
+              <span className="text-sm font-semibold capitalize">
+                {positionLabels[pos]}
+              </span>
             </button>
           ))}
         </div>
