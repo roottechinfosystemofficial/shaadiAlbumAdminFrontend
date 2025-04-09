@@ -7,7 +7,7 @@ import DashFooterBoxes from "../component/DashFooterBoxes";
 
 const Dashboard = () => {
   return (
-    <div className="flex flex-col gap-[30px] bg-[#ededed]">
+    <div className="flex flex-col gap-[50px] justify-evenly bg-[#f6f5f5]">
       <Dashdata />
       <BusinessSetting />
       <DirectLinkCard />
