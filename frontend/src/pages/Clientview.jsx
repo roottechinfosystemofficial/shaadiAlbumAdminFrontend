@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import "../css/Clientview.css";
 import ClientPhotosView from "../component/ClientPhotosView";
 import { useSelector } from "react-redux";
+import UnderClientView from "../component/UnderClientView";
 
 const Clientview = () => {
   const { position } = useSelector((state) => state.coverImg);
-  console.log(position);
+  const [whichView, setWhichView] = useState("");
+  console.log(whichView);
 
   const getPositionClasses = () => {
     switch (position) {
@@ -46,8 +48,11 @@ const Clientview = () => {
           </div>
         </div>
       </div>
-
-      <ClientPhotosView />
+      {whichView === "photos" ? (
+        <ClientPhotosView setWhichView={setWhichView} />
+      ) : (
+        <UnderClientView setWhichView={setWhichView} />
+      )}
     </>
   );
 };

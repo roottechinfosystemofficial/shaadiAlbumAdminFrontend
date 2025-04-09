@@ -7,10 +7,14 @@ import {
   ShoppingCart,
   Upload,
   X,
+  ArrowLeftCircle,
+  ArrowRightCircle,
+  RotateCw,
+  FlipVertical,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 
-const ClientPhotosView = () => {
+const ClientPhotosView = ({ setWhichView }) => {
   const { layout, spacing, thumbnail, background } = useSelector(
     (state) => state.galleryLayout
   );
@@ -23,6 +27,11 @@ const ClientPhotosView = () => {
   };
 
   const [modalImage, setModalImage] = useState(null);
+  const [rotation, setRotation] = useState(0); // rotation state
+  const [flip, setFlip] = useState(false); // flip state
+  const [isSlideshow, setIsSlideshow] = useState(false); // slideshow on/off state
+  const [slideshowInterval, setSlideshowInterval] = useState(null); // to store interval id
+  const [currentImageIndex, setCurrentImageIndex] = useState(0); // to track the current image in slideshow
 
   const bgClass =
     adminSettings.background === "dark"
@@ -53,9 +62,56 @@ const ClientPhotosView = () => {
 
   const closeModal = () => setModalImage(null);
 
+  const goBack = () => {
+    // Trigger setWhichView with the previous view, assuming "photos" is the main view
+    setWhichView("");
+  };
+
+  const handleNextImage = () => {
+    const nextIndex = (currentImageIndex + 1) % sampleImages.length;
+    setCurrentImageIndex(nextIndex);
+    setModalImage(sampleImages[nextIndex].url);
+  };
+
+  const handlePreviousImage = () => {
+    const prevIndex =
+      (currentImageIndex - 1 + sampleImages.length) % sampleImages.length;
+    setCurrentImageIndex(prevIndex);
+    setModalImage(sampleImages[prevIndex].url);
+  };
+
+  const toggleSlideshow = () => {
+    if (isSlideshow) {
+      clearInterval(slideshowInterval);
+      setSlideshowInterval(null);
+    } else {
+      const interval = setInterval(handleNextImage, 3000); // Change image every 3 seconds
+      setSlideshowInterval(interval);
+    }
+    setIsSlideshow(!isSlideshow);
+  };
+
+  const rotateImage = (e) => {
+    e.stopPropagation(); // Prevent the modal close when clicking on the rotate button
+    setRotation((prev) => prev + 90);
+  };
+
+  const flipImage = (e) => {
+    e.stopPropagation(); // Prevent the modal close when clicking on the flip button
+    setFlip((prev) => !prev);
+  };
+
   return (
     <div className={`${bgClass} min-h-screen w-full py-6`}>
       <div className="max-w-[95%] mx-auto px-4">
+        {/* Back Button */}
+        <button
+          onClick={goBack}
+          className="flex items-center gap-2 px-3 py-2 text-sm bg-white border rounded shadow hover:bg-gray-200 transition mb-4"
+        >
+          <span className="text-black">&larr; Back</span>
+        </button>
+
         {/* Header */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between pb-6 gap-4">
           <div>
@@ -99,7 +155,10 @@ const ClientPhotosView = () => {
               className={`mb-4 ${
                 adminSettings.layout === "vertical" ? "break-inside-avoid" : ""
               } rounded overflow-hidden bg-white shadow hover:shadow-lg transition duration-300 cursor-pointer`}
-              onClick={() => setModalImage(img.url)}
+              onClick={() => {
+                setModalImage(img.url);
+                setCurrentImageIndex(img.id);
+              }}
             >
               <img
                 src={img.url}
@@ -126,12 +185,63 @@ const ClientPhotosView = () => {
             >
               <X className="w-6 h-6" />
             </button>
-            <img
-              src={modalImage}
-              alt="Full view"
-              className="w-full max-h-[90vh] object-contain mx-auto rounded transition-transform duration-300 ease-in-out"
-              onClick={(e) => e.stopPropagation()}
-            />
+
+            {/* Image Display */}
+            <div
+              className={`relative mx-auto rounded transition-transform duration-300 ease-in-out ${
+                flip ? "scale-x-[-1]" : ""
+              }`}
+              style={{
+                transform: `rotate(${rotation}deg)`,
+              }}
+            >
+              <img
+                src={modalImage}
+                alt="Full view"
+                className="w-full max-h-[90vh] object-contain mx-auto"
+                onClick={(e) => e.stopPropagation()} // Prevent modal close when clicking on image
+              />
+            </div>
+
+            {/* Icon Buttons */}
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 flex gap-4">
+              <button
+                onClick={rotateImage}
+                className="p-2 bg-white text-black rounded-full shadow hover:bg-gray-200"
+              >
+                <RotateCw className="w-6 h-6" />
+              </button>
+              <button
+                onClick={flipImage}
+                className="p-2 bg-white text-black rounded-full shadow hover:bg-gray-200"
+              >
+                <FlipVertical className="w-6 h-6" />
+              </button>
+              <button
+                onClick={toggleSlideshow}
+                className="p-2 bg-white text-black rounded-full shadow hover:bg-gray-200"
+              >
+                {isSlideshow ? "Stop" : "Start"} Slideshow
+              </button>
+            </div>
+
+            {/* Navigation Arrows */}
+            <div className="absolute top-1/2 left-0 transform -translate-y-1/2">
+              <button
+                onClick={handlePreviousImage}
+                className="p-3 bg-white text-black rounded-full shadow hover:bg-gray-200"
+              >
+                <ArrowLeftCircle className="w-8 h-8" />
+              </button>
+            </div>
+            <div className="absolute top-1/2 right-0 transform -translate-y-1/2">
+              <button
+                onClick={handleNextImage}
+                className="p-3 bg-white text-black rounded-full shadow hover:bg-gray-200"
+              >
+                <ArrowRightCircle className="w-8 h-8" />
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -59,7 +59,7 @@ const Basesetting = () => {
       return;
     }
 
-    // Handle Social Settings form submission (e.g., sending data to an API)
+   
     console.log({
       facebookUrl,
       instagramUrl,

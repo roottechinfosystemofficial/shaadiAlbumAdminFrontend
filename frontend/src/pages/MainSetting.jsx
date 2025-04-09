@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import Basesetting from "../../MainSettingComponents/Basesetting";
-import PagesSetting from "../../MainSettingComponents/PagesSetting";
-import FaceRecognizationHistory from "../../MainSettingComponents/FaceRecognizationHistory";
+import Basesetting from "../MainSettingComponents/Basesetting";
+import PagesSetting from "../MainSettingComponents/PagesSetting";
+import FaceRecognizationHistory from "../MainSettingComponents/FaceRecognizationHistory";
 
 const MainSetting = () => {
   // State to track the active tab
