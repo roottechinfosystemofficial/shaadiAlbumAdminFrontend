@@ -25,7 +25,7 @@ const DownloadsTab = () => {
         {/* Single Image Download */}
         <div className="bg-white p-6 rounded-xl shadow-md space-y-4">
           <div className="flex items-center space-x-3">
-            <FiDownload className="text-2xl text-indigo-600" />
+            <FiDownload className="text-2xl text-primary" />
             <h3 className="text-xl font-semibold text-gray-800">
               Single Image Download
             </h3>
@@ -66,7 +66,7 @@ const DownloadsTab = () => {
                   type="radio"
                   id="1600px"
                   name="size"
-                  className="form-radio text-indigo-600 h-5 w-5"
+                  className="form-radio text-primary h-5 w-5"
                 />
                 <label htmlFor="1600px" className="text-sm text-gray-700">
                   1600 px
@@ -77,7 +77,7 @@ const DownloadsTab = () => {
                   type="radio"
                   id="original"
                   name="size"
-                  className="form-radio text-indigo-600 h-5 w-5"
+                  className="form-radio text-primary h-5 w-5"
                 />
                 <label htmlFor="original" className="text-sm text-gray-700">
                   Original
@@ -90,7 +90,7 @@ const DownloadsTab = () => {
         {/* Bulk Image Download */}
         <div className="bg-white p-6 rounded-xl shadow-md space-y-4">
           <div className="flex items-center space-x-3">
-            <FiDownload className="text-2xl text-indigo-600" />
+            <FiDownload className="text-2xl text-primary" />
             <h3 className="text-xl font-semibold text-gray-800">
               Bulk Image Download
             </h3>
@@ -131,7 +131,7 @@ const DownloadsTab = () => {
                   type="radio"
                   id="1600px-bulk"
                   name="bulk-size"
-                  className="form-radio text-indigo-600 h-5 w-5"
+                  className="form-radio text-primary h-5 w-5"
                 />
                 <label htmlFor="1600px-bulk" className="text-sm text-gray-700">
                   1600 px
@@ -142,7 +142,7 @@ const DownloadsTab = () => {
                   type="radio"
                   id="original-bulk"
                   name="bulk-size"
-                  className="form-radio text-indigo-600 h-5 w-5"
+                  className="form-radio text-primary h-5 w-5"
                 />
                 <label
                   htmlFor="original-bulk"
@@ -156,7 +156,7 @@ const DownloadsTab = () => {
                   type="radio"
                   id="both"
                   name="bulk-size"
-                  className="form-radio text-indigo-600 h-5 w-5"
+                  className="form-radio text-primary h-5 w-5"
                 />
                 <label htmlFor="both" className="text-sm text-gray-700">
                   Both
@@ -174,7 +174,7 @@ const DownloadsTab = () => {
           onClick={() => setIsAdvancedOptionsOpen(!isAdvancedOptionsOpen)}
         >
           <div className="flex items-center space-x-3">
-            <FiSettings className="text-2xl text-indigo-600" />
+            <FiSettings className="text-2xl text-primary" />
             <h3 className="text-xl font-semibold text-gray-800">
               Advanced Options
             </h3>
@@ -205,7 +205,7 @@ const DownloadsTab = () => {
                 />
                 <button
                   onClick={handleBlockEmail}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
                 >
                   Update
                 </button>

@@ -37,7 +37,7 @@ const SharingTab = () => {
                   "https://shaadialbum.in/face-link/YTVZM042MGRTZy9meUlncENWWGVmdz09"
                 )
               }
-              className="px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+              className="px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
             >
               <FiCopy className="text-white" />
             </button>
@@ -68,7 +68,7 @@ const SharingTab = () => {
                   "https://shaadialbum.in/my-shared-event/YTVZM042MGRTZy9meUlncENWWGVmdz09"
                 )
               }
-              className="px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+              className="px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
             >
               <FiCopy className="text-white" />
             </button>

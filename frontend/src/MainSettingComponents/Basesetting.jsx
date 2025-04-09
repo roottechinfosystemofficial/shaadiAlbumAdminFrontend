@@ -7,317 +7,205 @@ const Basesetting = () => {
   const [contactNo, setContactNo] = useState("");
   const [address, setAddress] = useState("");
   const [mapLink, setMapLink] = useState("");
-
-  // Social Settings State
   const [facebookUrl, setFacebookUrl] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
-
-  // Custom Domain Settings State
-  const [isPremiumUser, setIsPremiumUser] = useState(false); 
+  const [isPremiumUser, setIsPremiumUser] = useState(false);
   const [customDomain, setCustomDomain] = useState("");
 
-  // Handle logo file selection
   const handleLogoChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setLogo(URL.createObjectURL(file)); // Preview the selected logo
-    }
+    if (file) setLogo(URL.createObjectURL(file));
   };
 
-  // Handle Business Settings form submission
   const handleBusinessSettingsSubmit = (e) => {
     e.preventDefault();
-
-    // Validate required fields for Business Settings
     if (!businessName || !email || !contactNo || !address) {
       alert("Please fill in all required fields in the Business Settings.");
       return;
     }
-
-    // Handle Business Settings form submission (e.g., sending data to an API)
-    console.log({
-      businessName,
-      email,
-      contactNo,
-      address,
-      mapLink,
-      logo,
-    });
-
+    console.log({ businessName, email, contactNo, address, mapLink, logo });
     alert("Business Settings saved!");
   };
 
-  // Handle Social Settings form submission
   const handleSocialSettingsSubmit = (e) => {
     e.preventDefault();
-
-    // Validate required fields for Social Settings
     if (!facebookUrl || !instagramUrl || !youtubeUrl) {
       alert("Please fill in all required fields in the Social Settings.");
       return;
     }
-
-   
-    console.log({
-      facebookUrl,
-      instagramUrl,
-      youtubeUrl,
-      whatsappNumber,
-      customDomain,
-    });
-
+    console.log({ facebookUrl, instagramUrl, youtubeUrl, whatsappNumber });
     alert("Social Settings saved!");
   };
 
-  // Handle Custom Domain Form submission
   const handleCustomDomainSubmit = (e) => {
     e.preventDefault();
-    // Validate Custom Domain for Premium Users
     if (isPremiumUser && !customDomain) {
       alert("Please enter your custom domain.");
       return;
     }
-
-    // Handle Custom Domain form submission (e.g., sending data to an API)
-    console.log({
-      customDomain,
-    });
-
+    console.log({ customDomain });
     alert("Custom Domain settings saved!");
   };
 
-  return (
-    <div className="max-w-6xl mx-auto bg-white rounded-xl p-8 shadow-lg">
-      <h2 className="text-3xl font-semibold text-gray-800 mb-8">Settings</h2>
+  const inputStyle =
+    "w-full p-3 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary";
 
-      {/* Business Settings Form */}
-      <div className="bg-gray-50 p-6 rounded-lg shadow-md mb-8">
-        <h3 className="text-2xl font-semibold text-gray-800 mb-6">
-          Business Settings
-        </h3>
+  return (
+    <div className="max-w-6xl mx-auto bg-background rounded-xl p-8 shadow-lg">
+      <h2 className="text-3xl font-semibold text-primary mb-8">Settings</h2>
+
+      {/* Business Settings */}
+      <Section title="Business Settings">
         <form onSubmit={handleBusinessSettingsSubmit}>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Business Name */}
+            <Input
+              label="Business Name *"
+              value={businessName}
+              onChange={setBusinessName}
+              placeholder="Business Name"
+            />
+            <Input
+              label="Support Email Address *"
+              type="email"
+              value={email}
+              onChange={setEmail}
+              placeholder="youremail@gmail.com"
+            />
+            <Input
+              label="Support Contact No. *"
+              value={contactNo}
+              onChange={setContactNo}
+              placeholder="9876543210"
+            />
+            <Input
+              label="Office Address *"
+              value={address}
+              onChange={setAddress}
+              placeholder="Your Address"
+            />
+            <Input
+              label="MapLink - Contact Us Page"
+              value={mapLink}
+              onChange={setMapLink}
+              placeholder="Google Map Link"
+            />
             <div>
-              <label className="block text-lg font-medium mb-2 text-gray-700">
-                Business Name *
-              </label>
-              <input
-                type="text"
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-                placeholder="Business Name"
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              />
-            </div>
-
-            {/* Support Email Address */}
-            <div>
-              <label className="block text-lg font-medium mb-2 text-gray-700">
-                Support Email Address *
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="youremail@gmail.com"
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              />
-            </div>
-
-            {/* Support Contact No. */}
-            <div>
-              <label className="block text-lg font-medium mb-2 text-gray-700">
-                Support Contact No. *
-              </label>
-              <input
-                type="text"
-                value={contactNo}
-                onChange={(e) => setContactNo(e.target.value)}
-                placeholder="9876543210"
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              />
-            </div>
-
-            {/* Office Address */}
-            <div>
-              <label className="block text-lg font-medium mb-2 text-gray-700">
-                Office Address *
-              </label>
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Your Address"
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              />
-            </div>
-
-            {/* Map Link */}
-            <div>
-              <label className="block text-lg font-medium mb-2 text-gray-700">
-                MapLink - Contact Us Page
-              </label>
-              <input
-                type="text"
-                value={mapLink}
-                onChange={(e) => setMapLink(e.target.value)}
-                placeholder="Google Map Link"
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              />
-            </div>
-
-            {/* Logo Upload */}
-            <div>
-              <label className="block text-lg font-medium mb-2 text-gray-700">
-                Logo Image
-              </label>
+              <Label>Logo Image</Label>
               <input
                 type="file"
                 onChange={handleLogoChange}
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                className={inputStyle}
               />
-              {/* Logo Preview */}
               {logo && (
-                <div className="mt-4">
-                  <img
-                    src={logo}
-                    alt="Logo Preview"
-                    className="max-w-full h-32 object-contain rounded-md border border-gray-300 shadow-md"
-                  />
-                </div>
+                <img
+                  src={logo}
+                  alt="Logo"
+                  className="mt-4 h-32 object-contain border rounded-md shadow-md"
+                />
               )}
             </div>
           </div>
-
-          {/* Business Settings Submit Button */}
-          <div className="col-span-full flex justify-end mt-6">
-            <button
-              type="submit"
-              className="bg-indigo-600 text-white px-6 py-3 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              Save Business Settings
-            </button>
-          </div>
+          <SubmitButton label="Save Business Settings" />
         </form>
-      </div>
+      </Section>
 
-      {/* Social Settings Form */}
-      <div className="bg-gray-50 p-6 rounded-lg shadow-md mb-8">
-        <h3 className="text-2xl font-semibold text-gray-800 mb-6">
-          Social Settings
-        </h3>
+      {/* Social Settings */}
+      <Section title="Social Settings">
         <form onSubmit={handleSocialSettingsSubmit}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {/* Facebook URL */}
-            <div>
-              <label className="block text-lg font-medium mb-2 text-gray-700">
-                Facebook URL *
-              </label>
-              <input
-                type="url"
-                value={facebookUrl}
-                onChange={(e) => setFacebookUrl(e.target.value)}
-                placeholder="https://facebook.com/"
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              />
-            </div>
-
-            {/* Instagram URL */}
-            <div>
-              <label className="block text-lg font-medium mb-2 text-gray-700">
-                Instagram URL *
-              </label>
-              <input
-                type="url"
-                value={instagramUrl}
-                onChange={(e) => setInstagramUrl(e.target.value)}
-                placeholder="https://www.instagram.com/"
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              />
-            </div>
-
-            {/* YouTube URL */}
-            <div>
-              <label className="block text-lg font-medium mb-2 text-gray-700">
-                YouTube URL *
-              </label>
-              <input
-                type="url"
-                value={youtubeUrl}
-                onChange={(e) => setYoutubeUrl(e.target.value)}
-                placeholder="https://www.youtube.com/"
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              />
-            </div>
-
-            {/* WhatsApp Phone Number */}
-            <div>
-              <label className="block text-lg font-medium mb-2 text-gray-700">
-                WhatsApp Phone Number
-              </label>
-              <input
-                type="tel"
-                value={whatsappNumber}
-                onChange={(e) => setWhatsappNumber(e.target.value)}
-                placeholder="WhatsApp Phone Number"
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              />
-            </div>
+            <Input
+              label="Facebook URL *"
+              value={facebookUrl}
+              onChange={setFacebookUrl}
+              placeholder="https://facebook.com/"
+            />
+            <Input
+              label="Instagram URL *"
+              value={instagramUrl}
+              onChange={setInstagramUrl}
+              placeholder="https://instagram.com/"
+            />
+            <Input
+              label="YouTube URL *"
+              value={youtubeUrl}
+              onChange={setYoutubeUrl}
+              placeholder="https://youtube.com/"
+            />
+            <Input
+              label="WhatsApp Phone Number"
+              value={whatsappNumber}
+              onChange={setWhatsappNumber}
+              placeholder="WhatsApp Number"
+            />
           </div>
-
-          {/* Social Settings Submit Button */}
-          <div className="col-span-full flex justify-end mt-6">
-            <button
-              type="submit"
-              className="bg-indigo-600 text-white px-6 py-3 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              Save Social Settings
-            </button>
-          </div>
+          <SubmitButton label="Save Social Settings" />
         </form>
-      </div>
+      </Section>
 
-      {/* Custom Domain Form */}
-      <div className="bg-gray-50 p-6 rounded-lg shadow-md">
-        <h3 className="text-2xl font-semibold text-gray-800 mb-6">
-          Custom Domain Settings
-        </h3>
+      {/* Custom Domain Settings */}
+      <Section title="Custom Domain Settings">
         <form onSubmit={handleCustomDomainSubmit}>
           <div>
-            <label className="block text-lg font-medium mb-2 text-gray-700">
-              Custom Domain
-            </label>
+            <Label>Custom Domain</Label>
             {isPremiumUser ? (
               <input
                 type="text"
                 value={customDomain}
                 onChange={(e) => setCustomDomain(e.target.value)}
-                placeholder="yourbusinessname.com"
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                placeholder="yourbusiness.com"
+                className={inputStyle}
               />
             ) : (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted">
                 For Free Users: sagai.wbook.in
               </p>
             )}
           </div>
-
-          {/* Custom Domain Submit Button */}
-          <div className="flex justify-end mt-6">
-            <button
-              type="submit"
-              className="bg-indigo-600 text-white px-6 py-3 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              Save Custom Domain Settings
-            </button>
-          </div>
+          <SubmitButton label="Save Custom Domain Settings" />
         </form>
-      </div>
+      </Section>
     </div>
   );
 };
+
+// Sub-components for DRY structure
+const Section = ({ title, children }) => (
+  <div className="bg-muted p-6 rounded-lg shadow-md mb-8">
+    <h3 className="text-2xl font-semibold text-foreground mb-6">{title}</h3>
+    {children}
+  </div>
+);
+
+const Label = ({ children }) => (
+  <label className="block text-lg font-medium mb-2 text-muted-foreground">
+    {children}
+  </label>
+);
+
+const Input = ({ label, value, onChange, placeholder, type = "text" }) => (
+  <div>
+    <Label>{label}</Label>
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="w-full p-3 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+    />
+  </div>
+);
+
+const SubmitButton = ({ label }) => (
+  <div className="flex justify-end mt-6">
+    <button
+      type="submit"
+      className="bg-primary text-white px-6 py-3 rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary"
+    >
+      {label}
+    </button>
+  </div>
+);
 
 export default Basesetting;
