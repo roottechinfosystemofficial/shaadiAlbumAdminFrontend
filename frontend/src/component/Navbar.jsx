@@ -140,9 +140,11 @@ const Navbar = () => {
               <li className="p-2 hover:bg-primary/10 rounded-md transition-all">
                 <Link to="/my-profile">My Profile</Link>
               </li>
-              <li className="p-2 hover:bg-primary/10 rounded-md transition-all">
-                <Link to="/logout">Logout</Link>
-              </li>
+              <Link to="/login">
+                <li className="p-2 hover:bg-primary/10 rounded-md transition-all">
+                  Logout
+                </li>
+              </Link>
             </ul>
           )}
         </div>

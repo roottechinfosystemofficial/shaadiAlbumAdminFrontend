@@ -10,6 +10,7 @@ import PersonalFolder from "./pages/PersonalFolder";
 import MainSetting from "./pages/MainSetting";
 import EventSetting from "./pages/EventSetting";
 import Clientview from "./pages/Clientview";
+import  Users  from "./pages/Users";
 
 const appRouter = createBrowserRouter([
   {
@@ -35,6 +36,10 @@ const appRouter = createBrowserRouter([
       {
         path: "/eventsetting",
         element: <EventSetting />,
+      },
+      {
+        path: "/users",
+        element: <Users />,
       },
     ],
   },
