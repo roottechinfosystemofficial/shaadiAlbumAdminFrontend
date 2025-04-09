@@ -10,16 +10,14 @@ const EventCard = ({ event, onEdit, onDelete }) => {
   return (
     <div className="bg-white shadow-lg rounded-lg overflow-hidden w-full max-w-xs mx-auto relative">
       {/* Event Image & More Options */}
-      <div
-        className="relative cursor-pointer"
-        onClick={() => {
-          navigate(`/personalfolder/${1}`);
-        }}
-      >
+      <div className="relative cursor-pointer">
         <img
           src={event.image}
           alt={event.name}
           className="w-full h-40 object-cover"
+          onClick={() => {
+            navigate(`/personalfolder/${1}`);
+          }}
         />
         <button
           className="absolute top-2 right-2 text-gray-600 hover:text-black p-2 rounded-full bg-white shadow"

@@ -37,7 +37,7 @@ const LoginPage = () => {
   return (
     <div className="flex flex-col md:flex-row h-screen">
       {/* Left Side - Features Section */}
-      <div className="relative w-full md:w-[40%] bg-red-700 text-white flex flex-col justify-center items-center p-8 md:p-10">
+      <div className="relative w-full md:w-[40%] bg-primary text-white flex flex-col justify-center items-center p-8 md:p-10">
         <div
           key={featureIndex}
           className="text-center transition-all duration-[1500ms] ease-in-out opacity-100 transform scale-105"
@@ -57,7 +57,7 @@ const LoginPage = () => {
       {/* Right Side - Login Form */}
       <div className="relative w-full md:w-[60%] flex flex-col justify-center items-center p-6 sm:p-10">
         <div
-          className="hidden md:block absolute top-0 left-0 h-full w-[100px] bg-red-700"
+          className="hidden md:block absolute top-0 left-0 h-full w-[100px] bg-primary"
           style={{ clipPath: "ellipse(100px 50% at 0% 50%)" }}
         ></div>
 
@@ -74,7 +74,7 @@ const LoginPage = () => {
             </label>
             <input
               type="email"
-              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Enter email address"
             />
           </div>
@@ -85,7 +85,7 @@ const LoginPage = () => {
             </label>
             <input
               type={showPassword ? "text" : "password"}
-              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 pr-12"
+              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary pr-12"
               placeholder="Enter password"
             />
             <button
@@ -102,18 +102,18 @@ const LoginPage = () => {
               <input type="checkbox" className="form-checkbox" />
               <span>Remember Me</span>
             </label>
-            <a href="/forgot-password" className="text-red-500 hover:underline">
+            <a href="/forgot-password" className="text-primary hover:underline">
               Forgot Password?
             </a>
           </div>
 
-          <button className="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-700 transition-all">
+          <button className="w-full bg-primary text-white py-3 rounded-lg hover:bg-primary/80 transition-all">
             Login
           </button>
         </form>
 
         <button
-          className="text-red-500 mt-4 z-10 hover:underline"
+          className="text-primary mt-4 z-10 hover:underline"
           onClick={() => navigate("/signup")}
         >
           Don’t Have an Account?

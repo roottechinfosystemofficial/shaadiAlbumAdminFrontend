@@ -7,9 +7,9 @@ const Signup = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
+    <div className="flex flex-col md:flex-row min-h-screen bg-[#9C8769]">
       {/* Left Side - Clean and Classy */}
-      <div className="hidden md:flex md:w-[40%] bg-red-600 text-white items-center justify-center p-10">
+      <div className="hidden md:flex md:w-[40%] bg-[#9C8769] text-white items-center justify-center p-10">
         <div className="text-center space-y-6">
           {/* Icon */}
           <div className="text-6xl">📸</div>
@@ -40,27 +40,27 @@ const Signup = () => {
           <form className="space-y-5">
             <input
               type="text"
-              className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9C8769]"
               required
               placeholder="First and Last Name *"
             />
 
             <input
               type="email"
-              className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9C8769]"
               required
               placeholder="Email Address *"
             />
 
             <input
               type="tel"
-              className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9C8769]"
               placeholder="Phone"
             />
 
             <input
               type="text"
-              className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9C8769]"
               required
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
@@ -70,7 +70,7 @@ const Signup = () => {
             <p className="text-gray-600 text-sm">
               Your preview gallery URLs will start with:
               <br />
-              <span className="text-red-600 font-semibold">
+              <span className="text-[#9C8769] font-semibold">
                 https://{businessName || "your-business-name"}.shaadialbum.in
               </span>
             </p>
@@ -78,27 +78,27 @@ const Signup = () => {
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
-                className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9C8769]"
                 required
                 placeholder="Password"
               />
               <button
                 type="button"
-                className="absolute inset-y-0 right-3 flex items-center text-sm text-red-500 font-medium"
+                className="absolute inset-y-0 right-3 flex items-center text-sm text-[#9C8769] font-medium"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
             <button
-              className="text-red-600 hover:underline"
+              className="text-[#9C8769] hover:underline"
               onClick={() => navigate("/login")}
             >
-              Alredy Have Account?
+              Already Have an Account?
             </button>
             <button
               type="submit"
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold p-3 rounded-xl transition duration-200"
+              className="w-full bg-[#9C8769] hover:bg-[#7A6A4A] text-white font-semibold p-3 rounded-xl transition duration-200"
             >
               SUBMIT
             </button>

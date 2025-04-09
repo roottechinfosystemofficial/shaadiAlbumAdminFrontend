@@ -34,17 +34,17 @@ const DirectLinkCard = () => {
       {cardData.map((card, index) => (
         <div
           key={index}
-          className="bg-white shadow-lg rounded-lg px-4 py-10 flex flex-col items-center justify-between text-center"
+          className="bg-white shadow-lg rounded-2xl px-4 py-10 flex flex-col items-center justify-between text-center transition-all duration-300 hover:shadow-xl"
         >
           <img
             src={card.imgSrc}
             alt={card.title}
-            className="w-100 h-40 object-contain rounded-md"
+            className="w-full h-40 object-contain rounded-md"
           />
-          <h2 className="text-xl font-bold mt-4 max-w-[70%]">{card.title}</h2>
-          <p className="text-gray-600 mt-2">{card.description}</p>
+          <h2 className="text-xl font-bold mt-4 max-w-[80%]">{card.title}</h2>
+          <p className="text-gray-600 mt-2 text-sm px-2">{card.description}</p>
           <button
-            className="mt-4 bg-blue-500 text-white w-1/2 py-2 rounded-lg hover:bg-blue-600"
+            className="mt-4 bg-primary hover:bg-primary-dark transition-colors duration-300 text-white w-1/2 py-2 rounded-lg font-medium"
             onClick={() => navigate(card.link)}
           >
             Start

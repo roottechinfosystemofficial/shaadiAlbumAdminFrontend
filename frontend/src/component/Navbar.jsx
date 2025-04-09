@@ -41,26 +41,27 @@ const Navbar = () => {
           }}
           className="menu-button"
         >
-          <BiMenu />
+          <BiMenu size={24} />
         </button>
+
         {/* Navigation Links */}
         <div>
           <ul className={`${isMenuOpen ? "menu-open" : "menu-hidden"}`}>
-            <li className="flex items-center gap-2 hover:text-[#F36564] cursor-pointer">
+            <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
               <IoIosHome />
               <Link to="/" onClick={() => setIsMenuOpen(false)}>
                 Dashboard
               </Link>
             </li>
 
-            <li className="flex items-center gap-2 hover:text-[#F36564] cursor-pointer">
+            <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
               <GrGallery />
               <Link to="/event" onClick={() => setIsMenuOpen(false)}>
                 Client Gallery
               </Link>
             </li>
 
-            <li className="flex items-center gap-2 hover:text-[#F36564] cursor-pointer">
+            <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
               <FaUser />
               <Link to="/users" onClick={() => setIsMenuOpen(false)}>
                 Users
@@ -76,7 +77,7 @@ const Navbar = () => {
                 setIsProfileOpen(false);
               }}
             >
-              <li className="flex items-center gap-2 hover:text-[#F36564] cursor-pointer">
+              <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
                 <IoMdSettings />
                 Settings
                 <FaAngleDown />
@@ -89,29 +90,24 @@ const Navbar = () => {
                     setIsProfileOpen(false);
                   }}
                   onMouseLeave={() => setIsSettingsOpen(false)}
-                  className="absolute z-10 flex-col right-[-30px] top-[41px]  w-48 bg-white shadow-2xl rounded-md p-2"
+                  className="absolute z-10 flex-col right-[-30px] top-[41px] w-48 bg-white shadow-2xl rounded-md p-2"
                 >
-                  <li className="p-2 hover:bg-gray-200 rounded-md">
-                    <Link to="/email">Email</Link>
-                  </li>
-                  <li className="p-2 hover:bg-gray-200 rounded-md">
-                    <Link to="/pages">Pages</Link>
-                  </li>
-                  <li className="p-2 hover:bg-gray-200 rounded-md">
-                    <Link to="/banners">Banners</Link>
-                  </li>
-                  <li className="p-2 hover:bg-gray-200 rounded-md">
-                    <Link to="/showcase">Showcase</Link>
-                  </li>
-                  <li className="p-2 hover:bg-gray-200 rounded-md">
-                    <Link to="/notifications">Notifications</Link>
-                  </li>
-                  <li className="p-2 hover:bg-gray-200 rounded-md">
-                    <Link to="/face-recognition">Face Recognition</Link>
-                  </li>
-                  <li className="p-2 hover:bg-gray-200 rounded-md">
-                    <Link to="/history">History</Link>
-                  </li>
+                  {[
+                    ["Email", "/email"],
+                    ["Pages", "/pages"],
+                    ["Banners", "/banners"],
+                    ["Showcase", "/showcase"],
+                    ["Notifications", "/notifications"],
+                    ["Face Recognition", "/face-recognition"],
+                    ["History", "/history"],
+                  ].map(([text, path], i) => (
+                    <li
+                      key={i}
+                      className="p-2 hover:bg-primary/10 rounded-md cursor-pointer transition-all"
+                    >
+                      <Link to={path}>{text}</Link>
+                    </li>
+                  ))}
                 </ul>
               )}
             </div>
@@ -135,17 +131,16 @@ const Navbar = () => {
           <span>Hi, Your</span>
           <FaAngleDown />
 
-          {/* Profile Submenu */}
           {isProfileOpen && (
             <ul
               onMouseEnter={() => setIsProfileOpen(true)}
               onMouseLeave={() => setIsProfileOpen(false)}
-              className="absolute z-10 right-[-20px] flex-col top-[52px]  w-48 bg-white shadow-md rounded-md p-2"
+              className="absolute z-10 right-[-20px] flex-col top-[52px] w-48 bg-white shadow-md rounded-md p-2"
             >
-              <li className="p-2 hover:bg-gray-200 rounded-md">
+              <li className="p-2 hover:bg-primary/10 rounded-md transition-all">
                 <Link to="/my-profile">My Profile</Link>
               </li>
-              <li className="p-2 hover:bg-gray-200 rounded-md">
+              <li className="p-2 hover:bg-primary/10 rounded-md transition-all">
                 <Link to="/logout">Logout</Link>
               </li>
             </ul>

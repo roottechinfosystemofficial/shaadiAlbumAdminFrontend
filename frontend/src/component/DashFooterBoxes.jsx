@@ -50,10 +50,10 @@ const DashFooterBoxes = () => {
         <div
           key={index}
           className="bg-white shadow-lg rounded-lg p-4 flex items-center space-x-4 cursor-pointer border border-transparent 
-          hover:bg-blue-50 hover:shadow-xl hover:border-blue-500 transition-all duration-300"
+          hover:bg-primary/10 hover:shadow-xl hover:border-primary transition-all duration-300"
           onClick={() => navigate(item.link)}
         >
-          <div className="text-blue-500">{item.icon}</div>
+          <div className="text-primary">{item.icon}</div>
           <div>
             <h2 className="text-lg font-semibold">{item.title}</h2>
             <p className="text-gray-600 text-sm">{item.description}</p>

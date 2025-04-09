@@ -15,7 +15,7 @@ const BusinessSetting = () => {
             id="supportEmail"
             name="supportEmail"
             required
-            className="border border-gray-300 p-2 rounded-md"
+            className="border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="Enter support email"
           />
         </div>
@@ -30,7 +30,7 @@ const BusinessSetting = () => {
             id="supportContact"
             name="supportContact"
             required
-            className="border border-gray-300 p-2 rounded-md"
+            className="border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="Enter support contact number"
           />
         </div>
@@ -45,16 +45,16 @@ const BusinessSetting = () => {
             id="officeAddress"
             name="officeAddress"
             required
-            className="border border-gray-300 p-2 rounded-md"
+            className="border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="Enter office address"
           />
         </div>
 
         {/* Submit Button */}
-        <div className="flex sm:justify-start items-end  w-full ">
+        <div className="flex sm:justify-start items-end w-full">
           <button
             type="submit"
-            className="bg-blue-500 text-white h-12 px-5  rounded-lg hover:bg-blue-600 transition-all "
+            className="bg-primary hover:bg-primary-dark hover:scale-[1.02] active:scale-95 transition-all duration-300 text-white h-12 px-5 rounded-lg font-medium"
           >
             Submit
           </button>

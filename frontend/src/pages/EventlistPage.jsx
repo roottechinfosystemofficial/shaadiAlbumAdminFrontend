@@ -64,12 +64,12 @@ const EventlistPage = () => {
           <p className="text-3xl text-center md:text-left">Event List</p>
           <div className="flex flex-col sm:flex-row items-center gap-3 mt-4 md:mt-0 w-full sm:w-auto">
             <Link to="/setting">
-              <button className="bg-slate-300 px-4 py-2 rounded-md transition hover:bg-slate-400 w-full sm:w-auto">
+              <button className="bg-slate px-4 py-2 rounded-md transition hover:bg-slate-dark w-full sm:w-auto">
                 Default Setting
               </button>
             </Link>
             <button
-              className="bg-green-600 text-white px-4 py-2 rounded-md transition hover:bg-green-700 w-full sm:w-auto"
+              className="bg-primary text-white px-4 py-2 rounded-md transition hover:bg-primary-dark w-full sm:w-auto"
               onClick={() => setShowModal(true)}
             >
               Add Event
@@ -78,7 +78,6 @@ const EventlistPage = () => {
         </div>
         <hr className="border-t-1 border-gray-300 mt-3 mb-6" />
 
-        {/* Event Cards */}
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {sampleEvents.map((event) => (
             <EventCard
@@ -91,7 +90,6 @@ const EventlistPage = () => {
         </div>
       </div>
 
-      {/* Add Event Modal */}
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-80 px-4 z-50">
           <div className="bg-white px-5 py-6 rounded-lg shadow-lg w-[95%] sm:w-[80%] md:w-[60%] lg:w-[40%] max-h-[90vh] overflow-y-auto">
@@ -132,14 +130,14 @@ const EventlistPage = () => {
               <div className="flex flex-col sm:flex-row justify-end gap-3">
                 <button
                   type="button"
-                  className="bg-gray-300 px-4 py-2 rounded-md hover:bg-gray-400 w-full sm:w-auto"
+                  className="bg-muted px-4 py-2 rounded-md hover:bg-muted-dark w-full sm:w-auto"
                   onClick={() => setShowModal(false)}
                 >
                   Close
                 </button>
                 <button
                   type="submit"
-                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 w-full sm:w-auto"
+                  className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark w-full sm:w-auto"
                 >
                   Add
                 </button>
@@ -149,7 +147,6 @@ const EventlistPage = () => {
         </div>
       )}
 
-      {/* Edit Event Modal */}
       {editingEvent && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-80 px-4 z-50">
           <div className="bg-white px-5 py-6 rounded-lg shadow-lg w-[95%] sm:w-[80%] md:w-[60%] lg:w-[40%] max-h-[90vh] overflow-y-auto">
@@ -211,14 +208,14 @@ const EventlistPage = () => {
               <div className="flex justify-end gap-3">
                 <button
                   type="button"
-                  className="bg-gray-300 px-4 py-2 rounded-md hover:bg-gray-400"
+                  className="bg-muted px-4 py-2 rounded-md hover:bg-muted-dark"
                   onClick={() => setEditingEvent(null)}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                  className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark"
                 >
                   Save Changes
                 </button>
