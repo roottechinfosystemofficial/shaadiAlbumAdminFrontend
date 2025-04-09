@@ -62,8 +62,9 @@ const LoginPage = () => {
         ></div>
 
         {/* Logo */}
+        {/* Logo */}
         <div className="mb-6 z-10">
-          <img src={Logo} alt="Logo" className="w-20 sm:w-24" />
+          <img src={Logo} alt="Logo" className="w-28 sm:w-36" />
         </div>
 
         {/* Login Form */}
