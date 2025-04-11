@@ -137,9 +137,12 @@ const Navbar = () => {
               onMouseLeave={() => setIsProfileOpen(false)}
               className="absolute z-10 right-[-20px] flex-col top-[52px] w-48 bg-white shadow-md rounded-md p-2"
             >
-              <li className="p-2 hover:bg-primary/10 rounded-md transition-all">
-                <Link to="/my-profile">My Profile</Link>
-              </li>
+              <Link to="/myprofile">
+                <li className="p-2 hover:bg-primary/10 rounded-md transition-all">
+                  My Profile
+                </li>
+              </Link>
+
               <Link to="/login">
                 <li className="p-2 hover:bg-primary/10 rounded-md transition-all">
                   Logout

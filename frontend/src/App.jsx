@@ -10,7 +10,9 @@ import PersonalFolder from "./pages/PersonalFolder";
 import MainSetting from "./pages/MainSetting";
 import EventSetting from "./pages/EventSetting";
 import Clientview from "./pages/Clientview";
-import  Users  from "./pages/Users";
+import Users from "./pages/Users";
+import MyProfile from "./pages/Myprofile";
+import StandyShow from "./pages/StandyShow";
 
 const appRouter = createBrowserRouter([
   {
@@ -40,6 +42,14 @@ const appRouter = createBrowserRouter([
       {
         path: "/users",
         element: <Users />,
+      },
+      {
+        path: "/myprofile",
+        element: <MyProfile />,
+      },
+      {
+        path: "/standyshow",
+        element: <StandyShow />,
       },
     ],
   },

@@ -364,23 +364,22 @@ const Users = () => {
     },
   ];
 
-
   return (
     <div className="p-5 font-sans">
-      <div className="flex justify-between items-center">
-        <h2 className="text-black">Users List</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-black text-xl font-semibold">Users List</h2>
 
-        <div className=" flex gap-2">
+        <div className="flex gap-2">
           <button
-            className="ml-2 px-3 py-2 bg-[#17c2aa] text-white rounded cursor-pointer"
+            className="ml-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded cursor-pointer transition"
             onClick={() => setShowAddModal(true)}
           >
             Add User
           </button>
-          <button className="px-3 py-2 bg-[#17c2aa] text-white rounded cursor-pointer">
+          <button className="px-4 py-2 border border-slate-dark font-semibold bg-slate hover:bg-slate-dark hover:text-black rounded cursor-pointer transition">
             Export User
           </button>
-          <button className="px-3 py-2 bg-[#17c2aa] text-white rounded cursor-pointer">
+          <button className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded cursor-pointer transition">
             Delete Bulk Users
           </button>
         </div>

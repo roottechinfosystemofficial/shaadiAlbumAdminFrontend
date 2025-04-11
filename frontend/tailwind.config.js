@@ -6,8 +6,18 @@ export default {
       colors: {
         primary: "#9C8769",
         "primary-dark": "#7f6c52",
-        slate: "#cbd5e1", // Same as bg-slate-300
-        "slate-dark": "#94a3b8", // Slightly darker for hover
+        slate: "#cbd5e1",
+        "slate-dark": "#94a3b8",
+
+        // Additional theme-friendly accent colors
+        emerald: {
+          DEFAULT: "#10B981", // emerald-500
+          dark: "#059669", // emerald-600
+        },
+        indigo: {
+          DEFAULT: "#6366F1", // indigo-500
+          dark: "#4F46E5", // indigo-600
+        },
       },
     },
   },

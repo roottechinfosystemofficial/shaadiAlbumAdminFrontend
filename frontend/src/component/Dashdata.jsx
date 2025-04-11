@@ -21,15 +21,19 @@ const Dashdata = () => {
       {data.map((item, index) => (
         <div
           key={index}
-          className="bg-white text-primary rounded-2xl px-4 py-5 shadow-lg hover:bg-[#efefef] transition-all duration-300"
+          className="bg-white border border-slate shadow-md rounded-2xl p-5 transition-all duration-300 hover:shadow-xl hover:border-primary-dark"
         >
-          <div className="flex items-center justify-between">
-            <div className="text-4xl opacity-80">{item.icon}</div>
-            <div className="text-right">
-              <h3 className="text-base sm:text-lg font-semibold tracking-wide">
+          <div className="flex items-center gap-4">
+            <div className="text-4xl text-primary-dark bg-slate  p-3 rounded-full">
+              {item.icon}
+            </div>
+            <div className="text-right flex-1">
+              <h3 className="text-xl font-semibold text-gray-700">
                 {item.label}
               </h3>
-              <p className="text-xl sm:text-2xl font-bold mt-1">{item.value}</p>
+              <p className="text-md font-bold text-primary-dark mt-1">
+                {item.value}
+              </p>
             </div>
           </div>
         </div>

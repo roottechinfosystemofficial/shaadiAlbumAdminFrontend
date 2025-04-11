@@ -85,7 +85,6 @@ const PersonalfolderAside = () => {
           >
             Preview
           </button>
-
           <button className="flex-1 bg-slate text-gray-800 hover:text-white hover:bg-primary-dark text-sm py-2.5 rounded-xl font-medium shadow-sm transition duration-400">
             Insights
           </button>
@@ -100,7 +99,7 @@ const PersonalfolderAside = () => {
             </button>
           </div>
 
-          <div className="flex justify-between items-center bg-slate border border-slate rounded-lg px-3 py-2 shadow-sm">
+          <div className="flex justify-between mb-5 items-center bg-slate border border-slate rounded-lg px-3 py-2 shadow-sm">
             <div className="flex items-center gap-2 text-gray-900">
               <span className="text-yellow-500">✨</span>
               <p className="font-medium">Highlights</p>
@@ -132,6 +131,16 @@ const PersonalfolderAside = () => {
               )}
             </div>
           </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3 ">
+          <button
+            onClick={() => navigate("/standyshow")}
+            className="col-span-2 flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium text-sm py-2.5 rounded-lg transition shadow"
+          >
+            FaceScan Pre Registration
+          </button>
+
+         
         </div>
       </div>
     </aside>
