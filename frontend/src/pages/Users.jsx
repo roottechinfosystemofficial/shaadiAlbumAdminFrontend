@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 
-import ViewUserModal from "../component/ViewUserModal";
-import EditUserModal from "../component/EditUserModal";
-import AddUserModal from "../component/AddUserModal";
-import UserTable from "../component/UsersTable";
+import ViewUserModal from "../component/UsersComponent/ViewUserModal";
+import EditUserModal from "../component/UsersComponent/EditUserModal";
+import AddUserModal from "../component/UsersComponent/AddUserModal";
+import UserTable from "../component/UsersComponent/UsersTable";
 
 const Users = () => {
   const [showAddModal, setShowAddModal] = useState(false);

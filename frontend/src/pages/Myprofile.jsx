@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import Domain from "../MyprofileComponenet/Domain";
-import Business from "../MyprofileComponenet/Bussiness";
-import Social from "../MyprofileComponenet/Social";
-import Plan from "../MyprofileComponenet/Plan";
-import Profile from "../MyprofileComponenet/Profile";
+import Domain from "../component/MyprofileComponenet/Domain";
+import Business from "../component/MyprofileComponenet/Bussiness";
+import Social from "../component/MyprofileComponenet/Social";
+import Profile from "../component/MyprofileComponenet/Profile";
+import Plan from "../component/MyprofileComponenet/Plan";
 
 const MyProfile = () => {
   const [activeSection, setActiveSection] = useState("domain"); // Auto open "Domain"

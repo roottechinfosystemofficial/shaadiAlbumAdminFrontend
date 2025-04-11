@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import Basesetting from "../MainSettingComponents/Basesetting";
-import PagesSetting from "../MainSettingComponents/PagesSetting";
-import FaceRecognizationHistory from "../MainSettingComponents/FaceRecognizationHistory";
+import Basesetting from "../component/MainSettingComponents/Basesetting";
+import PagesSetting from "../component/MainSettingComponents/PagesSetting";
+import FaceRecognizationHistory from "../component/MainSettingComponents/FaceRecognizationHistory";
 
 const MainSetting = () => {
   const [activeTab, setActiveTab] = useState("settings");

@@ -1,9 +1,9 @@
 import React from "react";
 
-import BusinessSetting from "../component/BusinessSetting";
-import DirectLinkCard from "../component/DirectLinkCard";
-import Dashdata from "../component/Dashdata";
-import DashFooterBoxes from "../component/DashFooterBoxes";
+import BusinessSetting from "../component/DashboardComponent/BusinessSetting";
+import DirectLinkCard from "../component/DashboardComponent/DirectLinkCard";
+import Dashdata from "../component/DashboardComponent/Dashdata";
+import DashFooterBoxes from "../component/DashboardComponent/DashFooterBoxes";
 
 const Dashboard = () => {
   return (

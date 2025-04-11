@@ -1,5 +1,5 @@
 import React from "react";
-import logo from "../assets/logo_1.png";
+import logo from "../../assets/logo_1.png";
 
 const Plan = () => {
   return (

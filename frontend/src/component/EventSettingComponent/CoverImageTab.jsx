@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { setCoverImg, setPosition } from "../Redux/Slices/CoverImgSlice";
+import { setCoverImg, setPosition } from "../../Redux/Slices/CoverImgSlice";
 import {
   MdFormatAlignLeft,
   MdFormatAlignCenter,

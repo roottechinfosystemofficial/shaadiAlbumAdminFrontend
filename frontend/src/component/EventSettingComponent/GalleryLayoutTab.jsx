@@ -6,7 +6,7 @@ import {
   setSpacing,
   setThumbnail,
   setBackground,
-} from "../Redux/Slices/GalleryLayoutSlice";
+} from "../../Redux/Slices/GalleryLayoutSlice";
 import { LayoutGrid, Rows, Image, SunMoon } from "lucide-react";
 
 const optionsMap = {

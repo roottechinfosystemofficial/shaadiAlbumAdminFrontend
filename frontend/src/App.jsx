@@ -1,6 +1,6 @@
 import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Dashboard from "./pages/Dashboard";
+import Dashboard from "../src/pages/Dashboard";
 import Layout from "./component/Layout";
 import LoginPage from "./pages/LoginPage";
 import Signup from "./pages/Signup";
@@ -13,7 +13,7 @@ import Clientview from "./pages/Clientview";
 import Users from "./pages/Users";
 import MyProfile from "./pages/Myprofile";
 import StandyShow from "./pages/StandyShow";
-
+MainSetting;
 const appRouter = createBrowserRouter([
   {
     path: "/",

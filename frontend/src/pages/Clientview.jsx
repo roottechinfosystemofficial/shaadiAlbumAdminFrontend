@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import "../css/Clientview.css";
-import ClientPhotosView from "../component/ClientPhotosView";
+import ClientPhotosView from "../component/ClientSideComponent/ClientPhotosView";
 import { useSelector } from "react-redux";
-import UnderClientView from "../component/UnderClientView";
+import UnderClientView from "../component/ClientSideComponent/UnderClientView";
 
 const Clientview = () => {
   const { position } = useSelector((state) => state.coverImg);
