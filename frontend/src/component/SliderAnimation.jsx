@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronLeft } from "lucide-react";
+import { ArrowLeft, ChevronLeft } from "lucide-react";
 import img1 from "../assets/Standy/1.jpg";
 import img2 from "../assets/Standy/2.jpg";
 import img3 from "../assets/Standy/3.jpg";
 import img4 from "../assets/Standy/4.jpg";
-import img5 from "../assets/Standy/5.jpg";``
+import img5 from "../assets/Standy/5.jpg";
+``;
 import img6 from "../assets/Standy/6.jpg";
 import img7 from "../assets/Standy/7.jpg";
 import img8 from "../assets/Standy/8.jpg";
@@ -47,10 +48,10 @@ const SliderAnimation = () => {
       {/* Top Bar */}
       <div className="w-full flex items-center justify-between px-6 py-4 bg-white shadow-md mb-6">
         <button
-          className="flex items-center gap-2 text-slate-dark hover:text-black transition"
+          className="flex items-center gap-2 px-3 py-2 bg-slate hover:bg-slate-dark"
           onClick={() => window.history.back()}
         >
-          <ChevronLeft size={20} />
+          <ArrowLeft size={20} />
           Back
         </button>
         <h1 className="text-xl font-semibold text-gray-800">
@@ -79,7 +80,7 @@ const SliderAnimation = () => {
         {/* Left Arrow */}
         <button
           onClick={prevSlide}
-          className="absolute left-2 top-1/3 -translate-y-1/2 w-12 h-12 rounded-full bg-white/80 hover:bg-white shadow-lg flex items-center justify-center text-3xl text-slate-dark hover:text-black z-50 transition"
+          className="absolute left-2 top-1/3 -translate-y-1/2 w-12 h-12 rounded-full bg-white/80 hover:bg-white shadow-lg flex items-center justify-center text-3xl text-black z-50 transition"
         >
           &#10094;
         </button>
@@ -143,7 +144,7 @@ const SliderAnimation = () => {
         {/* Right Arrow */}
         <button
           onClick={nextSlide}
-          className="absolute right-2 top-1/3 -translate-y-1/2 w-12 h-12 rounded-full bg-white/80 hover:bg-white shadow-lg flex items-center justify-center text-3xl text-slate-dark hover:text-black z-50 transition"
+          className="absolute right-2 top-1/3 -translate-y-1/2 w-12 h-12 rounded-full bg-white/80 hover:bg-white shadow-lg flex items-center justify-center text-3xl text-black z-50 transition"
         >
           &#10095;
         </button>
