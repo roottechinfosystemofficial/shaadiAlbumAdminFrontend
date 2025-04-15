@@ -8,7 +8,7 @@ export const signup = async (req, res) => {
   try {
     const {
       name,
-      username,
+      businessName,
       email,
       password,
       address,
@@ -16,10 +16,11 @@ export const signup = async (req, res) => {
       studioName,
       phoneNo,
     } = req.body;
+    console.log(req.body);
 
-    const existingUser = await User.findOne({ username });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
-      throw new ApiError(400, "username already exists");
+      throw new ApiError(400, "Email already exists");
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -27,7 +28,7 @@ export const signup = async (req, res) => {
     const createdUser = await User.create({
       phoneNo,
       name,
-      username,
+      businessName,
       email,
       studioName,
       password: hashedPassword,
@@ -50,15 +51,22 @@ export const signup = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+   
+
     console.log(req.body);
     const user = await User.findOne({ email });
+
     if (!user) {
       throw new ApiError(404, "User not found with this email");
     }
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      user.password
+    );
     if (!isPasswordValid) {
       throw new ApiError(400, "Invalid credentials");
     }
+
     const accessToken = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.ACCESS_TOKEN_SECRET,

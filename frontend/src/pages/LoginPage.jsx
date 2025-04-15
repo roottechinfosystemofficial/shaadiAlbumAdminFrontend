@@ -3,6 +3,7 @@ import { FaUserShield, FaCloudUploadAlt, FaLock } from "react-icons/fa";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import Logo from "../assets/logo_1.png";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const features = [
   {
@@ -25,6 +26,8 @@ const features = [
 const LoginPage = () => {
   const [featureIndex, setFeatureIndex] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -33,6 +36,26 @@ const LoginPage = () => {
     }, 2000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    const loginData = {
+      email,
+      password,
+    };
+    try {
+      const res = await axios.post(
+        "http://localhost:5000/api/v1/login",
+        loginData
+      );
+      if (res.status === 200) {
+        navigate("/");
+      }
+    } catch (error) {
+      console.error("Login failed:", error);
+      alert("An error occurred during login. Please try again.");
+    }
+  };
 
   return (
     <div className="flex flex-col md:flex-row h-screen">
@@ -62,13 +85,12 @@ const LoginPage = () => {
         ></div>
 
         {/* Logo */}
-        {/* Logo */}
         <div className="mb-6 z-10">
           <img src={Logo} alt="Logo" className="w-28 sm:w-36" />
         </div>
 
         {/* Login Form */}
-        <form className="w-full max-w-sm z-10">
+        <form className="w-full max-w-sm z-10" onSubmit={handleLogin}>
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-1">
               Email
@@ -77,6 +99,9 @@ const LoginPage = () => {
               type="email"
               className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Enter email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
           </div>
 
@@ -88,6 +113,9 @@ const LoginPage = () => {
               type={showPassword ? "text" : "password"}
               className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary pr-12"
               placeholder="Enter password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
             />
             <button
               type="button"
@@ -99,16 +127,15 @@ const LoginPage = () => {
           </div>
 
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 text-sm gap-2 sm:gap-0">
-            <label className="flex items-center space-x-2 text-gray-600">
-              <input type="checkbox" className="form-checkbox" />
-              <span>Remember Me</span>
-            </label>
             <a href="/forgot-password" className="text-primary hover:underline">
               Forgot Password?
             </a>
           </div>
 
-          <button className="w-full bg-primary text-white py-3 rounded-lg hover:bg-primary/80 transition-all">
+          <button
+            type="submit"
+            className="w-full bg-primary text-white py-3 rounded-lg hover:bg-primary/80 transition-all"
+          >
             Login
           </button>
         </form>

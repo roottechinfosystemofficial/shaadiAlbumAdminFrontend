@@ -1,10 +1,45 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [businessName, setBusinessName] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
   const navigate = useNavigate();
+
+  const signupFun = async (e) => {
+    e.preventDefault();
+
+    const slugBusinessName = businessName
+      .trim()
+      .replace(/\s+/g, "-")
+      .toLowerCase();
+
+    const signupData = {
+      name: e.target[0].value,
+      email: e.target[1].value,
+      phone: phone,
+      businessName: slugBusinessName,
+      password: password,
+    };
+
+    try {
+      const res = await axios.post(
+        "http://localhost:5000/api/v1/user/signup",
+        signupData
+      );
+      if (res.status === 200) {
+        navigate("/login");
+      }
+    } catch (error) {
+      console.error("Signup failed:", error);
+      alert("An error occurred during signup. Please try again.");
+    }
+  };
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-[#9C8769]">
@@ -37,11 +72,13 @@ const Signup = () => {
             So we can know each other and share moments between us.
           </p>
 
-          <form className="space-y-5">
+          <form className="space-y-5" onSubmit={signupFun}>
             <input
               type="text"
               className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9C8769]"
               required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               placeholder="First and Last Name *"
             />
 
@@ -49,13 +86,23 @@ const Signup = () => {
               type="email"
               className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9C8769]"
               required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="Email Address *"
             />
 
             <input
-              type="tel"
+              type="text" // Change to "text" so we can control the input manually
               className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9C8769]"
+              value={phone}
+              onChange={(e) => {
+                // Ensure only numeric input and max length of 10 digits
+                if (/^\d{0,10}$/.test(e.target.value)) {
+                  setPhone(e.target.value);
+                }
+              }}
               placeholder="Phone"
+              maxLength="10" // Optional: Enforces 10 characters at the HTML level
             />
 
             <input
@@ -63,7 +110,13 @@ const Signup = () => {
               className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9C8769]"
               required
               value={businessName}
-              onChange={(e) => setBusinessName(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                // Allow only letters and spaces
+                if (/^[a-zA-Z\s]*$/.test(value)) {
+                  setBusinessName(value);
+                }
+              }}
               placeholder="Enter your Business Name *"
             />
 
@@ -71,7 +124,12 @@ const Signup = () => {
               Your preview gallery URLs will start with:
               <br />
               <span className="text-[#9C8769] font-semibold">
-                https://{businessName || "your-business-name"}.shaadialbum.in
+                https://
+                {(businessName.trim()
+                  ? businessName.trim().replace(/\s+/g, "-")
+                  : "your-business-name"
+                ).toLowerCase()}
+                .shaadialbum.in
               </span>
             </p>
 
@@ -81,6 +139,7 @@ const Signup = () => {
                 className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9C8769]"
                 required
                 placeholder="Password"
+                onChange={(e) => setPassword(e.target.value)}
               />
               <button
                 type="button"

@@ -4,7 +4,7 @@ const userSchema = new mongoose.Schema(
     name: { type: String, default: null },
     studioName: { type: String, default: null },
     providerId: { type: String, default: null },
-    username: { type: String, required: true, unique: true },
+    businessName: { type: String, require: true },
     email: { type: String, required: true, unique: true },
     phoneNo: { type: String, default: null },
     password: { type: String, required: true },
@@ -46,7 +46,7 @@ const userSchema = new mongoose.Schema(
     ],
     payments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Payment" }],
   },
-  { timestamps: true } 
+  { timestamps: true }
 );
 
 export const User = mongoose.model("User", userSchema);
