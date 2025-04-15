@@ -33,7 +33,6 @@ const userSchema = new mongoose.Schema(
     lastSeen: { type: Date, default: null },
     subscriptionEndDate: { type: Date, default: null },
 
-    // References to other collections (store ObjectIds)
     subscriptions: [
       { type: mongoose.Schema.Types.ObjectId, ref: "Subscription" },
     ],
@@ -47,7 +46,7 @@ const userSchema = new mongoose.Schema(
     ],
     payments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Payment" }],
   },
-  { timestamps: true } // Automatically adds createdAt & updatedAt
+  { timestamps: true } 
 );
 
 export const User = mongoose.model("User", userSchema);

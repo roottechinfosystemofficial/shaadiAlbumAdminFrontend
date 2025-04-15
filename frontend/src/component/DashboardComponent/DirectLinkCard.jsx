@@ -9,20 +9,21 @@ const cardData = [
     imgSrc: box1,
     title: "Client Gallery",
     description: "Face Recognition Based Image Sharing Platform",
-    link: "/client-gallery",
+    link: "/event",
   },
   {
     imgSrc: box2,
-    title: "Share Large Files",
+    title: "Face Scan Pre Registration",
     description:
-      "Fast secure File Transfer via Email or Shareable Links With Blazing Fast Transfer Speed",
-    link: "/share-files",
+      "Register attendees with facial recognition before the event for quick and secure check-in.",
+    link: "/standyshow",
   },
   {
     imgSrc: box3,
-    title: "Mobile App of your Studio / Brand",
-    description: "White-label Mobile App for Your Brand",
-    link: "/mobile-app",
+    title: "Flipbook",
+    description:
+      "Interactive digital book experience to showcase event memories or brand stories.",
+    link: "/personalfolder/1",
   },
 ];
 

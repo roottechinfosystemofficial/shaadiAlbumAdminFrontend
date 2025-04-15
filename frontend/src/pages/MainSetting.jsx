@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Basesetting from "../component/MainSettingComponents/Basesetting";
-import PagesSetting from "../component/MainSettingComponents/PagesSetting";
 import FaceRecognizationHistory from "../component/MainSettingComponents/FaceRecognizationHistory";
+import WatermarkSetting from "../component/MainSettingComponents/WatermarkSetting";
 
 const MainSetting = () => {
   const [activeTab, setActiveTab] = useState("settings");
@@ -23,25 +23,27 @@ const MainSetting = () => {
         >
           Settings
         </button>
-        <button
-          className={tabClass("pages")}
-          onClick={() => setActiveTab("pages")}
-        >
-          Pages
-        </button>
+
         <button
           className={tabClass("faceRecognition")}
           onClick={() => setActiveTab("faceRecognition")}
         >
           Face Recognition History
         </button>
+        <button
+          className={tabClass("watermark")}
+          onClick={() => setActiveTab("watermark")}
+        >
+          Watermark Setting
+        </button>
       </div>
 
       {/* Tab Content */}
       <div className="mt-6">
         {activeTab === "settings" && <Basesetting />}
-        {activeTab === "pages" && <PagesSetting />}
+
         {activeTab === "faceRecognition" && <FaceRecognizationHistory />}
+        {activeTab === "watermark" && <WatermarkSetting />}
       </div>
     </div>
   );

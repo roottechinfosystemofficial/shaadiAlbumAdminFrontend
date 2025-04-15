@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import FlipbookPanel from "./Personalfoldercomponent/FlipbookPanel";
 
 // Panels
 const VideosPanel = () => (
@@ -23,10 +24,6 @@ const PhotosPanel = () => (
     </div>
     <p className="text-center text-slate-dark mt-10">No Photos Found!</p>
   </>
-);
-
-const FlipbookPanel = () => (
-  <p className="text-center text-slate-dark mt-10">No Flipbook Found!</p>
 );
 
 const FavouritePanel = () => (

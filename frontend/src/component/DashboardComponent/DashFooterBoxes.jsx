@@ -13,7 +13,7 @@ const footerData = [
     icon: <FaUser size={24} />,
     title: "Your Profile",
     description: "Manage and update your personal details.",
-    link: "/profile",
+    link: "/myprofile",
   },
   {
     icon: <FaQrcode size={24} />,

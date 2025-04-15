@@ -13,6 +13,7 @@ import Clientview from "./pages/Clientview";
 import Users from "./pages/Users";
 import MyProfile from "./pages/Myprofile";
 import StandyShow from "./pages/StandyShow";
+import FlipbookShow from "./component/Personalfoldercomponent/FlipbookShow";
 MainSetting;
 const appRouter = createBrowserRouter([
   {
@@ -56,6 +57,10 @@ const appRouter = createBrowserRouter([
   {
     path: "/login",
     element: <LoginPage />,
+  },
+  {
+    path: "/flipbookUser",
+    element: <FlipbookShow />,
   },
   {
     path: "/:id/clientview",
