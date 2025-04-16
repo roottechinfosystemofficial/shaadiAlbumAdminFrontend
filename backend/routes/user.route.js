@@ -1,6 +1,7 @@
 import express from "express";
 import {
   changePassword,
+  checkAuth,
   editPofile,
   getCurrentUser,
   login,
@@ -13,7 +14,7 @@ import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const userRouter = express.Router();
 
-userRouter.post("/login", login);
+userRouter.post("/user/login", login);
 userRouter.post("/user/signup", signup);
 
 userRouter.post("/otp-provider", selectForgotPasswordOTPProvider);
@@ -26,6 +27,7 @@ userRouter.post("/refreshAccessToken", verifyJWT, refreshAccessToken);
 
 userRouter.put("/user/edit-profile", verifyJWT, editPofile);
 
-userRouter.post("/logout", verifyJWT, logoutUser);
+userRouter.post("/user/logout", verifyJWT, logoutUser);
+userRouter.get("/user/checkAuth", verifyJWT, checkAuth);
 
 export default userRouter;

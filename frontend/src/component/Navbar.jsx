@@ -1,17 +1,29 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo_1.png";
-import profileImg from "../assets/download.jpg";
 import { IoIosHome, IoMdSettings } from "react-icons/io";
 import { GrGallery } from "react-icons/gr";
 import { FaAngleDown, FaUser } from "react-icons/fa";
 import { BiMenu } from "react-icons/bi";
 import "../css/Navbar.css";
+import { useDispatch, useSelector } from "react-redux";
+import axios from "axios";
+import { setAuthUser } from "../Redux/Slices/UserSlice";
+import { USER_API_END_POINT } from "../constant";
 
 const Navbar = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { authUser } = useSelector((state) => state.user);
+  const [prevAuthUser, setPrevAuthUser] = useState(null);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  useEffect(() => {
+    if (prevAuthUser !== authUser) {
+      setPrevAuthUser(authUser);
+    }
+  }, [authUser, prevAuthUser]);
 
   const changeSettingOpen = () => {
     setIsSettingsOpen(!isSettingsOpen);
@@ -21,6 +33,26 @@ const Navbar = () => {
   const changeProfileOpen = () => {
     setIsProfileOpen(!isProfileOpen);
     setIsSettingsOpen(false);
+  };
+
+  const logoutHandler = async () => {
+    try {
+      const endpoint = `${USER_API_END_POINT}/logout`;
+      const res = await axios.post(
+        endpoint,
+        {},
+        {
+          withCredentials: true,
+        }
+      );
+      if (res.status === 200) {
+        navigate("/login");
+        dispatch(setAuthUser(null));
+      }
+    } catch (error) {
+      console.error("Logout failed:", error.message);
+      alert("Unable to logout. Please check your connection and try again.");
+    }
   };
 
   return (
@@ -124,11 +156,11 @@ const Navbar = () => {
           onClick={changeProfileOpen}
         >
           <img
-            src={profileImg}
+            src={authUser?.logo}
             alt="Avatar"
             className="w-10 h-10 rounded-full"
           />
-          <span>Hi, Your</span>
+          <span>Hi, {authUser?.name}</span>
           <FaAngleDown />
 
           {isProfileOpen && (
@@ -143,11 +175,11 @@ const Navbar = () => {
                 </li>
               </Link>
 
-              <Link to="/login">
+              <div className="cursor-pointer " onClick={logoutHandler}>
                 <li className="p-2 hover:bg-primary/10 rounded-md transition-all">
                   Logout
                 </li>
-              </Link>
+              </div>
             </ul>
           )}
         </div>

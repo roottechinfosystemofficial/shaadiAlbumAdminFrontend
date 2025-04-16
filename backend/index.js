@@ -1,9 +1,11 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
 import { dbConnect } from "./utils/db.js";
 import userRouter from "./routes/user.route.js";
-import cookieParser from "cookie-parser";
+import eventRouter from "./routes/event.route.js";
+
 dotenv.config();
 
 // Initialize Express app
@@ -13,13 +15,25 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
 
-app.use("/api/v1", userRouter);
-
-dbConnect();
+// Ensure cookie-parser is placed before routes to parse cookies properly
 app.use(cookieParser());
-// Root Route
+
+app.use(
+  cors({
+    origin: "http://localhost:5173", // Your frontend origin (React app)
+    credentials: true, // Allow cookies to be sent with requests
+  })
+);
+
+// Routes
+app.use("/api/v1", userRouter);
+app.use("/api/v1", eventRouter);
+
+// Connect to DB
+dbConnect();
+
+// Root Route (for testing)
 app.get("/", (req, res) => {
   res.send("Welcome to the API!");
 });

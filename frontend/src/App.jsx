@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Dashboard from "../src/pages/Dashboard";
+
+import Dashboard from "./pages/Dashboard";
 import Layout from "./component/Layout";
 import LoginPage from "./pages/LoginPage";
 import Signup from "./pages/Signup";
@@ -14,63 +15,34 @@ import Users from "./pages/Users";
 import MyProfile from "./pages/Myprofile";
 import StandyShow from "./pages/StandyShow";
 import FlipbookShow from "./component/Personalfoldercomponent/FlipbookShow";
-MainSetting;
+import { useDispatch, useSelector } from "react-redux";
+import axios from "axios";
+import { setAuthUser } from "./Redux/Slices/UserSlice";
+
 const appRouter = createBrowserRouter([
   {
     path: "/",
     element: <Layout />,
     children: [
-      {
-        path: "/",
-        element: <Dashboard />,
-      },
-      {
-        path: "/event",
-        element: <EventlistPage />,
-      },
-      {
-        path: "/setting",
-        element: <MainSetting />,
-      },
-      {
-        path: "/personalfolder/:folderId",
-        element: <PersonalFolder />,
-      },
-      {
-        path: "/eventsetting",
-        element: <EventSetting />,
-      },
-      {
-        path: "/users",
-        element: <Users />,
-      },
-      {
-        path: "/myprofile",
-        element: <MyProfile />,
-      },
-      {
-        path: "/standyshow",
-        element: <StandyShow />,
-      },
+      { path: "/", element: <Dashboard /> },
+      { path: "/event", element: <EventlistPage /> },
+      { path: "/setting", element: <MainSetting /> },
+      { path: "/personalfolder/:folderId", element: <PersonalFolder /> },
+      { path: "/eventsetting", element: <EventSetting /> },
+      { path: "/users", element: <Users /> },
+      { path: "/myprofile", element: <MyProfile /> },
+      { path: "/standyshow", element: <StandyShow /> },
     ],
   },
-  {
-    path: "/login",
-    element: <LoginPage />,
-  },
-  {
-    path: "/flipbookUser",
-    element: <FlipbookShow />,
-  },
-  {
-    path: "/:id/clientview",
-    element: <Clientview />,
-  },
+  { path: "/login", element: <LoginPage /> },
+  { path: "/flipbookUser", element: <FlipbookShow /> },
+  { path: "/:id/clientview", element: <Clientview /> },
   { path: "/signup", element: <Signup /> },
   { path: "*", element: <Notfound /> },
 ]);
 
 const App = () => {
+  
   return <RouterProvider router={appRouter} />;
 };
 

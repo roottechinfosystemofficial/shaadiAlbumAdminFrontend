@@ -2,17 +2,7 @@ import React, { useState } from "react";
 import FlipbookPanel from "./Personalfoldercomponent/FlipbookPanel";
 
 // Panels
-const VideosPanel = () => (
-  <>
-    <div className="flex justify-end items-center gap-2 mb-6">
-      <button className="bg-slate px-4 py-2 rounded-md">Add Video</button>
-      <select className="bg-slate px-4 py-2 rounded-md">
-        <option>Sort</option>
-      </select>
-    </div>
-    <p className="text-center text-slate-dark mt-10">No Videos Found!</p>
-  </>
-);
+
 
 const PhotosPanel = () => (
   <>
@@ -35,8 +25,6 @@ const PersonalFolderContent = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case "videos":
-        return <VideosPanel />;
       case "photos":
         return <PhotosPanel />;
       case "flipbook":
@@ -59,16 +47,7 @@ const PersonalFolderContent = () => {
 
         {/* Tabs */}
         <div className="flex flex-wrap gap-2">
-          <button
-            className={`px-4 py-2 rounded-md transition ${
-              activeTab === "videos"
-                ? "bg-primary text-white"
-                : "bg-slate hover:bg-primary-dark hover:text-white"
-            }`}
-            onClick={() => setActiveTab("videos")}
-          >
-            Videos
-          </button>
+         
           <button
             className={`px-4 py-2 rounded-md transition ${
               activeTab === "photos"

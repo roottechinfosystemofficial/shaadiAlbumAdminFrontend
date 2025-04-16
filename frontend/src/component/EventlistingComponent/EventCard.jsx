@@ -7,16 +7,29 @@ const EventCard = ({ event, onEdit, onDelete }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const navigate = useNavigate();
 
+  const eventImage = event?.eventImage || "fallback-image-url"; // Add a fallback image URL
+  const eventName = event?.eventName || "Untitled Event"; // Fallback text for missing name
+  const eventDate = event?.eventDate
+    ? new Date(event.eventDate).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "No Date Provided"; // Fallback for missing eventDate
+  const eventCode = event?.eventCode || "N/A"; // Fallback for missing eventCode
+  const eventPassword = event?.eventPassword || "N/A"; // Fallback for missing eventPassword
+  const isPublished = event?.isPublished || false; // Default to unpublished if not defined
+
   return (
     <div className="bg-white shadow-lg rounded-lg overflow-hidden w-full max-w-xs mx-auto relative">
       {/* Event Image & More Options */}
       <div className="relative cursor-pointer">
         <img
-          src={event.image}
-          alt={event.name}
+          src={eventImage} // Display fallback image if eventImage is not available
+          alt={eventName} // Display fallback name if eventName is not available
           className="w-full h-40 object-cover"
           onClick={() => {
-            navigate(`/personalfolder/${1}`);
+            navigate(`/personalfolder/${event?.id || 1}`); // Fall back to 1 if event.id is missing
           }}
         />
         <button
@@ -31,7 +44,7 @@ const EventCard = ({ event, onEdit, onDelete }) => {
           <div className="absolute top-10 right-2 bg-white shadow-lg rounded-md w-32">
             <button
               onClick={() => {
-                onEdit(event.id);
+                onEdit(event?._id);
                 setIsDropdownOpen(false);
               }}
               className="block w-full text-left px-4 py-2 hover:bg-gray-100"
@@ -40,7 +53,7 @@ const EventCard = ({ event, onEdit, onDelete }) => {
             </button>
             <button
               onClick={() => {
-                onDelete(event.id);
+                onDelete(event?._id);
                 setIsDropdownOpen(false);
               }}
               className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100"
@@ -53,27 +66,27 @@ const EventCard = ({ event, onEdit, onDelete }) => {
 
       {/* Event Details */}
       <div className="p-4">
-        <h3 className="text-lg font-semibold text-center">{event.name}</h3>
+        <h3 className="text-lg font-semibold text-center">{eventName}</h3>
         <div className="flex justify-between text-sm text-gray-600 mt-2">
-          <p>{event.date}</p>
+          <p>{eventDate}</p>
+
           <p
             className={`font-semibold ${
-              event.published ? "text-green-600" : "text-red-600"
+              isPublished ? "text-green-600" : "text-red-600"
             }`}
           >
-            {event.published ? "Published" : "Unpublished"}
+            {isPublished ? "Published" : "Unpublished"}
           </p>
         </div>
         <div className="flex justify-between items-center text-sm text-gray-600 mt-3">
           <div className="flex items-center gap-2">
-            <span>{event.code}</span>
-            <RefreshCw
-              size={16}
-              className="cursor-pointer hover:text-blue-600"
-            />
+            <span>{eventCode}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span>Password</span>
+            <span>
+              {showPassword ? eventPassword : "********"}
+              {/* Toggle password visibility */}
+            </span>
             <button
               onClick={() => setShowPassword(!showPassword)}
               className="text-gray-600 hover:text-black"

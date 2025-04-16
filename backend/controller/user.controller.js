@@ -51,7 +51,6 @@ export const signup = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-   
 
     console.log(req.body);
     const user = await User.findOne({ email });
@@ -59,10 +58,7 @@ export const login = async (req, res) => {
     if (!user) {
       throw new ApiError(404, "User not found with this email");
     }
-    const isPasswordValid = await bcrypt.compare(
-      password,
-      user.password
-    );
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new ApiError(400, "Invalid credentials");
     }
@@ -83,8 +79,8 @@ export const login = async (req, res) => {
     );
     const options = {
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
+      secure: false, // <-- for localhost testing
+      sameSite: "lax", // safer for local
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     };
@@ -301,15 +297,13 @@ export const editPofile = async (req, res) => {
 export const logoutUser = async (req, res) => {
   try {
     const refreshToken =
-      req.headers.cookies ||
-      req.cookies?.refreshToken ||
-      req.body?.refreshToken;
-
+      req.cookies?.refreshToken || req.headers?.authorization;
     const userId = req.userId;
 
     if (!userId) {
       return res.status(400).json(new ApiResponse(400, {}, "User not found"));
     }
+
     if (!refreshToken) {
       return res
         .status(400)
@@ -318,25 +312,23 @@ export const logoutUser = async (req, res) => {
 
     const options = {
       httpOnly: true,
-      secure: true,
+      secure: false, // <-- for localhost testing
+      sameSite: "lax", // safer for local
       path: "/",
-      sameSite: "none",
     };
 
-    const user = await User.findOne({ _id: userId, refreshToken });
-    if (!user) {
-      return res
-        .status(400)
-        .json(new ApiResponse(400, {}, "Invalid refresh token"));
-    }
-
-    await User.updateOne(
-      { _id: userId },
+    const user = await User.findOneAndUpdate(
+      { _id: userId, refreshToken },
       { $set: { refreshToken: "", refreshTokenExpiry: "" } }
     );
 
+    if (!user) {
+      throw new ApiError(404, "User not found or invalid refresh token");
+    }
+
     res.clearCookie("refreshToken", options);
     res.clearCookie("accessToken", options);
+
     return res
       .status(200)
       .json(new ApiResponse(200, {}, "User logged out successfully"));
@@ -345,5 +337,19 @@ export const logoutUser = async (req, res) => {
     return res
       .status(500)
       .json(new ApiResponse(500, null, "Internal Server Error"));
+  }
+};
+
+export const checkAuth = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const user = await User.findById(userId).select("name email role logo");
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.log("🔴 Auth check failed:", error.message);
+    res.status(401).json({ error: "Invalid or expired token" });
   }
 };

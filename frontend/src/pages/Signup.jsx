@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { USER_API_END_POINT } from "../constant";
 
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -28,10 +29,8 @@ const Signup = () => {
     };
 
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/v1/user/signup",
-        signupData
-      );
+      const endpoint = `${USER_API_END_POINT}/signup`;
+      const res = await axios.post(endpoint, signupData);
       if (res.status === 200) {
         navigate("/login");
       }

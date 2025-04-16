@@ -4,6 +4,7 @@ import { FiEye, FiEyeOff } from "react-icons/fi";
 import Logo from "../assets/logo_1.png";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { USER_API_END_POINT } from "../constant";
 
 const features = [
   {
@@ -44,10 +45,11 @@ const LoginPage = () => {
       password,
     };
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/v1/login",
-        loginData
-      );
+      const endpoint = `${USER_API_END_POINT}/login`;
+      const res = await axios.post(endpoint, loginData, {
+        withCredentials: true,
+      });
+
       if (res.status === 200) {
         navigate("/");
       }

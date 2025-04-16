@@ -15,7 +15,7 @@ const albumCategorySchema = new mongoose.Schema(
     },
     files: [{ type: mongoose.Schema.Types.ObjectId, ref: "AlbumFile" }],
   },
-  { timestamps: true } // Automatically adds createdAt & updatedAt
+  { timestamps: true } 
 );
 
 
