@@ -4,20 +4,23 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 export const verifyJWT = asyncHandler(async (req, _, next) => {
   try {
-    const token = req.cookies?.accessToken || req.headers?.authorization;
-    console.log(token);
+    console.log(req.cookies);
+
+    let token = req.cookies?.accessToken;
+
+    // If not in cookies, try Authorization header
+    if (!token && req.headers?.authorization?.startsWith("Bearer ")) {
+      token = req.headers.authorization.split(" ")[1];
+    }
 
     if (!token) {
-      throw new ApiError(401, "Unauthorized request");
+      throw new ApiError(401, "Unauthorized request: Token missing");
     }
 
     const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
-    if (!decodedToken) {
-      throw new ApiError(401, "Failed to decode token");
-    }
-
     req.userId = decodedToken.userId;
+    req.userRole = decodedToken.role;
 
     next();
   } catch (err) {
