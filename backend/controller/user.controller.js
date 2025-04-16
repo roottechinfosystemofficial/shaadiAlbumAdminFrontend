@@ -64,11 +64,12 @@ export const login = async (req, res) => {
     );
     const options = {
       httpOnly: true,
-      secure: false, // <-- for localhost testing
-      sameSite: "lax", // safer for local
+      secure: process.env.NODE_ENV === "production", // Set to true only in production (i.e., live website)
+      sameSite: "lax", // safer for local and live
       path: "/",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     };
+
 
     user.refreshToken = refreshToken;
     user.refreshTokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
