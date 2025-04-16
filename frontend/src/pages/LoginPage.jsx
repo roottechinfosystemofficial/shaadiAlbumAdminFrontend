@@ -5,6 +5,7 @@ import Logo from "../assets/logo_1.png";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { USER_API_END_POINT } from "../constant";
+import Cookies from "js-cookie";
 
 const features = [
   {
@@ -40,22 +41,33 @@ const LoginPage = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    const loginData = {
-      email,
-      password,
-    };
+    const loginData = { email, password };
+
     try {
       const endpoint = `${USER_API_END_POINT}/login`;
-      const res = await axios.post(endpoint, loginData, {
-        withCredentials: true,
-      });
+      const res = await axios.post(endpoint, loginData);
 
       if (res.status === 200) {
+        const { accessToken, refreshToken } = res.data.data;
+
+        // 🍪 Set cookies
+        Cookies.set("accessToken", accessToken, {
+          expires: 7,
+          secure: true, // required on HTTPS
+          sameSite: "Lax",
+        });
+
+        Cookies.set("refreshToken", refreshToken, {
+          expires: 7,
+          secure: true,
+          sameSite: "Lax",
+        });
+
         navigate("/");
       }
     } catch (error) {
       console.error("Login failed:", error);
-      alert("An error occurred during login. Please try again.");
+      alert("Login error. Try again.");
     }
   };
 

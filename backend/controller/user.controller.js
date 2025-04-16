@@ -37,12 +37,11 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    console.log(req.body);
     const user = await User.findOne({ email });
-
     if (!user) {
       throw new ApiError(404, "User not found with this email");
     }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new ApiError(400, "Invalid credentials");
@@ -51,49 +50,34 @@ export const login = async (req, res) => {
     const accessToken = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.ACCESS_TOKEN_SECRET,
-      {
-        expiresIn: "1d",
-      }
+      { expiresIn: "1d" }
     );
+
     const refreshToken = jwt.sign(
       { userId: user._id },
       process.env.REFRESH_TOKEN_SECRET,
-      {
-        expiresIn: "7d",
-      }
+      { expiresIn: "7d" }
     );
-    console.log(process.env.NODE_ENV);
-
-    const options = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Set to true only in production (i.e., live website)
-      sameSite: "lax", // safer for local and live
-      path: "/",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    };
 
     user.refreshToken = refreshToken;
     user.refreshTokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     user.lastSeen = new Date();
     await user.save();
 
-    return res
-      .status(200)
-      .cookie("accessToken", accessToken, options)
-      .cookie("refreshToken", refreshToken, options)
-      .json(
-        new ApiResponse(
-          200,
-          {
-            token: accessToken,
-            username: user.username,
-            role: user.role,
-            email: user.email,
-            logo: user.logo,
-          },
-          "User logged in successfully"
-        )
-      );
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          accessToken,
+          refreshToken,
+          username: user.username,
+          role: user.role,
+          email: user.email,
+          logo: user.logo,
+        },
+        "User logged in successfully"
+      )
+    );
   } catch (error) {
     console.error("🔴 Error in login:", error);
     return res.status(400).json(new ApiResponse(400, null, error.message));
@@ -286,7 +270,6 @@ export const logoutUser = async (req, res) => {
     const refreshToken =
       req.cookies?.refreshToken || req.headers?.authorization;
     const userId = req.userId;
-    console.log(refreshToken);
 
     if (!userId) {
       return res.status(400).json(new ApiResponse(400, {}, "User not found"));
