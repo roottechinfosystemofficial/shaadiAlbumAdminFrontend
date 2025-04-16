@@ -26,7 +26,6 @@ const apiRequest = async (method, endpoint, data = {}, token = "") => {
   } catch (error) {
     console.error("API request error:", error);
     throw error;
-  } finally {
   }
 };
 

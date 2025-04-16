@@ -9,7 +9,7 @@ import {
 } from "../Redux/Slices/UserSlice";
 import { USER_API_END_POINT } from "../constant";
 import Cookies from "js-cookie";
-import apiRequest from "../../../backend/utils/apiRequest";
+import apiRequest from "../utils/apiRequest";
 
 const Layout = () => {
   const dispatch = useDispatch();
