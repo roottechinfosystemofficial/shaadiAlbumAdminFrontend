@@ -62,6 +62,8 @@ export const login = async (req, res) => {
         expiresIn: "7d",
       }
     );
+    console.log(process.env.NODE_ENV);
+
     const options = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production", // Set to true only in production (i.e., live website)
@@ -69,7 +71,6 @@ export const login = async (req, res) => {
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     };
-
 
     user.refreshToken = refreshToken;
     user.refreshTokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -285,6 +286,7 @@ export const logoutUser = async (req, res) => {
     const refreshToken =
       req.cookies?.refreshToken || req.headers?.authorization;
     const userId = req.userId;
+    console.log(refreshToken);
 
     if (!userId) {
       return res.status(400).json(new ApiResponse(400, {}, "User not found"));
@@ -298,7 +300,7 @@ export const logoutUser = async (req, res) => {
 
     const options = {
       httpOnly: true,
-      secure: false, // <-- for localhost testing
+      secure: process.env.NODE_ENV === "production", // <-- for localhost testing
       sameSite: "lax", // safer for local
       path: "/",
     };
