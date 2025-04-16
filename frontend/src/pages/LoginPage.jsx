@@ -42,6 +42,12 @@ const LoginPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     const loginData = { email, password };
+    const isProduction = import.meta.env.VITE_ENV === "production"; // Check if the environment is production
+
+    if (!email || !password) {
+      alert("Please enter both email and password.");
+      return;
+    }
 
     try {
       const endpoint = `${USER_API_END_POINT}/login`;
@@ -50,20 +56,20 @@ const LoginPage = () => {
       if (res.status === 200) {
         const { accessToken, refreshToken } = res.data.data;
 
-        // 🍪 Set cookies
+        // 🍪 Set cookies with conditional 'secure' flag
         Cookies.set("accessToken", accessToken, {
-          expires: 7,
-          secure: true, // required on HTTPS
+          expires: 7, // expires in 7 days
+          secure: isProduction, // Only secure in production
           sameSite: "Lax",
         });
 
         Cookies.set("refreshToken", refreshToken, {
-          expires: 7,
-          secure: true,
+          expires: 7, // expires in 7 days
+          secure: isProduction, // Only secure in production
           sameSite: "Lax",
         });
 
-        navigate("/");
+        navigate("/"); // Redirect after successful login
       }
     } catch (error) {
       console.error("Login failed:", error);
