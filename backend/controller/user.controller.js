@@ -6,16 +6,7 @@ import { ApiError } from "../utils/ApiError.js";
 
 export const signup = async (req, res) => {
   try {
-    const {
-      name,
-      businessName,
-      email,
-      password,
-      address,
-      role,
-      studioName,
-      phoneNo,
-    } = req.body;
+    const { name, businessName, email, password, phone } = req.body;
     console.log(req.body);
 
     const existingUser = await User.findOne({ email });
@@ -26,17 +17,11 @@ export const signup = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const createdUser = await User.create({
-      phoneNo,
+      phoneNo: phone,
       name,
       businessName,
       email,
-      studioName,
       password: hashedPassword,
-      address,
-      role: role ?? "STUDIO_ADMIN",
-      logo: `https://ui-avatars.com/api/?name=${encodeURIComponent(
-        name ?? username
-      )}&background=random&color=fff`,
     });
 
     return res.json(
