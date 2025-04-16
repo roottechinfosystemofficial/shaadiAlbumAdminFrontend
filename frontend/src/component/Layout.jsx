@@ -13,42 +13,41 @@ import apiRequest from "../utils/apiRequest";
 
 const Layout = () => {
   const dispatch = useDispatch();
-  const { authUser, refreshToken } = useSelector((state) => state.user);
+  const { authUser, accessToken } = useSelector((state) => state.user); // ✅ include refreshToken
 
   useEffect(() => {
     const getCookies = () => {
       const accessToken = Cookies.get("accessToken");
       const refreshToken = Cookies.get("refreshToken");
 
-      if (accessToken) {
-        dispatch(setAccessToken(accessToken));
-      }
-      if (refreshToken) {
-        dispatch(setRefreshToken(refreshToken));
-      }
+      if (accessToken) dispatch(setAccessToken(accessToken));
+      if (refreshToken) dispatch(setRefreshToken(refreshToken));
     };
 
     getCookies();
-  }, [dispatch]); // This will only run once after the first render
+  }, [dispatch]);
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const endpoint = `${USER_API_END_POINT}/checkAuth`;
-        const res = await apiRequest("GET", endpoint, {}, refreshToken);
-        // const res = await axios.get(endpoint, {
-        //   withCredentials: true,
-        // });
+        const res = await apiRequest(
+          "GET",
+          endpoint,
+          {},
+          accessToken,
+          dispatch
+        ); // ✅ pass dispatch
         dispatch(setAuthUser(res.data));
       } catch (err) {
         console.error("Auth check failed:", err);
       }
     };
 
-    if (!authUser) {
+    if (!authUser && accessToken) {
       checkAuth();
     }
-  }, [authUser, dispatch, refreshToken]);
+  }, [authUser, accessToken, dispatch]); // ✅ added refreshToken
 
   return (
     <div className="flex flex-col min-h-screen">

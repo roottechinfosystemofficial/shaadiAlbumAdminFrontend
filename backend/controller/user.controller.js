@@ -280,6 +280,7 @@ export const logoutUser = async (req, res) => {
         .status(400)
         .json(new ApiResponse(400, {}, "Refresh token missing"));
     }
+    console.log(refreshToken);
 
     const options = {
       httpOnly: true,
