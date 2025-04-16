@@ -2,7 +2,6 @@ import React, { useEffect } from "react";
 import Navbar from "./Navbar";
 import { Outlet } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import axios from "axios";
 import {
   setAccessToken,
   setAuthUser,
@@ -49,7 +48,7 @@ const Layout = () => {
     if (!authUser) {
       checkAuth();
     }
-  }, [authUser, dispatch, refreshToken  ]);
+  }, [authUser, dispatch, refreshToken]);
 
   return (
     <div className="flex flex-col min-h-screen">
