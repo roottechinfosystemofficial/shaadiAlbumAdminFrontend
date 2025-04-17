@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef, memo } from "react";
 
-const totalImages = 50;
+const totalImages = 129;
 const batchSize = 6;
 
 const getImageUrls = (start, count) => {
   return Array.from({ length: count }, (_, i) => {
     const imageIndex = start + i + 1;
     const imageName = `img (${imageIndex})`;
-    return `https://res.cloudinary.com/dzfaikj95/image/upload/w_300,c_scale/shaadialum/${imageName}.jpg`;
+    return `https://res.cloudinary.com/dzfaikj95/image/upload/w_500,c_scale/shaadialum/${imageName}.jpg`;
   });
 };
 
@@ -15,13 +15,14 @@ const PhotosPanel = () => {
   const [visibleImages, setVisibleImages] = useState([]);
   const [loadedAll, setLoadedAll] = useState(false);
   const loaderRef = useRef(null);
+  const observerRef = useRef(null);
 
   useEffect(() => {
     setVisibleImages(getImageUrls(0, batchSize));
   }, []);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
+    observerRef.current = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !loadedAll) {
           requestIdleCallback(() => loadMoreImages());
@@ -30,10 +31,13 @@ const PhotosPanel = () => {
       { rootMargin: "150px" }
     );
 
-    if (loaderRef.current) observer.observe(loaderRef.current);
+    if (loaderRef.current) observerRef.current.observe(loaderRef.current);
 
     return () => {
-      if (loaderRef.current) observer.unobserve(loaderRef.current);
+      if (observerRef.current && loaderRef.current) {
+        observerRef.current.unobserve(loaderRef.current);
+        observerRef.current.disconnect();
+      }
     };
   }, [visibleImages, loadedAll]);
 
@@ -55,7 +59,11 @@ const PhotosPanel = () => {
     <div className="p-4">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {visibleImages.map((photo, index) => (
-          <MemoizedImageCard key={index} src={photo} />
+          <MemoizedImageCard
+            key={photo} // use unique key based on the image URL
+            src={photo}
+            alt={`Photo ${index + 1}`}
+          />
         ))}
       </div>
       {!loadedAll && (
@@ -70,6 +78,10 @@ const PhotosPanel = () => {
 const ImageCard = ({ src, alt }) => {
   const [loaded, setLoaded] = useState(false);
 
+  const handleError = (e) => {
+    e.target.src = "/fallback.jpg"; // fallback image URL
+  };
+
   return (
     <div className="overflow-hidden rounded-lg shadow-md relative group">
       <img
@@ -77,6 +89,7 @@ const ImageCard = ({ src, alt }) => {
         src={src}
         alt={alt}
         onLoad={() => setLoaded(true)}
+        onError={handleError}
         className={`w-[300px] object-cover h-48 transition duration-300 ease-in-out ${
           loaded ? "opacity-100 scale-100" : "opacity-0"
         } group-hover:scale-105`}
