@@ -7,9 +7,9 @@ import { FaAngleDown, FaUser } from "react-icons/fa";
 import { BiMenu } from "react-icons/bi";
 import "../css/Navbar.css";
 import { useDispatch, useSelector } from "react-redux";
-import axios from "axios";
 import { setAuthUser } from "../Redux/Slices/UserSlice";
 import { USER_API_END_POINT } from "../constant";
+import apiRequest from "../utils/apiRequest";
 
 const Navbar = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -17,8 +17,10 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { authUser } = useSelector((state) => state.user);
   const [prevAuthUser, setPrevAuthUser] = useState(null);
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { accessToken } = useSelector((state) => state.user); // ✅ include refreshToken
+
+  const navigate = useNavigate();
   useEffect(() => {
     if (prevAuthUser !== authUser) {
       setPrevAuthUser(authUser);
@@ -38,13 +40,7 @@ const Navbar = () => {
   const logoutHandler = async () => {
     try {
       const endpoint = `${USER_API_END_POINT}/logout`;
-      const res = await axios.post(
-        endpoint,
-        {},
-        {
-          withCredentials: true,
-        }
-      );
+      const res = await apiRequest("POST", endpoint, {}, accessToken, dispatch); // ✅ pass dispatch
       if (res.status === 200) {
         navigate("/login");
         dispatch(setAuthUser(null));
