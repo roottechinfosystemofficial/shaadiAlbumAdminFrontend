@@ -1,20 +1,8 @@
 import React, { useState } from "react";
 import FlipbookPanel from "./Personalfoldercomponent/FlipbookPanel";
+import PhotosPanel from "./Personalfoldercomponent/PhotosPanel";
 
-// Panels
 
-
-const PhotosPanel = () => (
-  <>
-    <div className="flex justify-end items-center gap-2 mb-6">
-      <button className="bg-slate px-4 py-2 rounded-md">Add Photo</button>
-      <select className="bg-slate px-4 py-2 rounded-md">
-        <option>Sort</option>
-      </select>
-    </div>
-    <p className="text-center text-slate-dark mt-10">No Photos Found!</p>
-  </>
-);
 
 const FavouritePanel = () => (
   <p className="text-center text-slate-dark mt-10">No Favourite Found!</p>
@@ -47,7 +35,6 @@ const PersonalFolderContent = () => {
 
         {/* Tabs */}
         <div className="flex flex-wrap gap-2">
-         
           <button
             className={`px-4 py-2 rounded-md transition ${
               activeTab === "photos"

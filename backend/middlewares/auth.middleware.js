@@ -9,7 +9,7 @@ export const verifyJWT = asyncHandler(async (req, _, next) => {
       ? req.headers.authorization.split(" ")[1]
       : null;
 
-    const token = bearerToken;
+    const token = bearerToken || req?.cookies?.accessToken;
 
     console.log("Token Received:", token);
 

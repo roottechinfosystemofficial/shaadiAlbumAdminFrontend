@@ -9,10 +9,10 @@ import {
 
 const Dashdata = () => {
   const data = [
-    { icon: <FaUsers />, label: "Total Users", value: "120" },
-    { icon: <FaCalendarAlt />, label: "Total Events", value: "45" },
-    { icon: <FaImages />, label: "Total Media", value: "500 GB" },
-    { icon: <FaHdd />, label: "Storage", value: "1.2 TB" },
+    { icon: <FaUsers />, label: "Total Users", value: "2" },
+    { icon: <FaCalendarAlt />, label: "Total Events", value: "1" },
+    { icon: <FaImages />, label: "Total Media", value: "11/∞" },
+    { icon: <FaHdd />, label: "Storage", value: "400GB" },
     { icon: <FaClock />, label: "Expiry On", value: "12/12/2025" },
   ];
 
