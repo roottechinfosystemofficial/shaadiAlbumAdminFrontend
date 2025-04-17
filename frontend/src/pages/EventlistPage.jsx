@@ -28,7 +28,7 @@ const EventlistPage = () => {
   const getAllEventsOfUser = async () => {
     try {
       const endpoint = `${EVENT_API_END_POINT}/getAllEventsOfUser`;
-      const res = await axios.get(endpoint, { withCredentials: true });
+      const res = await apiRequest("GET", endpoint, {}, accessToken, dispatch); // ✅ pass dispatch
       if (res.status === 200) setEvents(res.data.data);
     } catch (error) {
       console.error("Error fetching events:", error);
