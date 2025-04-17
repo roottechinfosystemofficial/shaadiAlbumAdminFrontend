@@ -9,7 +9,7 @@ const UnderClientView = ({ setWhichView }) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8">
         {/* Photos Box */}
         <div
-          className="bg-white border border-gray-300 rounded-lg p-6 shadow-md hover:shadow-lg transition duration-300 cursor-pointer"
+          className="bg-white border border-gray-300 rounded-lg  shadow-md hover:shadow-lg transition duration-300 cursor-pointer"
           onClick={() => setWhichView("photos")}
         >
           <img
@@ -27,11 +27,11 @@ const UnderClientView = ({ setWhichView }) => {
 
         {/* Flipbook Box */}
         <div
-          className="bg-white border border-gray-300 rounded-lg p-6 shadow-md hover:shadow-lg transition duration-300 cursor-pointer"
+          className="bg-white border border-gray-300 rounded-lg  shadow-md hover:shadow-lg transition duration-300 cursor-pointer"
           onClick={() => setWhichView("flipbook")}
         >
           <img
-            src="https://images.unsplash.com/photo-1501762855394-fb0e7b9dbb67?crop=entropy&cs=tinysrgb&fit=max&ixid=MnwzNjUyOXwwfDF8c2VhcmNofDJ8fGZsaXBib29rfGVufDB8fHx8fDE2NjA1MTQ5Nzk&ixlib=rb-1.2.1&q=80&w=400"
+            src="https://cdn0.weddingwire.in/article/7121/3_2/960/jpg/91217-indian-wedding-album-design-mili-ghosh-lead.jpeg"
             alt="Flipbook"
             className="w-full h-40 object-cover rounded-md mb-4"
           />
