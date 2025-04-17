@@ -83,7 +83,7 @@ const ImageCard = ({ src, alt }) => {
   };
 
   return (
-    <div className="overflow-hidden rounded-lg shadow-md relative group">
+    <div className="overflow-hidden rounded-lg shadow-md relative group w-[300px]">
       <img
         loading="lazy"
         src={src}
