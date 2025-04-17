@@ -5,6 +5,8 @@ import { EVENT_API_END_POINT } from "../constant";
 import EventCard from "../component/EventlistingComponent/EventCard";
 import EditEventModal from "../component/EventlistingComponent/EditEventModal";
 import EventModal from "../component/EventlistingComponent/EventModal";
+import { useDispatch, useSelector } from "react-redux";
+import apiRequest from "../utils/apiRequest";
 
 const EventlistPage = () => {
   const [showModal, setShowModal] = useState(false);
@@ -12,6 +14,8 @@ const EventlistPage = () => {
   const [eventDate, setEventDate] = useState("");
   const [editingEvent, setEditingEvent] = useState(null);
   const [events, setEvents] = useState([]);
+  const { accessToken } = useSelector((state) => state.user); // ✅ include refreshToken
+  const dispatch = useDispatch();
 
   const [editForm, setEditForm] = useState({
     eventName: "",
@@ -40,20 +44,25 @@ const EventlistPage = () => {
     const eventDetails = { eventName, eventDate };
     try {
       const endpoint = `${EVENT_API_END_POINT}/createEvent`;
-      const res = await axios.post(endpoint, eventDetails, {
-        withCredentials: true,
-      });
+      const res = await apiRequest(
+        "POST",
+        endpoint,
+        eventDetails,
+        accessToken,
+        dispatch
+      ); // ✅ pass dispatch
       if (res.status === 200) getAllEventsOfUser();
     } catch (error) {
       console.error("Error adding event:", error);
     }
+
     setShowModal(false);
   };
 
   const fetchEvent = async (eventId) => {
     try {
       const endpoint = `${EVENT_API_END_POINT}/getEventById/${eventId}`;
-      const res = await axios.get(endpoint, { withCredentials: true });
+      const res = await apiRequest("GET", endpoint, {}, accessToken, dispatch); // ✅ pass dispatch
       if (res.status === 200) {
         const data = res.data.data;
         setEditingEvent(data);
