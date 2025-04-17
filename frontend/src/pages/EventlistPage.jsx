@@ -99,7 +99,7 @@ const EventlistPage = () => {
 
       <hr className="border-t-1 border-gray-300 mt-3 mb-6" />
 
-      {events.length === 0 ? (
+      {events?.length === 0 ? (
         <div className="flex flex-col items-center justify-center text-center py-8">
           <p className="text-xl font-semibold text-gray-600 mb-2">
             No events available.
