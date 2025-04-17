@@ -18,7 +18,7 @@ const Navbar = () => {
   const { authUser } = useSelector((state) => state.user);
   const [prevAuthUser, setPrevAuthUser] = useState(null);
   const dispatch = useDispatch();
-  const { accessToken } = useSelector((state) => state.user); // ✅ include refreshToken
+  const { accessToken, refreshToken } = useSelector((state) => state.user); // ✅ include refreshToken
 
   const navigate = useNavigate();
   useEffect(() => {
@@ -40,7 +40,13 @@ const Navbar = () => {
   const logoutHandler = async () => {
     try {
       const endpoint = `${USER_API_END_POINT}/logout`;
-      const res = await apiRequest("POST", endpoint, {}, accessToken, dispatch); // ✅ pass dispatch
+      const res = await apiRequest(
+        "POST",
+        endpoint,
+        { refreshToken }, // ✅ pass refreshToken in data
+        accessToken,
+        dispatch
+      );
       if (res.status === 200) {
         navigate("/login");
         dispatch(setAuthUser(null));
@@ -50,6 +56,7 @@ const Navbar = () => {
       alert("Unable to logout. Please check your connection and try again.");
     }
   };
+
 
   return (
     <nav className="bg-white flex items-center justify-between px-6 pt-1 relative h-[70px]">

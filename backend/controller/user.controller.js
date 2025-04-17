@@ -268,7 +268,10 @@ export const editPofile = async (req, res) => {
 export const logoutUser = async (req, res) => {
   try {
     const refreshToken =
-      req.cookies?.refreshToken || req.headers?.authorization;
+      req.body?.refreshToken ||
+      req.cookies?.refreshToken ||
+      req.headers?.authorization;
+
     const userId = req.userId;
 
     if (!userId) {
