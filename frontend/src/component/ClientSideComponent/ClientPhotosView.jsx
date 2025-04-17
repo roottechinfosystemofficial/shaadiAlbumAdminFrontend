@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   ArrowDownToLineIcon,
   Heart,
@@ -14,6 +14,17 @@ import {
 } from "lucide-react";
 import { useSelector } from "react-redux";
 
+const totalImages = 129;
+const batchSize = 12;
+
+const getImageUrls = (start, count) => {
+  return Array.from({ length: count }, (_, i) => {
+    const imageIndex = start + i + 1;
+    const imageName = `img (${imageIndex})`;
+    return `https://res.cloudinary.com/dzfaikj95/image/upload/w_500,c_scale/shaadialum/${imageName}.jpg`;
+  });
+};
+
 const ClientPhotosView = ({ setWhichView }) => {
   const { layout, spacing, thumbnail, background } = useSelector(
     (state) => state.galleryLayout
@@ -26,22 +37,21 @@ const ClientPhotosView = ({ setWhichView }) => {
     background: background || "light",
   };
 
+  const [imageUrls, setImageUrls] = useState([]);
   const [modalImage, setModalImage] = useState(null);
   const [rotation, setRotation] = useState(0);
   const [flip, setFlip] = useState(false);
   const [isSlideshow, setIsSlideshow] = useState(false);
   const [slideshowInterval, setSlideshowInterval] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [loadedAll, setLoadedAll] = useState(false);
+  const loaderRef = useRef(null);
+  const observerRef = useRef(null);
 
   const bgClass =
     adminSettings.background === "dark"
       ? "bg-black text-white"
       : "bg-white text-gray-900";
-
-  const sampleImages = Array.from({ length: 100 }, (_, i) => ({
-    id: i,
-    url: `https://picsum.photos/seed/${i}/800/600`,
-  }));
 
   const spacingClasses = {
     small: "gap-2",
@@ -58,6 +68,44 @@ const ClientPhotosView = ({ setWhichView }) => {
     small: "h-32",
     regular: "h-48",
     large: "h-64",
+  };
+
+  useEffect(() => {
+    setImageUrls(getImageUrls(0, batchSize));
+  }, []);
+
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loadedAll) {
+          requestIdleCallback(() => loadMoreImages());
+        }
+      },
+      { rootMargin: "150px" }
+    );
+
+    if (loaderRef.current) observerRef.current.observe(loaderRef.current);
+
+    return () => {
+      if (observerRef.current && loaderRef.current) {
+        observerRef.current.unobserve(loaderRef.current);
+        observerRef.current.disconnect();
+      }
+    };
+  }, [imageUrls, loadedAll]);
+
+  const loadMoreImages = () => {
+    const current = imageUrls.length;
+    if (current >= totalImages) {
+      setLoadedAll(true);
+      return;
+    }
+
+    const nextBatch = getImageUrls(
+      current,
+      Math.min(batchSize, totalImages - current)
+    );
+    setImageUrls((prev) => [...prev, ...nextBatch]);
   };
 
   const closeModal = () => {
@@ -86,8 +134,8 @@ const ClientPhotosView = ({ setWhichView }) => {
   const handleNextImage = () => {
     stopSlideshowIfRunning();
     setCurrentImageIndex((prevIndex) => {
-      const nextIndex = (prevIndex + 1) % sampleImages.length;
-      setModalImage(sampleImages[nextIndex].url);
+      const nextIndex = (prevIndex + 1) % imageUrls.length;
+      setModalImage(imageUrls[nextIndex]);
       setRotation(0);
       setFlip(false);
       return nextIndex;
@@ -97,8 +145,8 @@ const ClientPhotosView = ({ setWhichView }) => {
   const handlePreviousImage = () => {
     stopSlideshowIfRunning();
     setCurrentImageIndex((prevIndex) => {
-      const prev = (prevIndex - 1 + sampleImages.length) % sampleImages.length;
-      setModalImage(sampleImages[prev].url);
+      const prev = (prevIndex - 1 + imageUrls.length) % imageUrls.length;
+      setModalImage(imageUrls[prev]);
       setRotation(0);
       setFlip(false);
       return prev;
@@ -110,7 +158,7 @@ const ClientPhotosView = ({ setWhichView }) => {
       clearInterval(slideshowInterval);
       setSlideshowInterval(null);
     } else {
-      const interval = setInterval(handleNextImage, 1000);
+      const interval = setInterval(handleNextImage, 2000);
       setSlideshowInterval(interval);
     }
     setIsSlideshow(!isSlideshow);
@@ -142,20 +190,12 @@ const ClientPhotosView = ({ setWhichView }) => {
             <p className="text-sm text-gray-500">dyhrf</p>
           </div>
           <div className="flex flex-wrap gap-3 text-black">
-            {[
-              { icon: <ScanFace className="w-5 h-5" />, label: "Face Search" },
-              { icon: <Heart className="w-5 h-5" />, label: "Favourites" },
-              { icon: <Upload className="w-5 h-5" /> },
-              { icon: <ShoppingCart className="w-5 h-5" /> },
-              { icon: <Share2 className="w-5 h-5" /> },
-              { icon: <ArrowDownToLineIcon className="w-5 h-5" /> },
-            ].map((btn, index) => (
+            {[ScanFace, Heart, Upload, ShoppingCart, Share2, ArrowDownToLineIcon].map((Icon, index) => (
               <button
                 key={index}
                 className="flex items-center gap-2 px-3 py-2 text-sm bg-white border rounded shadow hover:bg-gray-200 transition"
               >
-                {btn.icon}
-                {btn.label && <span>{btn.label}</span>}
+                <Icon className="w-5 h-5" />
               </button>
             ))}
           </div>
@@ -166,31 +206,33 @@ const ClientPhotosView = ({ setWhichView }) => {
         </div>
 
         <div
-          className={`${layoutClasses[adminSettings.layout]} ${
-            spacingClasses[adminSettings.spacing]
-          }`}
+          className={`${layoutClasses[adminSettings.layout]} ${spacingClasses[adminSettings.spacing]}`}
         >
-          {sampleImages.map((img) => (
+          {imageUrls.map((url, index) => (
             <div
-              key={img.id}
+              key={url}
               className={`mb-4 ${
                 adminSettings.layout === "vertical" ? "break-inside-avoid" : ""
               } rounded overflow-hidden bg-white shadow hover:shadow-lg transition duration-300 cursor-pointer`}
               onClick={() => {
-                setModalImage(img.url);
-                setCurrentImageIndex(img.id);
+                setModalImage(url);
+                setCurrentImageIndex(index);
               }}
             >
               <img
-                src={img.url}
-                alt={`sample-${img.id}`}
-                className={`w-full object-cover ${
-                  thumbSizeClasses[adminSettings.thumbnail]
-                }`}
+                src={url}
+                alt={`img-${index}`}
+                className={`w-full object-cover ${thumbSizeClasses[adminSettings.thumbnail]}`}
               />
             </div>
           ))}
         </div>
+
+        {!loadedAll && (
+          <div ref={loaderRef} className="text-center py-6 text-gray-500">
+            Loading more images...
+          </div>
+        )}
       </div>
 
       {modalImage && (
@@ -198,9 +240,9 @@ const ClientPhotosView = ({ setWhichView }) => {
           className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center transition duration-300"
           onClick={closeModal}
         >
-          <div className="relative max-w-5xl max-h-[90vh] w-full px-4 ">
+          <div className="relative max-w-5xl max-h-[90vh] w-full px-4">
             <div
-              className="relative mx-auto rounded transition-transform duration-300 ease-in-out "
+              className="relative mx-auto rounded transition-transform duration-300 ease-in-out"
               style={{
                 transform: `rotate(${rotation}deg) scaleX(${flip ? -1 : 1})`,
               }}
@@ -210,14 +252,12 @@ const ClientPhotosView = ({ setWhichView }) => {
                 alt="Full view"
                 className="w-full max-h-[90vh] object-contain mx-auto"
               />
-              <div>
-                <button
-                  onClick={closeModal}
-                  className="absolute bg-slate rounded-md text-black font-bold  top-0 right-0 cursor-pointer p-3 "
-                >
-                  <X className="w-6 h-6 " />
-                </button>
-              </div>
+              <button
+                onClick={closeModal}
+                className="absolute bg-slate rounded-md text-black font-bold top-0 right-0 cursor-pointer p-3"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
 
             <div className="absolute top-4 left-1/2 transform -translate-x-1/2 flex gap-4">
@@ -238,7 +278,7 @@ const ClientPhotosView = ({ setWhichView }) => {
                   e.stopPropagation();
                   toggleSlideshow();
                 }}
-                className="p-2 bg-white text-black rounded-full shadow hover:bg-gray-200"
+                className="p-2 bg-white text-black rounded-full shadow hover:bg-gray-200 text-sm font-medium"
               >
                 {isSlideshow ? "Stop" : "Start"} Slideshow
               </button>
