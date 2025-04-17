@@ -186,11 +186,18 @@ const ClientPhotosView = ({ setWhichView }) => {
 
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between pb-6 gap-4">
           <div>
-            <h2 className="text-2xl font-bold">RAHUL</h2>
+            <h2 className="text-2xl font-bold">Dhruv</h2>
             <p className="text-sm text-gray-500">dyhrf</p>
           </div>
           <div className="flex flex-wrap gap-3 text-black">
-            {[ScanFace, Heart, Upload, ShoppingCart, Share2, ArrowDownToLineIcon].map((Icon, index) => (
+            {[
+              ScanFace,
+              Heart,
+              Upload,
+              ShoppingCart,
+              Share2,
+              ArrowDownToLineIcon,
+            ].map((Icon, index) => (
               <button
                 key={index}
                 className="flex items-center gap-2 px-3 py-2 text-sm bg-white border rounded shadow hover:bg-gray-200 transition"
@@ -206,7 +213,9 @@ const ClientPhotosView = ({ setWhichView }) => {
         </div>
 
         <div
-          className={`${layoutClasses[adminSettings.layout]} ${spacingClasses[adminSettings.spacing]}`}
+          className={`${layoutClasses[adminSettings.layout]} ${
+            spacingClasses[adminSettings.spacing]
+          }`}
         >
           {imageUrls.map((url, index) => (
             <div
@@ -222,7 +231,7 @@ const ClientPhotosView = ({ setWhichView }) => {
               <img
                 src={url}
                 alt={`img-${index}`}
-                className={`w-full object-cover ${thumbSizeClasses[adminSettings.thumbnail]}`}
+                className="w-full h-auto rounded"
               />
             </div>
           ))}

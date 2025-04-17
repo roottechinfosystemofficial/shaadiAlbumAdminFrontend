@@ -26,7 +26,7 @@ const PersonalfolderAside = () => {
 
       {/* Event Info */}
       <div className="space-y-1">
-        <h2 className="text-2xl font-bold text-gray-900">RAHUL</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Dhruv</h2>
         <div className="flex justify-between text-sm text-gray-500">
           <p>Apr 3rd 2025</p>
           <p className="text-emerald-600 font-semibold">Published</p>
@@ -139,8 +139,6 @@ const PersonalfolderAside = () => {
           >
             FaceScan Pre Registration
           </button>
-
-         
         </div>
       </div>
     </aside>

@@ -32,7 +32,7 @@ const Clientview = () => {
         >
           <div className="flex flex-col items-start">
             <p className="text-2xl md:text-3xl uppercase pb-2 md:pb-4 font-extrabold">
-              Rahul
+              Dhruv
             </p>
             <div className="flex flex-wrap gap-4 md:gap-10">
               <button className="border-2 border-white py-1 px-3 md:px-4 rounded-md text-sm md:text-base">

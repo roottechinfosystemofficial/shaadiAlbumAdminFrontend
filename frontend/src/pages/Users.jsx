@@ -14,8 +14,8 @@ const Users = () => {
   const users = [
     {
       id: 1,
-      name: "Rahul",
-      email: "rahulvankar63@gmail.com",
+      name: "Dhruv",
+      email: "Dhruvvankar63@gmail.com",
       phone: "+91-814412301",
       favorites: 0,
       createdDate: "2025-04-09 13:14:25",

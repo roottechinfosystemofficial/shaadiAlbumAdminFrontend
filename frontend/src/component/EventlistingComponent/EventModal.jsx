@@ -28,7 +28,7 @@ const EventModal = ({
             type="text"
             value={eventName}
             onChange={(e) => setEventName(e.target.value)}
-            placeholder="e.g. Rahul weds Kavita"
+            placeholder="e.g. Dhruv weds Kavita"
             className="w-full border p-2 rounded-md mb-3"
             required
           />
