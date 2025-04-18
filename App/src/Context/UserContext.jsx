@@ -45,7 +45,7 @@ export const UserProvider = ({ children }) => {
       }
 
       const response = await fetch(
-        "https://anyaa-backend.onrender.com/api/v1/user/user",
+        "http://192.168.1.101:5000/api/v1/app-user/user",
         {
           method: "GET",
           headers: {
@@ -63,18 +63,13 @@ export const UserProvider = ({ children }) => {
         throw new Error(errorData.message || "Failed to fetch user data");
       }
       const { data } = await response.json(); // ✅ Get 'data' first
+      console.log(data);
       const user = data.user; // ✅ Extract user from data
       setUser(user);
 
       // ✅ Only navigate if needed
       if (navigation) {
-        const currentRoute = navigation.getState().routes.slice(-1)[0]?.name;
-
-        if (user.isAdmin && currentRoute !== "AdminHome") {
-          navigation.replace("AdminHome");
-        } else if (!user.isAdmin && currentRoute !== "Home") {
-          navigation.replace("Home");
-        }
+        navigation.navigate("HomeScreen");
       }
     } catch (error) {
       console.error("Error fetching user data:", error.message);

@@ -25,7 +25,7 @@ const AppNavigator = () => {
   return (
     <Stack.Navigator
       screenOptions={{ headerShown: false }}
-      initialRouteName="Welcome"
+      initialRouteName="GetLSDataLoading"
     >
       <Stack.Screen name="GetLSDataLoading" component={GetLSDataLoading} />
       <Stack.Screen name="Welcome" component={Welcome} />

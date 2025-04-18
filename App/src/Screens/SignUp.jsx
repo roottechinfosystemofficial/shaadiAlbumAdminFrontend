@@ -12,6 +12,7 @@ import {
   ScrollView,
   Keyboard,
   TouchableWithoutFeedback,
+  ActivityIndicator,
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import { AntDesign } from "@expo/vector-icons";
@@ -26,6 +27,10 @@ const SignUp = () => {
   const navigation = useNavigation();
   const scrollViewRef = useRef(null);
   const [keepSignedIn, setKeepSignedIn] = useState(false);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const toggleCheckbox = () => {
     setKeepSignedIn(!keepSignedIn);
   };
@@ -36,6 +41,45 @@ const SignUp = () => {
       animated: true,
     });
   };
+  const submitSignup = async () => {
+    if (!name || !phone || !password) {
+      alert("Please fill all fields.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await fetch(
+        "http://192.168.1.101:5000/api/v1/app-user/signup",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name,
+            phone,
+            password,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log("Signup successful:", data);
+        navigation.navigate("SuccessSignUp");
+      } else {
+        alert(data?.message || "Signup failed.");
+      }
+    } catch (error) {
+      console.error("Signup error:", error);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -72,6 +116,8 @@ const SignUp = () => {
                 placeholder="Your Name"
                 onFocus={handleFocus}
                 placeholderTextColor={theme.colours.primary}
+                value={name}
+                onChangeText={setName}
               />
             </View>
             <View style={styles.inputContainer}>
@@ -88,6 +134,8 @@ const SignUp = () => {
                 onFocus={handleFocus}
                 placeholderTextColor={theme.colours.primary}
                 autoComplete="tel"
+                value={phone}
+                onChangeText={setPhone}
               />
             </View>
 
@@ -138,9 +186,14 @@ const SignUp = () => {
 
               <TouchableOpacity
                 style={styles.nextButton}
-                onPress={() => navigation.navigate("SuccessSignUp")}
+                onPress={submitSignup}
+                disabled={loading}
               >
-                <Text style={styles.nextText}>Next</Text>
+                {loading ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <Text style={styles.nextText}>Next</Text>
+                )}
               </TouchableOpacity>
 
               {/* Create Account */}

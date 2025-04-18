@@ -10,7 +10,7 @@ const GetLSDataLoading = () => {
 
   useEffect(() => {
     const checkToken = async () => {
-      await getItemFromLS(navigation); // Fetch token and navigate accordingly
+      await getItemFromLS(navigation);
     };
 
     checkToken();

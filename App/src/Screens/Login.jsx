@@ -13,19 +13,26 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import { AntDesign } from "@expo/vector-icons";
 import { theme } from "../constants/themes";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import { hp, wp } from "../helpers/Common";
 import { useNavigation } from "@react-navigation/native";
+import useAuth from "../Context/UserContext";
 
 const Login = () => {
   const [password, setPassword] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const navigation = useNavigation();
   const [secureText, setSecureText] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const { setUser } = useAuth();
+
   const scrollViewRef = useRef(null);
 
   const handleFocus = (event) => {
@@ -46,6 +53,49 @@ const Login = () => {
       navigation.navigate("ForgotPassword", { phone: phoneNumber });
     }
   };
+
+  const handleLogin = async () => {
+    if (!phoneNumber || !password) {
+      alert("Please enter phone and password.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await fetch(
+        "http://192.168.1.101:5000/api/v1/app-user/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ phone: phoneNumber, password }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log("Login success:", data);
+
+        const { accessToken, user } = data.data;
+
+        // Store token and user in AsyncStorage
+        await AsyncStorage.setItem("token", accessToken);
+        setUser(user);
+
+        navigation.navigate("HomeScreen");
+      } else {
+        alert(data?.message || "Login failed");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -132,9 +182,14 @@ const Login = () => {
               {/* Next Button */}
               <TouchableOpacity
                 style={styles.nextButton}
-                onPress={() => navigation.navigate("HomeScreen")}
+                onPress={handleLogin}
+                disabled={loading}
               >
-                <Text style={styles.nextText}>Next</Text>
+                {loading ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <Text style={styles.nextText}>Next</Text>
+                )}
               </TouchableOpacity>
 
               {/* Create Account */}
