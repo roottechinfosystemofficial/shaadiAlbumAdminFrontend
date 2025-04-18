@@ -16,8 +16,10 @@ import {
 } from "@expo/vector-icons";
 import { theme } from "../constants/themes";
 import ScreenWrapper from "../Components/ScreenWrapper";
+import useAuth from "../Context/UserContext";
 
 const Account = ({ navigation }) => {
+  const { removeTokenLogout } = useAuth();
   return (
     <ScreenWrapper bg="white">
       <ScrollView style={styles.container}>
@@ -100,7 +102,9 @@ const Account = ({ navigation }) => {
 
         <TouchableOpacity
           style={[styles.menuItem, { marginTop: 10 }]}
-          onPress={() => console.log("Log out")}
+          onPress={() => {
+            removeTokenLogout(navigation);
+          }}
         >
           <View style={[styles.iconWrapper, { backgroundColor: "#FF3B30" }]}>
             <MaterialIcons name="logout" size={20} color="#FFF" />

@@ -23,8 +23,8 @@ const AppContent = () => {
 
 export default function App() {
   return (
-    <UserProvider>
-      <AppContent />
-    </UserProvider>
+    // <UserProvider>
+    <AppContent />
+    // </UserProvider>
   );
 }

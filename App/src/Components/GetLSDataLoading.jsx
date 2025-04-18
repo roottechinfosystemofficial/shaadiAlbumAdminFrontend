@@ -10,7 +10,10 @@ const GetLSDataLoading = () => {
 
   useEffect(() => {
     const checkToken = async () => {
-      await getItemFromLS(navigation);
+      // Wait 8 seconds before running getItemFromLS
+      setTimeout(async () => {
+        await getItemFromLS(navigation);
+      }, 2000);
     };
 
     checkToken();
