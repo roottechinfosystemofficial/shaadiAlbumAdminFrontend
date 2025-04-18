@@ -7,8 +7,10 @@ import { useAuthCheck } from "../Hooks/useAuthCheckHook";
 
 const MainLayout = () => {
   const dispatch = useDispatch();
+  console.log("mainlayout out");
 
   useEffect(() => {
+    console.log("mainlayout out");
     const getCookies = () => {
       const accessToken = Cookies.get("accessToken");
       const refreshToken = Cookies.get("refreshToken");

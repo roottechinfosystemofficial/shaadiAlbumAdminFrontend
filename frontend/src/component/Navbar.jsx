@@ -7,7 +7,11 @@ import { FaAngleDown, FaUser } from "react-icons/fa";
 import { BiMenu } from "react-icons/bi";
 import "../css/Navbar.css";
 import { useDispatch, useSelector } from "react-redux";
-import { setAuthUser } from "../Redux/Slices/UserSlice";
+import {
+  setAccessToken,
+  setAuthUser,
+  setRefreshToken,
+} from "../Redux/Slices/UserSlice";
 import { USER_API_END_POINT } from "../constant";
 import apiRequest from "../utils/apiRequest";
 import Cookies from "js-cookie";
@@ -20,7 +24,7 @@ const Navbar = () => {
   const { authUser } = useSelector((state) => state.user);
   const [prevAuthUser, setPrevAuthUser] = useState(null);
   const dispatch = useDispatch();
-  const { accessToken, refreshToken } = useSelector((state) => state.user); // ✅ include refreshToken
+  const { accessToken } = useSelector((state) => state.user); // ✅ include refreshToken
 
   const navigate = useNavigate();
   useEffect(() => {
@@ -41,13 +45,19 @@ const Navbar = () => {
 
   const logoutHandler = async () => {
     try {
+      console.log(accessToken);
+      console.log();
+      
+
       const endpoint = `${USER_API_END_POINT}/logout`;
 
       const res = await apiRequest("POST", endpoint, {}, accessToken, dispatch);
 
       if (res.status === 200) {
-        dispatch(setAuthUser(null));
         Cookies.remove("accessToken");
+        dispatch(setAuthUser(null));
+        dispatch(setAccessToken(null));
+        dispatch(setRefreshToken(null));
         Cookies.remove("refreshToken");
 
         navigate("/login");
