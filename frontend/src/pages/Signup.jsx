@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { USER_API_END_POINT } from "../constant";
+import toast from "../utils/toast.js";
+import Loader from "../component/Loader.jsx";
 
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -10,10 +12,12 @@ const Signup = () => {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const signupFun = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
     const slugBusinessName = businessName
       .trim()
@@ -21,39 +25,40 @@ const Signup = () => {
       .toLowerCase();
 
     const signupData = {
-      name: e.target[0].value,
-      email: e.target[1].value,
-      phone: phone,
+      name,
+      email,
+      phone,
       businessName: slugBusinessName,
-      password: password,
+      password,
     };
 
     try {
       const endpoint = `${USER_API_END_POINT}/signup`;
       const res = await axios.post(endpoint, signupData);
       if (res.status === 200) {
+        toast.success("Signup successful! 🎉");
         navigate("/login");
       }
     } catch (error) {
       console.error("Signup failed:", error);
-      alert("An error occurred during signup. Please try again.");
+      toast.error(
+        error.response?.data?.message ||
+          "An error occurred during signup. Please try again."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-[#9C8769]">
-      {/* Left Side - Clean and Classy */}
+      {/* Left Side */}
       <div className="hidden md:flex md:w-[40%] bg-[#9C8769] text-white items-center justify-center p-10">
         <div className="text-center space-y-6">
-          {/* Icon */}
           <div className="text-6xl">📸</div>
-
-          {/* Headline */}
           <h1 className="text-4xl lg:text-5xl font-extrabold leading-tight">
             Welcome to Shaadi Album
           </h1>
-
-          {/* Description */}
           <p className="text-lg lg:text-xl opacity-90">
             A beautiful space to create, <br /> customize, and share your
             gallery.
@@ -61,7 +66,7 @@ const Signup = () => {
         </div>
       </div>
 
-      {/* Right Side - Signup Form (No shadow) */}
+      {/* Right Side - Signup Form */}
       <div className="w-full md:w-[60%] flex justify-center items-center p-6 md:p-12 bg-white">
         <div className="w-full max-w-[500px]">
           <h2 className="text-3xl font-bold text-gray-800 mb-2">
@@ -91,17 +96,16 @@ const Signup = () => {
             />
 
             <input
-              type="text" // Change to "text" so we can control the input manually
+              type="text"
               className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9C8769]"
               value={phone}
               onChange={(e) => {
-                // Ensure only numeric input and max length of 10 digits
                 if (/^\d{0,10}$/.test(e.target.value)) {
                   setPhone(e.target.value);
                 }
               }}
               placeholder="Phone"
-              maxLength="10" // Optional: Enforces 10 characters at the HTML level
+              maxLength="10"
             />
 
             <input
@@ -111,7 +115,6 @@ const Signup = () => {
               value={businessName}
               onChange={(e) => {
                 const value = e.target.value;
-                // Allow only letters and spaces
                 if (/^[a-zA-Z\s]*$/.test(value)) {
                   setBusinessName(value);
                 }
@@ -148,17 +151,24 @@ const Signup = () => {
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
+
             <button
+              type="button"
               className="text-[#9C8769] hover:underline"
               onClick={() => navigate("/login")}
             >
               Already Have an Account?
             </button>
+
             <button
               type="submit"
-              className="w-full bg-[#9C8769] hover:bg-[#7A6A4A] text-white font-semibold p-3 rounded-xl transition duration-200"
+              disabled={loading}
+              className={`w-full flex justify-center items-center gap-2 ${
+                loading ? "bg-[#7A6A4A]" : "bg-[#9C8769]"
+              } text-white font-semibold p-3 rounded-xl transition duration-200`}
             >
-              SUBMIT
+              {loading && <Loader />}
+              {loading ? "Submitting..." : "SIGNUP"}
             </button>
           </form>
         </div>

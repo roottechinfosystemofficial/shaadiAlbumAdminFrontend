@@ -8,7 +8,8 @@ import { USER_API_END_POINT } from "../constant";
 import Cookies from "js-cookie";
 import { useDispatch } from "react-redux";
 import { setAuthUser } from "../Redux/Slices/UserSlice";
-import  toast  from "../utils/toast";
+import toast from "../utils/toast";
+import Loader from "../component/Loader";
 
 const features = [
   {
@@ -176,10 +177,8 @@ const LoginPage = () => {
                   : "hover:bg-primary/80"
               }`}
             >
-              {loading && (
-                <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              )}
-              {loading ? "Logging in..." : "Login"}
+              {loading && <Loader />}
+              {loading ? "Logging in..." : "LOGIN"}
             </button>
           </form>
 

@@ -1,10 +1,10 @@
 import jwt from "jsonwebtoken";
 import { ApiError } from "../utils/ApiError.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
 
-export const verifyJWT = asyncHandler(async (req, _, next) => {
+// Verify JWT Middleware
+export const verifyJWT = async (req, _, next) => {
   try {
-    // Check token in cookies or Authorization header
+    // Extract token from Authorization header or cookies
     const bearerToken = req.headers.authorization?.startsWith("Bearer")
       ? req.headers.authorization.split(" ")[1]
       : null;
@@ -17,30 +17,33 @@ export const verifyJWT = asyncHandler(async (req, _, next) => {
       throw new ApiError(401, "Unauthorized request: Token missing");
     }
 
-    // Verify token using the correct secret
+    // Verify the JWT token
     const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
+    // Attach user info to request object
     req.userId = decodedToken.userId;
     req.userRole = decodedToken.role;
 
-    next();
+    next(); // Proceed to next middleware or route handler
   } catch (err) {
     console.error("JWT verification failed:", err.message);
     throw new ApiError(401, err?.message || "Unauthorized");
   }
-});
+};
 
-export const verifySuperAdmin = asyncHandler(async (req, res, next) => {
-  if (req.user.role !== "SUPER_ADMIN") {
-    throw new ApiError(401, "unauthorized request");
+// Verify Super Admin Middleware
+export const verifySuperAdmin = (req, res, next) => {
+  if (req.userRole !== "SUPER_ADMIN") {
+    throw new ApiError(401, "Unauthorized request");
   }
-  next();
-});
+  next(); // Proceed to next middleware or route handler
+};
 
-export const verifyStudioAdmin = asyncHandler(async (req, res, next) => {
-  console.log(req.user.role);
-  if (req.user.role !== "STUDIO_ADMIN") {
-    throw new ApiError(401, "unauthorized request");
+// Verify Studio Admin Middleware
+export const verifyStudioAdmin = (req, res, next) => {
+  console.log(req.userRole);
+  if (req.userRole !== "STUDIO_ADMIN") {
+    throw new ApiError(401, "Unauthorized request");
   }
-  next();
-});
+  next(); // Proceed to next middleware or route handler
+};
