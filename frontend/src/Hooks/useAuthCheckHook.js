@@ -11,7 +11,8 @@ export const useAuthCheck = () => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        console.log("dov");
+        console.log("authUser", authUser);
+        console.log("access", accessToken);
 
         const endpoint = `${USER_API_END_POINT}/checkAuth`;
         const res = await apiRequest(
