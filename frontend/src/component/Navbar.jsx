@@ -10,7 +10,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { setAuthUser } from "../Redux/Slices/UserSlice";
 import { USER_API_END_POINT } from "../constant";
 import apiRequest from "../utils/apiRequest";
-import Cookies from "js-cookie"; // Import the Cookies utility
+import Cookies from "js-cookie";
+import toast from "react-hot-toast";
 
 const Navbar = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -46,26 +47,30 @@ const Navbar = () => {
       const res = await apiRequest(
         "POST",
         endpoint,
-        { refreshToken }, // Pass refreshToken in data
+        { refreshToken },
         accessToken,
         dispatch
       );
 
       // If the response is successful (status 200)
       if (res.status === 200) {
+        dispatch(setAuthUser(null));
         // 1. Clear cookies to remove the session
         Cookies.remove("accessToken");
         Cookies.remove("refreshToken");
 
         // 2. Dispatch Redux action to clear authUser state
-        dispatch(setAuthUser(null));
 
         // 3. Navigate to the login page
         navigate("/login", { replace: true }); // replace ensures no back navigation
+
+        toast.success("You have successfully logged out!"); // Success toast
       }
     } catch (error) {
       console.error("Logout failed:", error.message);
-      alert("Unable to logout. Please check your connection and try again.");
+      toast.error(
+        "Unable to logout. Please check your connection and try again."
+      );
     }
   };
 

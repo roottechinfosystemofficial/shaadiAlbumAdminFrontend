@@ -272,43 +272,25 @@ export const editPofile = async (req, res) => {
 
 export const logoutUser = async (req, res) => {
   try {
-    const refreshToken =
-      req.body?.refreshToken ||
-      req.cookies?.refreshToken ||
-      req.headers?.authorization;
-
     const userId = req.userId;
 
     if (!userId) {
       return res.status(400).json(new ApiResponse(400, {}, "User not found"));
     }
 
-    if (!refreshToken) {
-      return res
-        .status(400)
-        .json(new ApiResponse(400, {}, "Refresh token missing"));
-    }
-    console.log(refreshToken);
-
-    const options = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // <-- for localhost testing
-      sameSite: "lax", // safer for local
-      path: "/",
-    };
-
-    const user = await User.findOneAndUpdate(
-      { _id: userId, refreshToken },
-      { $set: { refreshToken: "", refreshTokenExpiry: "" } }
+    // Find and update the user's refreshToken in the database
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $set: { refreshToken: "", refreshTokenExpiry: "" } }, // Clear refresh token and expiry
+      { new: true }
     );
 
+    // If the user isn't found or the refreshToken doesn't match
     if (!user) {
-      throw new ApiError(404, "User not found or invalid refresh token");
+      throw new ApiError(404, "User not found");
     }
 
-    res.clearCookie("refreshToken", options);
-    res.clearCookie("accessToken", options);
-
+    // Send success response
     return res
       .status(200)
       .json(new ApiResponse(200, {}, "User logged out successfully"));
