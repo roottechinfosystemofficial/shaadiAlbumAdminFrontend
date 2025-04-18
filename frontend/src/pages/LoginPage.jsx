@@ -8,7 +8,7 @@ import { USER_API_END_POINT } from "../constant";
 import Cookies from "js-cookie";
 import { useDispatch } from "react-redux";
 import { setAuthUser } from "../Redux/Slices/UserSlice";
-import toast from "react-hot-toast";
+import  toast  from "../utils/toast";
 
 const features = [
   {

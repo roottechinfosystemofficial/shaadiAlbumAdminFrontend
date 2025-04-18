@@ -15,7 +15,7 @@ import {
 import { USER_API_END_POINT } from "../constant";
 import apiRequest from "../utils/apiRequest";
 import Cookies from "js-cookie";
-import toast from "react-hot-toast";
+import toast from "../utils/toast.js";
 
 const Navbar = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -47,7 +47,6 @@ const Navbar = () => {
     try {
       console.log(accessToken);
       console.log();
-      
 
       const endpoint = `${USER_API_END_POINT}/logout`;
 
