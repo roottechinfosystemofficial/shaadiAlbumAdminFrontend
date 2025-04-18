@@ -15,13 +15,16 @@ export const signup = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
+    const logoUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      name
+    )}&background=random&color=fff`;
     const createdUser = await User.create({
       phoneNo: phone,
       name,
       businessName,
       email,
       password: hashedPassword,
+      logo: logoUrl,
     });
 
     return res.json(
