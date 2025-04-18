@@ -30,5 +30,5 @@ export const useAuthCheck = () => {
     if (!authUser && accessToken) {
       checkAuth();
     }
-  }, [accessToken, authUser]);
+  }, [accessToken, authUser, dispatch]);
 };

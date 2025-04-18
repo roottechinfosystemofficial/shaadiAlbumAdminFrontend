@@ -43,28 +43,16 @@ const Navbar = () => {
     try {
       const endpoint = `${USER_API_END_POINT}/logout`;
 
-      // Make the API request with the refresh token
-      const res = await apiRequest(
-        "POST",
-        endpoint,
-        { refreshToken },
-        accessToken,
-        dispatch
-      );
+      const res = await apiRequest("POST", endpoint, {}, accessToken, dispatch);
 
-      // If the response is successful (status 200)
       if (res.status === 200) {
         dispatch(setAuthUser(null));
-        // 1. Clear cookies to remove the session
         Cookies.remove("accessToken");
         Cookies.remove("refreshToken");
 
-        // 2. Dispatch Redux action to clear authUser state
+        navigate("/login");
 
-        // 3. Navigate to the login page
-        navigate("/login", { replace: true }); // replace ensures no back navigation
-
-        toast.success("You have successfully logged out!"); // Success toast
+        toast.success("You have successfully logged out!");
       }
     } catch (error) {
       console.error("Logout failed:", error.message);
