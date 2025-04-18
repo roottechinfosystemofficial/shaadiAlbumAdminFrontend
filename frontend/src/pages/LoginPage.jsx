@@ -8,7 +8,6 @@ import { USER_API_END_POINT } from "../constant";
 import Cookies from "js-cookie";
 import { useDispatch } from "react-redux";
 import { setAuthUser } from "../Redux/Slices/UserSlice";
-import Loader from "../component/Loader";
 import toast from "react-hot-toast";
 
 const features = [
@@ -88,8 +87,6 @@ const LoginPage = () => {
       setLoading(false);
     }
   };
-
-  if (loading) return <Loader />;
 
   return (
     <div className="flex flex-col md:flex-row h-screen overflow-hidden">
@@ -172,9 +169,17 @@ const LoginPage = () => {
 
             <button
               type="submit"
-              className="w-full bg-primary text-white py-3 rounded-lg hover:bg-primary/80 transition-all text-sm sm:text-base"
+              disabled={loading}
+              className={`w-full flex justify-center items-center gap-2 bg-primary text-white py-3 rounded-lg transition-all text-sm sm:text-base ${
+                loading
+                  ? "opacity-70 cursor-not-allowed"
+                  : "hover:bg-primary/80"
+              }`}
             >
-              Login
+              {loading && (
+                <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              )}
+              {loading ? "Logging in..." : "Login"}
             </button>
           </form>
 
