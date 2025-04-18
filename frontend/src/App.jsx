@@ -2,7 +2,6 @@ import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import Dashboard from "./pages/Dashboard";
-import Layout from "./component/Layout";
 import LoginPage from "./pages/LoginPage";
 import Signup from "./pages/Signup";
 import Notfound from "./pages/Notfound";
@@ -15,28 +14,52 @@ import Users from "./pages/Users";
 import MyProfile from "./pages/Myprofile";
 import StandyShow from "./pages/StandyShow";
 import FlipbookShow from "./component/Personalfoldercomponent/FlipbookShow";
+import NavLayout from "./component/NavLayout";
+import MainLayout from "./component/MainLayout";
+import PublicOnlyRoute from "./component/PublicOnlyRoute";
+import ProtectedRoute from "./component/ProtectedRoute";
 
 const appRouter = createBrowserRouter([
   {
     path: "/",
-    element: <Layout />,
+    element: <MainLayout />, // Global layout
     children: [
-      { path: "/", element: <Dashboard /> },
-      { path: "/event", element: <EventlistPage /> },
-      { path: "/setting", element: <MainSetting /> },
-      { path: "/personalfolder/:folderId", element: <PersonalFolder /> },
-      { path: "/eventsetting", element: <EventSetting /> },
-      { path: "/users", element: <Users /> },
-      { path: "/myprofile", element: <MyProfile /> },
-      { path: "/standyshow", element: <StandyShow /> },
+      // ✅ Protected area (requires auth)
+      {
+        element: <ProtectedRoute />,
+        children: [
+          {
+            element: <NavLayout />,
+            children: [
+              { path: "/", element: <Dashboard /> },
+              { path: "event", element: <EventlistPage /> },
+              { path: "setting", element: <MainSetting /> },
+              { path: "personalfolder/:folderId", element: <PersonalFolder /> },
+              { path: "eventsetting", element: <EventSetting /> },
+              { path: "users", element: <Users /> },
+              { path: "myprofile", element: <MyProfile /> },
+              { path: "standyshow", element: <StandyShow /> },
+            ],
+          },
+          // ✅ Flipbook user view (only after login)
+          { path: "flipbookUser", element: <FlipbookShow /> },
+        ],
+      },
+
+      // 🔓 Public pages (but block if already logged in)
+      {
+        element: <PublicOnlyRoute />,
+        children: [
+          { path: "login", element: <LoginPage /> },
+          { path: "signup", element: <Signup /> },
+        ],
+      },
+
+      // 🌐 External client view (no auth needed)
+      { path: ":id/clientview", element: <Clientview /> },
+      { path: "*", element: <Notfound /> },
     ],
   },
-
-  { path: "/login", element: <LoginPage /> },
-  { path: "/flipbookUser", element: <FlipbookShow /> },
-  { path: "/:id/clientview", element: <Clientview /> },
-  { path: "/signup", element: <Signup /> },
-  { path: "*", element: <Notfound /> },
 ]);
 
 const App = () => {

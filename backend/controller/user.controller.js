@@ -68,12 +68,14 @@ export const login = async (req, res) => {
       new ApiResponse(
         200,
         {
+          user: {
+            name: user.name,
+            role: user.role,
+            email: user.email,
+            logo: user.logo,
+          },
           accessToken,
           refreshToken,
-          username: user.username,
-          role: user.role,
-          email: user.email,
-          logo: user.logo,
         },
         "User logged in successfully"
       )

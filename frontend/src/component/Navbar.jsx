@@ -10,6 +10,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setAuthUser } from "../Redux/Slices/UserSlice";
 import { USER_API_END_POINT } from "../constant";
 import apiRequest from "../utils/apiRequest";
+import Cookies from "js-cookie"; // Import the Cookies utility
 
 const Navbar = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -40,23 +41,33 @@ const Navbar = () => {
   const logoutHandler = async () => {
     try {
       const endpoint = `${USER_API_END_POINT}/logout`;
+
+      // Make the API request with the refresh token
       const res = await apiRequest(
         "POST",
         endpoint,
-        { refreshToken }, // ✅ pass refreshToken in data
+        { refreshToken }, // Pass refreshToken in data
         accessToken,
         dispatch
       );
+
+      // If the response is successful (status 200)
       if (res.status === 200) {
-        navigate("/login");
+        // 1. Clear cookies to remove the session
+        Cookies.remove("accessToken");
+        Cookies.remove("refreshToken");
+
+        // 2. Dispatch Redux action to clear authUser state
         dispatch(setAuthUser(null));
+
+        // 3. Navigate to the login page
+        navigate("/login", { replace: true }); // replace ensures no back navigation
       }
     } catch (error) {
       console.error("Logout failed:", error.message);
       alert("Unable to logout. Please check your connection and try again.");
     }
   };
-
 
   return (
     <nav className="bg-white flex items-center justify-between px-6 pt-1 relative h-[70px]">

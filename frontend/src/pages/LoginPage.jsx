@@ -7,6 +7,8 @@ import axios from "axios";
 import { USER_API_END_POINT } from "../constant";
 import Cookies from "js-cookie";
 import { useAuthCheck } from "../Hooks/useAuthCheckHook";
+import { useDispatch } from "react-redux";
+import { setAuthUser } from "../Redux/Slices/UserSlice";
 
 const features = [
   {
@@ -32,7 +34,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-  useAuthCheck();
+  const dispatch = useDispatch();
   useEffect(() => {
     const interval = setInterval(() => {
       setFeatureIndex((prevIndex) => (prevIndex + 1) % features.length);
@@ -55,6 +57,7 @@ const LoginPage = () => {
       const res = await axios.post(endpoint, loginData);
 
       if (res.status === 200) {
+        dispatch(setAuthUser(res.data.data.user));
         const { accessToken, refreshToken } = res.data.data;
 
         // 🍪 Set cookies with conditional 'secure' flag
