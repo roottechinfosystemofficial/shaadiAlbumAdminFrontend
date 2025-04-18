@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import Dashboard from "./pages/Dashboard";
@@ -15,9 +15,6 @@ import Users from "./pages/Users";
 import MyProfile from "./pages/Myprofile";
 import StandyShow from "./pages/StandyShow";
 import FlipbookShow from "./component/Personalfoldercomponent/FlipbookShow";
-import { useDispatch, useSelector } from "react-redux";
-import axios from "axios";
-import { setAuthUser } from "./Redux/Slices/UserSlice";
 
 const appRouter = createBrowserRouter([
   {
@@ -34,6 +31,7 @@ const appRouter = createBrowserRouter([
       { path: "/standyshow", element: <StandyShow /> },
     ],
   },
+
   { path: "/login", element: <LoginPage /> },
   { path: "/flipbookUser", element: <FlipbookShow /> },
   { path: "/:id/clientview", element: <Clientview /> },
@@ -42,7 +40,6 @@ const appRouter = createBrowserRouter([
 ]);
 
 const App = () => {
-  
   return <RouterProvider router={appRouter} />;
 };
 

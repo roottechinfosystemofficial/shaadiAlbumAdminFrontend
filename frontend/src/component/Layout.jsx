@@ -2,18 +2,14 @@ import React, { useEffect } from "react";
 import Navbar from "./Navbar";
 import { Outlet } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  setAccessToken,
-  setAuthUser,
-  setRefreshToken,
-} from "../Redux/Slices/UserSlice";
-import { USER_API_END_POINT } from "../constant";
+import { setAccessToken, setRefreshToken } from "../Redux/Slices/UserSlice";
 import Cookies from "js-cookie";
-import apiRequest from "../utils/apiRequest";
+import { useAuthCheck } from "../Hooks/useAuthCheckHook";
 
 const Layout = () => {
   const dispatch = useDispatch();
-  const { authUser, accessToken } = useSelector((state) => state.user); // ✅ include refreshToken
+  const { authUser } = useSelector((state) => state.user);
+  console.log(authUser);
 
   useEffect(() => {
     const getCookies = () => {
@@ -26,28 +22,7 @@ const Layout = () => {
 
     getCookies();
   }, [dispatch]);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const endpoint = `${USER_API_END_POINT}/checkAuth`;
-        const res = await apiRequest(
-          "GET",
-          endpoint,
-          {},
-          accessToken,
-          dispatch
-        ); // ✅ pass dispatch
-        dispatch(setAuthUser(res.data));
-      } catch (err) {
-        console.error("Auth check failed:", err);
-      }
-    };
-
-    if (!authUser && accessToken) {
-      checkAuth();
-    }
-  }, [authUser, accessToken, dispatch]); // ✅ added refreshToken
+  useAuthCheck();
 
   return (
     <div className="flex flex-col min-h-screen">

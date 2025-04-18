@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { USER_API_END_POINT } from "../constant";
 import Cookies from "js-cookie";
+import { useAuthCheck } from "../Hooks/useAuthCheckHook";
 
 const features = [
   {
@@ -31,7 +32,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-
+  useAuthCheck();
   useEffect(() => {
     const interval = setInterval(() => {
       setFeatureIndex((prevIndex) => (prevIndex + 1) % features.length);

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { USER_API_END_POINT } from "../constant";
+import { useAuthCheck } from "../Hooks/useAuthCheckHook";
 
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -11,6 +12,7 @@ const Signup = () => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  useAuthCheck();
 
   const signupFun = async (e) => {
     e.preventDefault();
