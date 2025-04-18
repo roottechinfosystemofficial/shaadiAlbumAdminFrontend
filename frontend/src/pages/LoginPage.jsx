@@ -6,9 +6,10 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { USER_API_END_POINT } from "../constant";
 import Cookies from "js-cookie";
-import { useAuthCheck } from "../Hooks/useAuthCheckHook";
 import { useDispatch } from "react-redux";
 import { setAuthUser } from "../Redux/Slices/UserSlice";
+import Loader from "../component/Loader";
+import toast from "react-hot-toast";
 
 const features = [
   {
@@ -33,8 +34,11 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
   useEffect(() => {
     const interval = setInterval(() => {
       setFeatureIndex((prevIndex) => (prevIndex + 1) % features.length);
@@ -44,14 +48,16 @@ const LoginPage = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    const loginData = { email, password };
-    const isProduction = import.meta.env.VITE_ENV === "production"; // Check if the environment is production
 
     if (!email || !password) {
-      alert("Please enter both email and password.");
+      toast.error("Please enter both email and password.");
       return;
     }
 
+    const loginData = { email, password };
+    const isProduction = import.meta.env.VITE_ENV === "production";
+
+    setLoading(true);
     try {
       const endpoint = `${USER_API_END_POINT}/login`;
       const res = await axios.post(endpoint, loginData);
@@ -60,26 +66,30 @@ const LoginPage = () => {
         dispatch(setAuthUser(res.data.data.user));
         const { accessToken, refreshToken } = res.data.data;
 
-        // 🍪 Set cookies with conditional 'secure' flag
         Cookies.set("accessToken", accessToken, {
-          expires: 7, // expires in 7 days
-          secure: isProduction, // Only secure in production
+          expires: 7,
+          secure: isProduction,
           sameSite: "Lax",
         });
 
         Cookies.set("refreshToken", refreshToken, {
-          expires: 7, // expires in 7 days
-          secure: isProduction, // Only secure in production
+          expires: 7,
+          secure: isProduction,
           sameSite: "Lax",
         });
 
-        navigate("/"); // Redirect after successful login
+        toast.success("Login successful!");
+        navigate("/");
       }
     } catch (error) {
       console.error("Login failed:", error);
-      alert("Login error. Try again.");
+      toast.error(error?.response?.data?.message || "Login failed. Try again.");
+    } finally {
+      setLoading(false);
     }
   };
+
+  if (loading) return <Loader />;
 
   return (
     <div className="flex flex-col md:flex-row h-screen overflow-hidden">
