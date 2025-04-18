@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import { dbConnect } from "./utils/db.js";
 import userRouter from "./routes/user.route.js";
 import eventRouter from "./routes/event.route.js";
+import appUserRouter from "./routes/appUser.route.js";
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use(cors(corsOptions));
 
 // Routes
 app.use("/api/v1", userRouter);
+app.use("/api/v1", appUserRouter);
 app.use("/api/v1", eventRouter);
 
 // Connect to DB
