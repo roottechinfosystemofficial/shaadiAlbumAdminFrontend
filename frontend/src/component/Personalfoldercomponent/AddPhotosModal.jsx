@@ -55,7 +55,7 @@ const AddPhotosModal = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-      <div className="bg-white rounded-xl px-6 py-10 w-[95%] max-w-2xl shadow-2xl relative animate-fadeIn">
+      <div className="bg-white rounded-xl px-6 py-10 w-[95%] max-w-2xl shadow-2xl relative animate-fadeIn flex flex-col gap-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Upload Photos</h2>
@@ -66,38 +66,6 @@ const AddPhotosModal = ({ isOpen, onClose }) => {
             <X />
           </button>
         </div>
-
-        {/* Upload Options */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-4">
-          {/* Select Files */}
-          <label className="flex-1 border-2 border-dashed border-slate p-4 text-center text-sm rounded-lg cursor-pointer hover:border-primary transition flex flex-col items-center gap-2">
-            <ImagePlus size={24} />
-            <p>Select individual photos</p>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleFileChange}
-              className="hidden"
-            />
-          </label>
-
-          {/* Select Folder */}
-          <label className="flex-1 border-2 border-dashed border-slate p-4 text-center text-sm rounded-lg cursor-pointer hover:border-primary transition flex flex-col items-center gap-2">
-            <FolderOpen size={24} />
-            <p>Select folder</p>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              webkitdirectory="true"
-              mozdirectory="true"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-          </label>
-        </div>
-
         {/* Duplicate Handling Options */}
         <div className="flex items-center gap-4 mb-4">
           <button
@@ -130,6 +98,36 @@ const AddPhotosModal = ({ isOpen, onClose }) => {
             )}
             Overwrite Duplicates
           </button>
+        </div>
+        {/* Upload Options */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-4">
+          {/* Select Files */}
+          <label className="flex-1 border-2 border-dashed border-slate p-4 text-center text-sm rounded-lg cursor-pointer hover:border-primary transition flex flex-col items-center gap-2">
+            <ImagePlus size={24} />
+            <p>Select individual photos</p>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </label>
+
+          {/* Select Folder */}
+          <label className="flex-1 border-2 border-dashed border-slate p-4 text-center text-sm rounded-lg cursor-pointer hover:border-primary transition flex flex-col items-center gap-2">
+            <FolderOpen size={24} />
+            <p>Select folder</p>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              webkitdirectory="true"
+              mozdirectory="true"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </label>
         </div>
 
         {/* File Name List */}

@@ -26,12 +26,15 @@ function FlipbookPanel() {
     tile: null,
   });
   const navigate = useNavigate();
+
+  // Handle the edit button click
   const handleEditClick = (book) => {
     setSelectedBook(book);
     setFormData({ name: book.name, tile: null });
     setEditModalOpen(true);
   };
 
+  // Handle the input changes (for text and file inputs)
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
     setFormData((prev) => ({
@@ -40,15 +43,34 @@ function FlipbookPanel() {
     }));
   };
 
+  // Handle form submission (save changes)
   const handleFormSubmit = (e) => {
     e.preventDefault();
     console.log("Updated Flipbook:", formData);
     setEditModalOpen(false);
   };
 
+  // Navigate to the "Add Flipbook" page
+  const handleAddFlipbookClick = () => {
+    // You can set up navigation to the "Add Flipbook" page here
+    navigate("/addFlipbook");
+  };
+
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">Flipbook List</h2>
+      {/* Add Back and Add Flipbook buttons */}
+      <div className="flex items-center mb-4 w-full justify-between">
+        <h2 className="text-2xl font-bold mb-4">Flipbook List</h2>
+        <button
+          onClick={handleAddFlipbookClick}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Add Flipbook
+        </button>
+      </div>
+
+      {/* Flipbook List Table */}
+
       <div className="overflow-x-auto">
         <table className="min-w-full table-auto border border-gray-300">
           <thead className="bg-gray-100">
@@ -95,6 +117,7 @@ function FlipbookPanel() {
         </table>
       </div>
 
+      {/* Edit Modal */}
       {editModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">

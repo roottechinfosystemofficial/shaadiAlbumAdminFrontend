@@ -24,7 +24,7 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className="flex flex-col gap-[50px] justify-evenly bg-[#f6f5f5]">
+    <div className="flex flex-col gap-[50px] justify-evenly bg-check">
       <Dashdata />
       <BusinessSetting />
       <DirectLinkCard />

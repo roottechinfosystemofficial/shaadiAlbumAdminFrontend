@@ -8,7 +8,7 @@ const PersonalfolderAside = () => {
   const navigate = useNavigate();
 
   return (
-    <aside className="w-full sm:w-full sm:max-w-none p-4 bg-white border-r border-slate text-gray-900 space-y-6">
+    <aside className="p-4 text-gray-900 space-y-6 sidebar-content">
       {/* Action Buttons */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <button
@@ -26,7 +26,7 @@ const PersonalfolderAside = () => {
 
       {/* Event Info */}
       <div className="space-y-1">
-        <h2 className="text-2xl font-bold text-gray-900">Dhruv</h2>
+        <h2 className="text-2xl font-bold">Dhruv</h2>
         <div className="flex justify-between text-sm text-gray-500">
           <p>Apr 3rd 2025</p>
           <p className="text-emerald-600 font-semibold">Published</p>
@@ -44,7 +44,7 @@ const PersonalfolderAside = () => {
           alt="Folder Cover"
           className="w-full h-44 object-cover"
         />
-        <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/50 opacity-0 hover:opacity-100 sm:hover:opacity-100 transition-opacity duration-300">
+        <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/50 opacity-0 hover:opacity-100 transition-opacity duration-300">
           <button className="bg-white p-2 rounded-full shadow hover:bg-slate transition">
             <Trash2 size={18} className="text-rose-600" />
           </button>
@@ -67,25 +67,26 @@ const PersonalfolderAside = () => {
       </div>
 
       {/* Event Details */}
-      <div className="space-y-4 p-4 bg-white border border-slate rounded-xl shadow-sm pb-24">
+      <div className="space-y-4 p-4 bg-white border border-slate rounded-xl shadow-sm pb-28 sm:pb-4">
         <div>
           <p className="text-xs text-gray-500">Event Code:</p>
           <div className="flex justify-between items-center">
-            <p className="font-semibold text-gray-900">205462</p>
+            <p className="font-semibold">205462</p>
             <button className="text-primary text-xs hover:underline">
               Copy
             </button>
           </div>
         </div>
 
+        {/* Buttons */}
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={() => navigate("/1/clientview")}
-            className="flex-1 bg-slate hover:bg-primary-dark hover:text-white text-sm py-2.5 rounded-xl font-medium shadow-md transition duration-400"
+            className="flex-1 bg-slate hover:bg-primary-dark hover:text-white text-sm py-2.5 rounded-xl font-medium shadow-md transition"
           >
             Preview
           </button>
-          <button className="flex-1 bg-slate text-gray-800 hover:text-white hover:bg-primary-dark text-sm py-2.5 rounded-xl font-medium shadow-sm transition duration-400">
+          <button className="flex-1 bg-slate text-gray-800 hover:text-white hover:bg-primary-dark text-sm py-2.5 rounded-xl font-medium shadow-sm transition">
             Insights
           </button>
         </div>
@@ -100,7 +101,7 @@ const PersonalfolderAside = () => {
           </div>
 
           <div className="flex justify-between items-center bg-slate border border-slate rounded-lg px-3 py-2 shadow-sm mb-5">
-            <div className="flex items-center gap-2 text-gray-900">
+            <div className="flex items-center gap-2">
               <span className="text-yellow-500">✨</span>
               <p className="font-medium">Highlights</p>
               <span className="text-xs bg-white px-2 py-0.5 rounded-full text-gray-700 border border-slate">
@@ -114,7 +115,7 @@ const PersonalfolderAside = () => {
               </button>
 
               {showOptions && (
-                <div className="absolute top-[0%] left-[100%] w-44 bg-white text-gray-900 rounded-md shadow-lg z-10 text-sm border border-slate overflow-hidden">
+                <div className="absolute top-0 left-full w-44 bg-white text-gray-900 rounded-md shadow-lg z-10 text-sm border border-slate overflow-hidden">
                   <button className="w-full text-left px-4 py-2 hover:bg-slate">
                     Make Private
                   </button>
@@ -133,6 +134,7 @@ const PersonalfolderAside = () => {
           </div>
         </div>
 
+        {/* Bottom CTA */}
         <div className="grid grid-cols-1">
           <button
             onClick={() => navigate("/standyshow")}

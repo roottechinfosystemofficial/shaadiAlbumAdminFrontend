@@ -3,7 +3,7 @@ import logo from "../../assets/logo_1.png";
 
 const Plan = () => {
   return (
-    <div className="p-6 shadow-xl rounded-lg max-w-4xl mx-auto bg-white">
+    <div className="px-6 py-2  rounded-lg max-w-6xl mx-auto bg-white">
       {/* Heading */}
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Your Plan</h1>
 

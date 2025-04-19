@@ -4,11 +4,16 @@ import PersonalFolderContent from "../component/PersonalFolderContent";
 
 const PersonalFolder = () => {
   return (
-    <div className="flex flex-col sm:flex-row h-full min-h-screen overflow-x-hidden">
-      <aside className="sm:w-1/5 w-full sm:h-screen border-r">
+    <div className="flex flex-col sm:flex-row min-h-screen">
+      {/* Sidebar */}
+      <aside className=" sm:w-[280px] w-full  border-r border-slate bg-white ">
         <PersonalfolderAside />
       </aside>
-      <PersonalFolderContent />
+
+      {/* Main Content */}
+      <main className="flex-1 w-full overflow-y-auto">
+        <PersonalFolderContent />
+      </main>
     </div>
   );
 };

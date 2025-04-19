@@ -72,7 +72,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-white flex items-center justify-between px-6 pt-1 relative h-[70px]">
+    <nav className="bg-white flex items-center justify-between px-6 pt-3 relative h-[70px]">
       {/* Logo */}
       <div className="mt-2">
         <Link to="/">
