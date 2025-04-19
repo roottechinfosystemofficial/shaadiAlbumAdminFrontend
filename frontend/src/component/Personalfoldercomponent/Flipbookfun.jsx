@@ -114,6 +114,23 @@ const Flipbookfun = ({ images }) => {
           ))}
         </HTMLFlipBook>
       </div>
+      <div className="flex items-center justify-between w-full max-w-[800px] mt-4 px-4">
+        <button
+          onClick={prevPage}
+          className="p-3 rounded-full bg-white text-gray-900 hover:bg-gray-300 transition-transform transform hover:scale-110"
+        >
+          <ArrowLeft />
+        </button>
+        <span className="text-white font-semibold text-lg tracking-wide">
+          Page {currentPage + 1} / {pages.length}
+        </span>
+        <button
+          onClick={nextPage}
+          className="p-3 rounded-full bg-white text-gray-900 hover:bg-gray-300 transition-transform transform hover:scale-110"
+        >
+          <ArrowRight />
+        </button>
+      </div>
     </div>
   );
 };
