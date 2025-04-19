@@ -1,34 +1,49 @@
 // Redux store setup
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
-import { persistStore, persistReducer } from "redux-persist";
-import storage from "redux-persist/lib/storage"; // Use localStorage
-import { coverImgSlice } from "./Slices/CoverImgSlice";
-import { galleryLayoutSlice } from "./Slices/GalleryLayoutSlice";
-import { userSlice } from "./Slices/UserSlice";
+import { persistStore, persistReducer, createTransform } from "redux-persist";
+import storage from "redux-persist/lib/storage"; // localStorage
 
-// Persist configuration
+import coverImgReducer from "./Slices/CoverImgSlice";
+import galleryLayoutReducer from "./Slices/GalleryLayoutSlice";
+import userReducer from "./Slices/UserSlice";
+
+// 🔐 Persist only `authUser` from user slice
+const authUserTransform = createTransform(
+  (inboundState) => ({
+    authUser: inboundState.authUser,
+  }),
+  (outboundState) => outboundState,
+  { whitelist: ["user"] }
+);
+
+// 🛠 Persist config with transform
 const persistConfig = {
-  key: "root", // The key used to store the persisted state
-  storage, // Using localStorage
-  whitelist: ["user"], // Only persist 'user' slice (optional)
+  key: "root",
+  storage,
+  whitelist: ["user"], // Only persist the user slice
+  transforms: [authUserTransform], // Only persist authUser from user
 };
 
+// 🧠 Combine reducers
 const rootReducer = combineReducers({
-  user: userSlice.reducer,
-  galleryLayout: galleryLayoutSlice.reducer,
-  coverImg: coverImgSlice.reducer,
+  user: userReducer,
+  galleryLayout: galleryLayoutReducer,
+  coverImg: coverImgReducer,
 });
 
+// 🧊 Create persisted reducer
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
+// 🏪 Configure store
 const store = configureStore({
   reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
-      serializableCheck: false, // Disable serializableCheck for redux-persist
+      serializableCheck: false,
     }),
 });
 
+// 🚀 Create persistor
 const persistor = persistStore(store);
 
 export { store, persistor };
