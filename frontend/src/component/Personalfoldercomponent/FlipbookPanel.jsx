@@ -96,20 +96,20 @@ function FlipbookPanel() {
             </p>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap justify-between space-x-2 mt-auto w-full">
+            <div className="flex  justify-between gap-3 mt-auto w-full ">
               <button
                 onClick={() => navigate("/flipbookUser")}
-                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center gap-1 text-xs sm:text-sm w-full sm:w-auto mb-2 sm:mb-0"
+                className="p-3 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center text-xs sm:text-sm w-full sm:w-[50%] gap-2 "
               >
                 <Image className="h-3 w-3" />
-                <span className="hidden sm:inline">Open</span>
+                <span className="">Open</span>
               </button>
               <button
-                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center text-xs sm:text-sm w-full sm:w-auto mb-2 sm:mb-0"
+                className="p-3 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center text-xs sm:text-sm w-full sm:w-[50%] gap-2 "
                 onClick={() => handleEditClick(book)}
               >
                 <Edit2 className="h-3 w-3" />
-                <span className="hidden sm:inline">Edit</span>
+                <span className="">Edit</span>
               </button>
             </div>
           </div>
