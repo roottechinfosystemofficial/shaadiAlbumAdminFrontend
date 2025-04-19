@@ -106,17 +106,21 @@ const ImageCard = ({ src, alt }) => {
 
   return (
     <div className="w-full min-w-[180px] max-w-full overflow-hidden rounded-lg shadow relative group">
-      <div className="relative aspect-[4/3] bg-gray-100">
+      {/* Container to maintain full height */}
+      <div className="relative h-[300px]">
+        {" "}
+        {/* Set a fixed height or use dynamic height */}
         <img
           loading="lazy"
           src={src}
           alt={alt}
           onLoad={() => setLoaded(true)}
           onError={handleError}
-          className={`absolute inset-0 w-full h-full object-cover transition duration-300 ease-in-out transform ${
+          className={`absolute inset-0 w-full h-full object-contain transition duration-300 ease-in-out transform ${
             loaded ? "opacity-100 scale-100" : "opacity-0"
           } group-hover:scale-105`}
         />
+        {/* Placeholder loader */}
         {!loaded && (
           <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-lg" />
         )}
