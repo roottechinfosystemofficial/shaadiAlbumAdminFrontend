@@ -9,3 +9,12 @@ body {
   box-sizing: border-box;
   font-family: "Lato", sans-serif;
 }
+@media screen and (max-width: 768px) {
+  .rotate-mobile {
+    transform: rotate(90deg);
+    transform-origin: center center;
+    width: 100vh !important;
+    height: 100vw !important;
+    overflow: hidden;
+  }
+}

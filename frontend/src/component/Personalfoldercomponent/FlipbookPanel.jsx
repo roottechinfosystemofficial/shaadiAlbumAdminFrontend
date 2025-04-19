@@ -66,7 +66,7 @@ function FlipbookPanel() {
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center"
         >
           <PlusSquare className="h-5 w-5 mr-2" />
-          <span className="hidden sm:inline">Add Flipbook</span>
+          <span className="">Add Flipbook</span>
         </button>
       </div>
 

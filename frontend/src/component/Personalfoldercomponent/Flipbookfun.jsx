@@ -43,23 +43,28 @@ const Flipbookfun = ({ images }) => {
   const bookRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [pages, setPages] = useState([]);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    handleResize(); // Initial run
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     const preparePages = async () => {
       if (!images || images.length === 0) return;
 
       const processed = [];
+      processed.push(images[0]); // Front cover
 
-      // Front cover (first image)
-      processed.push(images[0]);
-
-      // Split all remaining images except the cover
       for (let i = 1; i < images.length; i++) {
         if (i === images.length - 1) {
-          // Last page - no split, add it as a full page (back cover)
-          processed.push(images[i]);
+          processed.push(images[i]); // Back cover
         } else {
-          // Split the image into left and right halves
           const [left, right] = await splitImage(images[i]);
           processed.push(left, right);
         }
@@ -84,8 +89,8 @@ const Flipbookfun = ({ images }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center w-[95%] mx-auto min-h-screen bg-black overflow-hidden">
-      <div className="w-[90%] md:w-[70%] lg:w-[60%] flex justify-center items-center">
+    <div className="flex flex-col items-center justify-center w-full mx-auto min-h-screen bg-black overflow-hidden">
+      <div className="flex justify-center items-center">
         <HTMLFlipBook
           width={600}
           height={500}
@@ -100,7 +105,9 @@ const Flipbookfun = ({ images }) => {
           usePortrait={false}
           onFlip={(e) => setCurrentPage(e.data)}
           ref={bookRef}
-          className="shadow-xl"
+          className={`shadow-xl transition-transform duration-300 ease-in-out ${
+            isMobile ? "rotate-mobile" : ""
+          }`}
         >
           {pages.map((src, index) => (
             <div
