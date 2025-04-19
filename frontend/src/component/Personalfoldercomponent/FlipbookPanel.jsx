@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Edit2, Trash, Image, PlusSquare } from "lucide-react"; // Import Lucide Icons
 
 const flipbooks = [
   {
@@ -52,75 +53,73 @@ function FlipbookPanel() {
 
   // Navigate to the "Add Flipbook" page
   const handleAddFlipbookClick = () => {
-    // You can set up navigation to the "Add Flipbook" page here
     navigate("/addFlipbook");
   };
 
   return (
     <div className="p-6">
       {/* Add Back and Add Flipbook buttons */}
-      <div className="flex items-center mb-4 w-full justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
         <h2 className="text-2xl font-bold mb-4">Flipbook List</h2>
         <button
           onClick={handleAddFlipbookClick}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center"
         >
-          Add Flipbook
+          <PlusSquare className="h-5 w-5 mr-2" />
+          <span className="hidden sm:inline">Add Flipbook</span>
         </button>
       </div>
 
-      {/* Flipbook List Table */}
+      {/* Flipbook Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {flipbooks.map((book) => (
+          <div
+            key={book.id}
+            className="bg-white shadow-lg rounded-xl p-4 flex flex-col items-start relative"
+          >
+            {/* Delete Icon */}
+            <button
+              onClick={() => console.log("Delete book", book.id)} // Replace with actual delete functionality
+              className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
+            >
+              <Trash className="h-4 w-4" />
+            </button>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full table-auto border border-gray-300">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="border px-4 py-2 text-left">Event Id</th>
-              <th className="border px-4 py-2 text-left">Flipbook Name</th>
-              <th className="border px-4 py-2 text-left">Size</th>
-              <th className="border px-4 py-2 text-left">Total Images</th>
-              <th className="border px-4 py-2 text-left">Created Date</th>
-              <th className="border px-4 py-2 text-left">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {flipbooks.map((book) => (
-              <tr key={book.id} className="hover:bg-gray-50">
-                <td className="border px-4 py-2">{book.id}</td>
-                <td className="border px-4 py-2">{book.name}</td>
-                <td className="border px-4 py-2">{book.size}</td>
-                <td className="border px-4 py-2">{book.totalImages}</td>
-                <td className="border px-4 py-2">{book.createdDate}</td>
-                <td className="border px-4 py-2 space-x-2">
-                  <button
-                    onClick={() => navigate("/flipbookUser")}
-                    className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    Open
-                  </button>
-                  <button
-                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
-                    onClick={() => handleEditClick(book)}
-                  >
-                    Edit
-                  </button>
-                  <button className="px-3 py-1 bg-purple-500 text-white rounded hover:bg-purple-600">
-                    Images
-                  </button>
-                  <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            <div className="text-lg font-semibold mb-2">{book.name}</div>
+            <p className="text-sm text-gray-500 mb-2">Event Id: {book.id}</p>
+            <p className="text-sm text-gray-500 mb-2">Size: {book.size}</p>
+            <p className="text-sm text-gray-500 mb-2">
+              Total Images: {book.totalImages}
+            </p>
+            <p className="text-sm text-gray-500 mb-4">
+              Created: {book.createdDate}
+            </p>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap justify-between space-x-2 mt-auto w-full">
+              <button
+                onClick={() => navigate("/flipbookUser")}
+                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center gap-1 text-xs sm:text-sm w-full sm:w-auto mb-2 sm:mb-0"
+              >
+                <Image className="h-3 w-3" />
+                <span className="hidden sm:inline">Open</span>
+              </button>
+              <button
+                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center text-xs sm:text-sm w-full sm:w-auto mb-2 sm:mb-0"
+                onClick={() => handleEditClick(book)}
+              >
+                <Edit2 className="h-3 w-3" />
+                <span className="hidden sm:inline">Edit</span>
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Edit Modal */}
       {editModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+          <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-lg sm:max-w-md">
             <h3 className="text-xl font-semibold mb-4">Edit Flipbook</h3>
             <form onSubmit={handleFormSubmit}>
               <div className="mb-4">
