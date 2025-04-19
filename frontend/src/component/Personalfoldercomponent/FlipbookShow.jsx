@@ -6,7 +6,7 @@ const images = imageNumbers.map((num) => `/FlipBook/img${num}.jpg`);
 
 const FlipbookShow = () => {
   return (
-    <div className="w-full min-h-screen bg-black overflow-hidden">
+    <div className="w-full  bg-black overflow-hidden">
       <Flipbookfun images={images} />
     </div>
   );

@@ -21,5 +21,8 @@ export default {
       },
     },
   },
+  safelist: [
+    "rotate-mobile", // Prevent purge of this class
+  ],
   plugins: [],
 };
