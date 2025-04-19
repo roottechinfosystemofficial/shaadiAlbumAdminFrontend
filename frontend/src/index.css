@@ -13,8 +13,7 @@ body {
   .rotate-mobile {
     transform: rotate(90deg);
     transform-origin: center center;
-    width: 100vh !important;
-    height: 100vw !important;
-    overflow: hidden;
+    width: 100dvh !important;
+    height: 100dvw !important;
   }
 }

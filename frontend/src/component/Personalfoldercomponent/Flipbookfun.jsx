@@ -49,7 +49,7 @@ const Flipbookfun = ({ images }) => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-    handleResize();
+    handleResize(); // Initial run
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -89,52 +89,44 @@ const Flipbookfun = ({ images }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center w-full min-h-screen bg-black overflow-hidden">
-      {/* 36x12 aspect ratio container */}
-      <div
-        className={`relative flex justify-center items-center ${
-          isMobile ? "rotate-mobile" : ""
-        }`}
-        style={{
-          width: "900px", // 3x
-          height: "300px", // 1x
-          maxWidth: "100%",
-          overflow: "hidden",
-        }}
-      >
+    <div className="flex flex-col items-center justify-center w-full mx-auto min-h-screen bg-black overflow-hidden">
+      <div className="flex justify-center items-center">
         <HTMLFlipBook
-          width={900}
-          height={300}
+          width={600}
+          height={500}
           size="fixed"
-          minWidth={600}
-          maxWidth={900}
-          minHeight={200}
-          maxHeight={300}
+          minWidth={400}
+          maxWidth={400}
+          minHeight={500}
+          maxHeight={500}
           showCover={true}
           maxShadowOpacity={0.6}
           mobileScrollSupport={false}
           usePortrait={false}
           onFlip={(e) => setCurrentPage(e.data)}
           ref={bookRef}
-          className="shadow-xl"
+          className={`shadow-xl transition-transform duration-300 ease-in-out ${
+            isMobile ? "rotate-mobile" : ""
+          }`}
         >
           {pages.map((src, index) => (
             <div
               key={index}
-              className="w-full h-full bg-black flex items-center justify-center"
+              className={`w-full h-full ${
+                index === 0 ? "bg-cover bg-center" : ""
+              }`}
             >
               <img
                 src={src}
                 alt={`Page ${index + 1}`}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain mx-auto"
               />
             </div>
           ))}
         </HTMLFlipBook>
       </div>
 
-      {/* Controls */}
-      {/* <div className="flex items-center justify-between w-full max-w-[400px] mt-4 px-4">
+      {/* <div className="flex items-center justify-between w-full max-w-[800px] mt-4 px-4">
         <button
           onClick={prevPage}
           className="p-3 rounded-full bg-white text-gray-900 hover:bg-gray-300 transition-transform transform hover:scale-110"
