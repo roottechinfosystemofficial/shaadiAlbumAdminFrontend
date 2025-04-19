@@ -49,7 +49,7 @@ const Flipbookfun = ({ images }) => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-    handleResize(); // Initial run
+    handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -90,7 +90,8 @@ const Flipbookfun = ({ images }) => {
 
   return (
     <div className="flex flex-col items-center justify-center w-full mx-auto min-h-screen bg-black overflow-hidden">
-      <div className="flex justify-center items-center">
+      {/* 36in x 12in container below lg screens */}
+      <div className="flex justify-center items-center w-[3456px] h-[1152px] lg:w-auto lg:h-auto">
         <HTMLFlipBook
           width={600}
           height={500}
@@ -125,24 +126,6 @@ const Flipbookfun = ({ images }) => {
           ))}
         </HTMLFlipBook>
       </div>
-
-      {/* <div className="flex items-center justify-between w-full max-w-[800px] mt-4 px-4">
-        <button
-          onClick={prevPage}
-          className="p-3 rounded-full bg-white text-gray-900 hover:bg-gray-300 transition-transform transform hover:scale-110"
-        >
-          <ArrowLeft />
-        </button>
-        <span className="text-white font-semibold text-lg tracking-wide">
-          Page {currentPage + 1} / {pages.length}
-        </span>
-        <button
-          onClick={nextPage}
-          className="p-3 rounded-full bg-white text-gray-900 hover:bg-gray-300 transition-transform transform hover:scale-110"
-        >
-          <ArrowRight />
-        </button>
-      </div> */}
     </div>
   );
 };
