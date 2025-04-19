@@ -56,8 +56,8 @@ const PhotosPanel = () => {
   };
 
   return (
-    <div className="p-4">
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+    <div className="p-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-y-4">
         {visibleImages.map((photo, index) => (
           <MemoizedImageCard
             key={photo} // use unique key based on the image URL

@@ -7,7 +7,7 @@ const ProtectedRoute = () => {
 
   // 🔐 Check if user is logged in
   if (!authUser) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" />;
   }
 
   // ✅ Allow access

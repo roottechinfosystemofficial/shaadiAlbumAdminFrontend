@@ -10,8 +10,8 @@ const baseStyle = {
 };
 
 const toastConfig = {
-  position: "top-right",
-  autoClose: 2500,
+  position: "top-center",
+  autoClose: 1500,
   hideProgressBar: false,
   closeOnClick: true,
   pauseOnHover: true,

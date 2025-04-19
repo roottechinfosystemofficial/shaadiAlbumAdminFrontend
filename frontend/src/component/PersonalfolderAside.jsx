@@ -8,9 +8,9 @@ const PersonalfolderAside = () => {
   const navigate = useNavigate();
 
   return (
-    <aside className="w-full max-w-md sm:max-w-full p-4 bg-white border-r border-slate text-gray-900 space-y-6">
+    <aside className="w-full sm:w-full sm:max-w-none p-4 bg-white border-r border-slate text-gray-900 space-y-6">
       {/* Action Buttons */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <button
           onClick={() => navigate("/eventsetting")}
           className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-medium text-sm py-2.5 rounded-lg transition shadow"
@@ -44,7 +44,7 @@ const PersonalfolderAside = () => {
           alt="Folder Cover"
           className="w-full h-44 object-cover"
         />
-        <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/50 opacity-0 hover:opacity-100 transition-opacity duration-300">
+        <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/50 opacity-0 hover:opacity-100 sm:hover:opacity-100 transition-opacity duration-300">
           <button className="bg-white p-2 rounded-full shadow hover:bg-slate transition">
             <Trash2 size={18} className="text-rose-600" />
           </button>
@@ -78,7 +78,7 @@ const PersonalfolderAside = () => {
           </div>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={() => navigate("/1/clientview")}
             className="flex-1 bg-slate hover:bg-primary-dark hover:text-white text-sm py-2.5 rounded-xl font-medium shadow-md transition duration-400"
@@ -99,7 +99,7 @@ const PersonalfolderAside = () => {
             </button>
           </div>
 
-          <div className="flex justify-between mb-5 items-center bg-slate border border-slate rounded-lg px-3 py-2 shadow-sm">
+          <div className="flex justify-between items-center bg-slate border border-slate rounded-lg px-3 py-2 shadow-sm mb-5">
             <div className="flex items-center gap-2 text-gray-900">
               <span className="text-yellow-500">✨</span>
               <p className="font-medium">Highlights</p>
@@ -132,10 +132,11 @@ const PersonalfolderAside = () => {
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3 ">
+
+        <div className="grid grid-cols-1">
           <button
             onClick={() => navigate("/standyshow")}
-            className="col-span-2 flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium text-sm py-2.5 rounded-lg transition shadow"
+            className="flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium text-sm py-2.5 rounded-lg transition shadow"
           >
             FaceScan Pre Registration
           </button>
