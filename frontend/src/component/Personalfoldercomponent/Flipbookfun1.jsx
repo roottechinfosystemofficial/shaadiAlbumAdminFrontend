@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import HTMLFlipBook from "react-pageflip";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 // Function to split an image into left and right halves
 const splitImage = (src) => {
@@ -42,6 +43,16 @@ const Flipbookfun = ({ images }) => {
   const bookRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [pages, setPages] = useState([]);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    handleResize(); // Initial run
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     const preparePages = async () => {
@@ -65,71 +76,72 @@ const Flipbookfun = ({ images }) => {
     preparePages();
   }, [images]);
 
-  return (
-    <div className="flex items-center justify-center w-full min-h-screen bg-red-200 relative overflow-hidden">
-      {/* 📱 Mobile Version */}
-      <div className="sm:hidden absolute top-0 left-0 w-full h-full flex items-center justify-center">
-        <div
-          className="transform origin-center"
-          style={{
-            transform: "rotate(90deg)",
-            width: "400px",
-            height: "300px",
-            touchAction: "pan-y",
-            WebkitTapHighlightColor: "transparent",
-          }}
-        >
-          <HTMLFlipBook
-            width={300}
-            height={200}
-            size="fixed"
-            showCover={true}
-            usePortrait={false}
-            mobileScrollSupport={true}
-            ref={bookRef}
-            onFlip={(e) => setCurrentPage(e.data)}
-            className="shadow-md"
-          >
-            {pages.map((src, index) => (
-              <div key={index} className="w-full h-full">
-                <img
-                  src={src}
-                  alt={`Page ${index + 1}`}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            ))}
-          </HTMLFlipBook>
-        </div>
-      </div>
+  const nextPage = () => {
+    if (currentPage < pages.length - 1) {
+      bookRef.current.pageFlip().flipNext();
+    }
+  };
 
-      {/* 💻 Desktop Version */}
-      <div className="hidden sm:flex justify-center items-center">
+  const prevPage = () => {
+    if (currentPage > 0) {
+      bookRef.current.pageFlip().flipPrev();
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center w-full mx-auto min-h-screen bg-black overflow-hidden">
+      <div className="flex justify-center items-center">
         <HTMLFlipBook
           width={600}
-          height={400}
+          height={500}
           size="fixed"
-          minWidth={600}
-          maxWidth={600}
-          minHeight={400}
-          maxHeight={400}
+          minWidth={400}
+          maxWidth={400}
+          minHeight={500}
+          maxHeight={500}
           showCover={true}
-          usePortrait={false}
+          maxShadowOpacity={0.6}
           mobileScrollSupport={false}
+          usePortrait={false}
           onFlip={(e) => setCurrentPage(e.data)}
           ref={bookRef}
-          className="shadow-xl"
+          className={`shadow-xl transition-transform duration-300 ease-in-out ${
+            isMobile ? "rotate-mobile" : ""
+          }`}
         >
           {pages.map((src, index) => (
-            <div key={index} className="w-full h-full">
+            <div
+              key={index}
+              className={`w-full h-full ${
+                index === 0 ? "bg-cover bg-center" : ""
+              }`}
+            >
               <img
                 src={src}
                 alt={`Page ${index + 1}`}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain mx-auto"
               />
             </div>
           ))}
         </HTMLFlipBook>
+      </div>
+
+      <div className="flex items-center justify-between w-full max-w-[800px] mt-4 px-4">
+        <button
+          onClick={prevPage}
+          className="p-3 rounded-full bg-white text-gray-900 hover:bg-gray-300 transition-transform transform hover:scale-110"
+        >
+          <ArrowLeft />
+        </button>
+        <span className="text-white font-semibold text-lg tracking-wide">
+          Page {currentPage + 1} / {pages.length}
+        </span>
+        <button
+          onClick={nextPage}
+          className="p-3 rounded-full bg-white text-gray-900 hover:bg-gray-300 transition-transform transform hover:scale-110"
+        >
+          <ArrowRight />
+        </button>
       </div>
     </div>
   );
