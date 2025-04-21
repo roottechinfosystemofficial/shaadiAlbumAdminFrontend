@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ArrowDownToLineIcon,
   Heart,
@@ -15,8 +15,6 @@ import {
 import { useSelector } from "react-redux";
 import axios from "axios";
 
-const batchSize = 6;
-
 const ClientPhotosView = ({ setWhichView }) => {
   const { singleEvent } = useSelector((state) => state.event);
   const { layout, spacing, thumbnail, background } = useSelector(
@@ -32,9 +30,6 @@ const ClientPhotosView = ({ setWhichView }) => {
   const [slideshowInterval, setSlideshowInterval] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
-
-  const loaderRef = useRef(null);
-  const observerRef = useRef(null);
 
   const adminSettings = {
     spacing: spacing || "large",
@@ -73,30 +68,22 @@ const ClientPhotosView = ({ setWhichView }) => {
     ).then((loaded) => loaded.filter(Boolean));
   };
 
-  const fetchImages = async (offset = 0) => {
+  const fetchImages = async () => {
     if (!singleEvent?._id) return;
 
     try {
       const { data } = await axios.get(
         "http://localhost:5000/api/v1/list-images",
         {
-          params: {
-            eventId: singleEvent._id,
-            offset,
-            limit: batchSize,
-          },
+          params: { eventId: singleEvent._id },
         }
       );
 
-      const newImages = data.images || [];
-      const uniqueNewImages = newImages.filter(
-        (url) => !imageUrls.includes(url)
-      );
+      const allImages = data.images || [];
+      const preloaded = await preloadImages(allImages);
 
-      const preloaded = await preloadImages(uniqueNewImages);
-
-      if (preloaded.length < batchSize) setLoadedAll(true);
-      setImageUrls((prev) => [...prev, ...preloaded]);
+      setImageUrls(preloaded);
+      setLoadedAll(true);
       setIsInitialLoading(false);
     } catch (err) {
       console.error("Error fetching images:", err);
@@ -109,28 +96,8 @@ const ClientPhotosView = ({ setWhichView }) => {
     setImageUrls([]);
     setLoadedAll(false);
     setIsInitialLoading(true);
-    fetchImages(0);
+    fetchImages();
   }, [singleEvent]);
-
-  useEffect(() => {
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && !loadedAll) {
-          fetchImages(imageUrls.length);
-        }
-      },
-      { rootMargin: "150px" }
-    );
-
-    if (loaderRef.current) observerRef.current.observe(loaderRef.current);
-
-    return () => {
-      if (observerRef.current && loaderRef.current) {
-        observerRef.current.unobserve(loaderRef.current);
-        observerRef.current.disconnect();
-      }
-    };
-  }, [imageUrls, loadedAll]);
 
   const closeModal = () => {
     setModalImage(null);
@@ -158,7 +125,7 @@ const ClientPhotosView = ({ setWhichView }) => {
   const handleNextImage = () => {
     stopSlideshowIfRunning();
     setCurrentImageIndex((prevIndex) => {
-      const nextIndex = (prevIndex + 1) % imageUrls?.length;
+      const nextIndex = (prevIndex + 1) % imageUrls.length;
       setModalImage(imageUrls[nextIndex]);
       setRotation(0);
       setFlip(false);
@@ -169,7 +136,7 @@ const ClientPhotosView = ({ setWhichView }) => {
   const handlePreviousImage = () => {
     stopSlideshowIfRunning();
     setCurrentImageIndex((prevIndex) => {
-      const prev = (prevIndex - 1 + imageUrls?.length) % imageUrls?.length;
+      const prev = (prevIndex - 1 + imageUrls.length) % imageUrls.length;
       setModalImage(imageUrls[prev]);
       setRotation(0);
       setFlip(false);
@@ -266,12 +233,6 @@ const ClientPhotosView = ({ setWhichView }) => {
                 />
               </div>
             ))}
-          </div>
-        )}
-
-        {!loadedAll && imageUrls.length > 0 && (
-          <div ref={loaderRef} className="text-center py-6 text-gray-500">
-            Loading more images...
           </div>
         )}
       </div>
