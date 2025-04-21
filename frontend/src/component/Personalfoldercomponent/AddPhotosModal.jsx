@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import axios from "axios";
+import imageCompression from "browser-image-compression";
 import { X, CheckCircle, Circle, FolderOpen, ImagePlus } from "lucide-react";
 
 const AddPhotosModal = ({ isOpen, onClose }) => {
@@ -9,54 +11,72 @@ const AddPhotosModal = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
-  // Handle file input change (individual files or folder)
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     setSelectedFiles((prev) => [...prev, ...files]);
   };
 
-  // Handle removing files from the selected list
   const handleRemoveFile = (index) => {
     const updated = [...selectedFiles];
     updated.splice(index, 1);
     setSelectedFiles(updated);
   };
 
-  // Simulate file upload process and update progress
-  const simulateUpload = () => {
-    setUploading(true);
-    let progress = 0;
-
-    // Simulate progress update
-    const interval = setInterval(() => {
-      progress += 10;
-      setUploadProgress(progress);
-
-      if (progress >= 100) {
-        clearInterval(interval);
-        setUploading(false); // Upload complete
-        onClose(); // Close modal after upload
-      }
-    }, 500); // Simulate a 500ms interval between progress increments
-  };
-
-  // Handle the upload action (trigger progress simulation)
-  const handleUpload = () => {
-    console.log("Uploading files:", selectedFiles);
-    console.log("Duplicate mode:", duplicateHandling);
-    setSelectedFiles([]);
-    simulateUpload(); // Simulate file upload
-  };
-
-  // Handle selecting duplicate options (skip or overwrite)
   const handleDuplicateOption = (mode) => {
     setDuplicateHandling(mode);
+  };
+
+  const handleUpload = async () => {
+    setUploading(true);
+    setUploadProgress(0);
+
+    let progressPerFile = 100 / selectedFiles.length;
+
+    for (let i = 0; i < selectedFiles.length; i++) {
+      const file = selectedFiles[i];
+
+      try {
+        // 1. Compress
+        const compressed = await imageCompression(file, {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1920,
+          useWebWorker: true,
+        });
+
+        // 2. Get presigned URL
+        const { data } = await axios.get(
+          "http://localhost:5000/api/v1/api/s3/get-presigned-url",
+          {
+            params: {
+              fileName: compressed.name,
+              fileType: compressed.type,
+            },
+          }
+        );
+        console.log(data);
+
+        // 3. Upload to S3
+        await axios.put(data.url, compressed, {
+          headers: {
+            "Content-Type": compressed.type,
+          },
+        });
+
+        // 4. Update progress
+        setUploadProgress((prev) => prev + progressPerFile);
+      } catch (err) {
+        console.error("Upload failed for:", file.name, err);
+      }
+    }
+
+    setUploading(false);
+    setSelectedFiles([]);
+    onClose();
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
       <div className="bg-white rounded-xl px-6 py-10 w-[95%] max-w-2xl shadow-2xl relative animate-fadeIn flex flex-col gap-4">
-        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Upload Photos</h2>
           <button
@@ -66,7 +86,7 @@ const AddPhotosModal = ({ isOpen, onClose }) => {
             <X />
           </button>
         </div>
-        {/* Duplicate Handling Options */}
+
         <div className="flex items-center gap-4 mb-4">
           <button
             onClick={() => handleDuplicateOption("skip")}
@@ -99,9 +119,8 @@ const AddPhotosModal = ({ isOpen, onClose }) => {
             Overwrite Duplicates
           </button>
         </div>
-        {/* Upload Options */}
+
         <div className="flex flex-col sm:flex-row gap-4 mb-4">
-          {/* Select Files */}
           <label className="flex-1 border-2 border-dashed border-slate p-4 text-center text-sm rounded-lg cursor-pointer hover:border-primary transition flex flex-col items-center gap-2">
             <ImagePlus size={24} />
             <p>Select individual photos</p>
@@ -114,7 +133,6 @@ const AddPhotosModal = ({ isOpen, onClose }) => {
             />
           </label>
 
-          {/* Select Folder */}
           <label className="flex-1 border-2 border-dashed border-slate p-4 text-center text-sm rounded-lg cursor-pointer hover:border-primary transition flex flex-col items-center gap-2">
             <FolderOpen size={24} />
             <p>Select folder</p>
@@ -130,7 +148,6 @@ const AddPhotosModal = ({ isOpen, onClose }) => {
           </label>
         </div>
 
-        {/* File Name List */}
         {selectedFiles.length > 0 && (
           <div className="mb-4 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
             {selectedFiles.map((file, index) => (
@@ -152,7 +169,6 @@ const AddPhotosModal = ({ isOpen, onClose }) => {
           </div>
         )}
 
-        {/* Progress Bar */}
         {uploading && (
           <div className="mb-4">
             <div className="w-full bg-gray-200 rounded-full h-2">
@@ -162,12 +178,11 @@ const AddPhotosModal = ({ isOpen, onClose }) => {
               ></div>
             </div>
             <p className="text-sm text-gray-500 text-center mt-2">
-              {uploadProgress}% Uploading...
+              {uploadProgress.toFixed(0)}% Uploading...
             </p>
           </div>
         )}
 
-        {/* Footer */}
         <div className="flex justify-between items-center">
           <p className="text-sm text-gray-500">
             {selectedFiles.length} file{selectedFiles.length !== 1 && "s"}{" "}
