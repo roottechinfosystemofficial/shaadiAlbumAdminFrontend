@@ -91,25 +91,39 @@ export const user = async (req, res) => {
     return res.status(400).json(new ApiResponse(400, null, error.message));
   }
 };
+
 export const findEventByEventcode = async (req, res) => {
   try {
     const { eventCode } = req.body;
+    const userId = req.userId;
 
     if (!eventCode) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Event code is required" });
+      return res.status(400).json({
+        success: false,
+        message: "Event code is required",
+      });
     }
 
     const findedEvent = await Event.findOne({ eventCode });
 
     if (!findedEvent) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Event not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
     }
 
-    console.log(findedEvent);
+    // ✅ Update user's event list
+    if (userId) {
+      const user = await AppUser.findById(userId);
+
+      if (user && !user.event.includes(eventCode)) {
+        user.eventNames.push(eventCode);
+        await user.save();
+      }
+    }
+
+    console.log("Event found:", findedEvent);
 
     return res.status(200).json({
       success: true,
@@ -118,8 +132,9 @@ export const findEventByEventcode = async (req, res) => {
     });
   } catch (error) {
     console.error("Error finding event by code:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error" });
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 };
