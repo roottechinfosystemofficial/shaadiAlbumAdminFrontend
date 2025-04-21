@@ -8,6 +8,7 @@ const FlipbookShow = () => {
   return (
     <div className="">
       <Flipbookfun images={images} />
+      
     </div>
   );
 };
