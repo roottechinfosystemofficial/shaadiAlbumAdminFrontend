@@ -48,7 +48,7 @@ export const getPresignedUrl = async (req, res) => {
 
 // 🔹 List All Images with Pre-signed GET URLs
 export const getEventImages = async (req, res) => {
-  const { eventId, offset = 0, limit = 6 } = req.query;
+  const { eventId } = req.query;
 
   if (!eventId) {
     return res.status(400).json({ error: "Missing eventId" });
@@ -59,7 +59,7 @@ export const getEventImages = async (req, res) => {
   const listCommand = new ListObjectsV2Command({
     Bucket: process.env.BUCKET_NAME,
     Prefix: prefix,
-    MaxKeys: 1000, // fetch a large set to allow offset slicing
+    MaxKeys: 1000,
   });
 
   try {
@@ -71,13 +71,8 @@ export const getEventImages = async (req, res) => {
       (a, b) => new Date(b.LastModified) - new Date(a.LastModified)
     );
 
-    const sliced = sortedItems.slice(
-      Number(offset),
-      Number(offset) + Number(limit)
-    );
-
     const imageUrls = await Promise.all(
-      sliced.map(async (item) => {
+      sortedItems.map(async (item) => {
         const getCommand = new GetObjectCommand({
           Bucket: process.env.BUCKET_NAME,
           Key: item.Key,

@@ -1,72 +1,59 @@
-import React, { useState, useEffect, useRef, memo } from "react";
+import React, { useState, useEffect, memo } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import AddPhotosModal from "./AddPhotosModal";
-
-const batchSize = 6;
 
 const PhotosPanel = () => {
   const [images, setImages] = useState([]);
   const [loadedAll, setLoadedAll] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const loaderRef = useRef(null);
-  const observerRef = useRef(null);
+  const [selectedImages, setSelectedImages] = useState(new Set());
   const { singleEvent } = useSelector((state) => state.event);
 
-  // Load initial batch
+  // Load all images once
   useEffect(() => {
     if (!singleEvent?._id) return;
     setImages([]);
+    setSelectedImages(new Set());
     setLoadedAll(false);
-    fetchImages(0);
+    fetchImages();
   }, [singleEvent]);
 
-  const fetchImages = async (offset) => {
+  const fetchImages = async () => {
     try {
       const { data } = await axios.get(
         "http://localhost:5000/api/v1/list-images",
         {
-          params: {
-            eventId: singleEvent._id,
-            offset,
-            limit: batchSize,
-          },
+          params: { eventId: singleEvent._id },
         }
       );
 
-      const newImages = data.images || [];
-      const uniqueNewImages = newImages.filter((url) => !images.includes(url));
-
-      if (uniqueNewImages.length < batchSize) setLoadedAll(true);
-
-      setImages((prev) => [...prev, ...uniqueNewImages]);
+      const allImages = data.images || [];
+      setImages(allImages);
+      setLoadedAll(true);
     } catch (err) {
       console.error("Error fetching images:", err);
     }
   };
 
-  // Infinite scroll
-  useEffect(() => {
-    if (!singleEvent?._id) return;
+  const toggleSelect = (url) => {
+    setSelectedImages((prev) => {
+      const updated = new Set(prev);
+      updated.has(url) ? updated.delete(url) : updated.add(url);
+      return updated;
+    });
+  };
 
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && !loadedAll) {
-          fetchImages(images.length);
-        }
-      },
-      { rootMargin: "150px" }
-    );
+  const selectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedImages(new Set(images));
+    } else {
+      setSelectedImages(new Set());
+    }
+  };
 
-    if (loaderRef.current) observerRef.current.observe(loaderRef.current);
-
-    return () => {
-      if (observerRef.current && loaderRef.current) {
-        observerRef.current.unobserve(loaderRef.current);
-        observerRef.current.disconnect();
-      }
-    };
-  }, [images, loadedAll, singleEvent]);
+  const allSelected =
+    images.length > 0 && selectedImages.size === images.length;
 
   return (
     <div className="p-2 sm:p-4">
@@ -80,6 +67,20 @@ const PhotosPanel = () => {
         </button>
       </div>
 
+      {images.length > 0 && (
+        <div className="mb-3 flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={allSelected}
+            onChange={selectAll}
+            className="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary"
+          />
+          <label className="text-sm text-gray-700">
+            Select All ({selectedImages.size}/{images.length})
+          </label>
+        </div>
+      )}
+
       {images.length > 0 ? (
         <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {images.map((url, index) => (
@@ -87,6 +88,8 @@ const PhotosPanel = () => {
               key={url + index}
               src={url}
               alt={`Photo ${index + 1}`}
+              selected={selectedImages.has(url)}
+              onToggleSelect={() => toggleSelect(url)}
             />
           ))}
         </div>
@@ -103,31 +106,30 @@ const PhotosPanel = () => {
         </div>
       )}
 
-      {!loadedAll && images.length > 0 && (
-        <div ref={loaderRef} className="text-center mt-6 text-gray-500">
-          Loading more images...
-        </div>
-      )}
-
       <AddPhotosModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onUploadSuccess={() => {
           setImages([]);
           setLoadedAll(false);
-          fetchImages(0);
+          setSelectedImages(new Set());
+          fetchImages();
         }}
       />
     </div>
   );
 };
 
-const ImageCard = ({ src, alt }) => {
+const ImageCard = ({ src, alt, selected, onToggleSelect }) => {
   const [loaded, setLoaded] = useState(false);
   const handleError = (e) => (e.target.src = "/fallback.jpg");
 
   return (
-    <div className="w-full min-w-[180px] max-w-full overflow-hidden rounded-lg shadow relative group">
+    <div
+      className={`relative w-full min-w-[180px] max-w-full overflow-hidden rounded-lg shadow group ${
+        selected ? "ring-2 ring-primary" : ""
+      }`}
+    >
       <div className="relative h-[300px]">
         <img
           loading="lazy"
@@ -142,6 +144,16 @@ const ImageCard = ({ src, alt }) => {
         {!loaded && (
           <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-lg" />
         )}
+      </div>
+
+      {/* Checkbox overlay */}
+      <div className="absolute top-2 left-2 bg-white bg-opacity-75 p-1 rounded shadow">
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggleSelect}
+          className="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary"
+        />
       </div>
     </div>
   );
