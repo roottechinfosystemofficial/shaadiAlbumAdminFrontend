@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import jwt from "jsonwebtoken";
+import Event from "../model/Event.model.js";
 
 export const signUp = async (req, res) => {
   try {
