@@ -6,10 +6,16 @@ import {
   TouchableOpacity,
 } from "react-native";
 import React from "react";
-import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
+import {
+  Ionicons,
+  FontAwesome5,
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { theme } from "../constants/themes";
 
 const Home = () => {
+  const navigation = useNavigation();
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -36,6 +42,18 @@ const Home = () => {
           placeholderTextColor="#65350F"
           style={styles.input}
         />
+        <TouchableOpacity
+          onPress={() => {
+            navigation.navigate("QRScanner");
+          }}
+        >
+          <MaterialCommunityIcons
+            name="qrcode-scan"
+            size={22}
+            color="#65350F"
+            style={styles.qrIcon}
+          />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -48,7 +66,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 40,
+  },
+  qrIcon: {
+    marginRight: 7,
   },
   header: {
     flexDirection: "row",
@@ -76,7 +97,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F2ECE7",
     borderRadius: 12,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 7,
     marginTop: 30,
   },
   icon: {

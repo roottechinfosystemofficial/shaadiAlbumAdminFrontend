@@ -77,6 +77,7 @@ const Favorites = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [hasPermission, setHasPermission] = useState(null);
   const [cameraRef, setCameraRef] = useState(null);
+
   const [cameraVisible, setCameraVisible] = useState(false);
 
   const flatListRef = useRef(null);
@@ -140,26 +141,8 @@ const Favorites = () => {
     setSelectedImage(null);
     setModalVisible(false);
   };
-  const handleSelfieCapture = async () => {
-    const { granted } = await ImagePicker.requestCameraPermissionsAsync();
-    if (!granted) {
-      return Alert.alert("Permission denied", "Camera permission is required.");
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      // allowsEditing: true,
-      aspect: [1, 1], // square selfie
-      quality: 0.7,
-      cameraType: ImagePicker.CameraType.front, // selfie camera
-    });
-
-    if (!result.canceled) {
-      const imageUri = result.assets[0].uri;
-      console.log("Captured selfie:", imageUri);
-
-      // TODO: you can upload this image or store it in state
-      // setSelfieImage(imageUri);
-    }
+  const handleSelfieCapture = () => {
+    navigation.navigate("FaceIDVerification");
   };
 
   useEffect(() => {
@@ -236,6 +219,7 @@ const Favorites = () => {
                 color={theme.colours.primary}
               />
             </TouchableOpacity>
+
             <TouchableOpacity style={styles.gridButton} onPress={toggleGrid}>
               <Ionicons
                 name={gridCount === 3 ? "grid-outline" : "grid"}
