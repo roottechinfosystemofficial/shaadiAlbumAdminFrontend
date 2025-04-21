@@ -77,14 +77,19 @@ export const login = async (req, res) => {
 export const user = async (req, res) => {
   try {
     const userId = req.userId;
-    const user = await AppUser.findById(userId).select("-password");
+
+    const user = await AppUser.findById(userId)
+      .select("-password")
+      .populate("searchEvent");
+
     if (!user) {
       throw new ApiError(404, "User not found");
     }
+
     return res
       .status(200)
       .json(
-        new ApiResponse(200, user, "current user details fetched successfully")
+        new ApiResponse(200, user, "Current user details fetched successfully")
       );
   } catch (error) {
     console.error("🔴 Error in getCurrentUser:", error);
