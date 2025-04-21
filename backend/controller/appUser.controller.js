@@ -80,7 +80,7 @@ export const user = async (req, res) => {
 
     const user = await AppUser.findById(userId)
       .select("-password")
-      .populate("searchEvent");
+      .populate("searchEvent"); 
 
     if (!user) {
       throw new ApiError(404, "User not found");
