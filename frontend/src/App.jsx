@@ -56,7 +56,7 @@ const appRouter = createBrowserRouter([
       },
 
       // 🌐 External client view (no auth needed)
-      { path: ":id/clientview", element: <Clientview /> },
+      { path: ":eventId/clientview", element: <Clientview /> },
       { path: "*", element: <Notfound /> },
     ],
   },

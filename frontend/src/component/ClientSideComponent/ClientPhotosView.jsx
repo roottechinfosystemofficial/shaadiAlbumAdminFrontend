@@ -15,10 +15,26 @@ import {
 import { useSelector } from "react-redux";
 import axios from "axios";
 
+const batchSize = 6;
+
 const ClientPhotosView = ({ setWhichView }) => {
+  const { singleEvent } = useSelector((state) => state.event);
   const { layout, spacing, thumbnail, background } = useSelector(
     (state) => state.galleryLayout
   );
+
+  const [imageUrls, setImageUrls] = useState([]);
+  const [loadedAll, setLoadedAll] = useState(false);
+  const [modalImage, setModalImage] = useState(null);
+  const [rotation, setRotation] = useState(0);
+  const [flip, setFlip] = useState(false);
+  const [isSlideshow, setIsSlideshow] = useState(false);
+  const [slideshowInterval, setSlideshowInterval] = useState(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+  const loaderRef = useRef(null);
+  const observerRef = useRef(null);
 
   const adminSettings = {
     spacing: spacing || "large",
@@ -26,18 +42,6 @@ const ClientPhotosView = ({ setWhichView }) => {
     thumbnail: thumbnail || "large",
     background: background || "light",
   };
-
-  const [imageUrls, setImageUrls] = useState([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [modalImage, setModalImage] = useState(null);
-  const [rotation, setRotation] = useState(0);
-  const [flip, setFlip] = useState(false);
-  const [isSlideshow, setIsSlideshow] = useState(false);
-  const [slideshowInterval, setSlideshowInterval] = useState(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const loaderRef = useRef(null);
-  const observerRef = useRef(null);
 
   const bgClass =
     adminSettings.background === "dark"
@@ -55,28 +59,64 @@ const ClientPhotosView = ({ setWhichView }) => {
     horizontal: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4",
   };
 
-  const fetchImages = async () => {
-    try {
-      const res = await axios.get(`/api/images?page=${page}`);
-      const newImages = res.data.images;
+  const preloadImages = (urls) => {
+    return Promise.all(
+      urls.map(
+        (url) =>
+          new Promise((resolve) => {
+            const img = new Image();
+            img.src = url;
+            img.onload = () => resolve(url);
+            img.onerror = () => resolve(null);
+          })
+      )
+    ).then((loaded) => loaded.filter(Boolean));
+  };
 
-      setImageUrls((prev) => [...prev, ...newImages]);
-      setPage((prev) => prev + 1);
-      if (newImages?.length === 0) setHasMore(false);
+  const fetchImages = async (offset = 0) => {
+    if (!singleEvent?._id) return;
+
+    try {
+      const { data } = await axios.get(
+        "http://localhost:5000/api/v1/list-images",
+        {
+          params: {
+            eventId: singleEvent._id,
+            offset,
+            limit: batchSize,
+          },
+        }
+      );
+
+      const newImages = data.images || [];
+      const uniqueNewImages = newImages.filter(
+        (url) => !imageUrls.includes(url)
+      );
+
+      const preloaded = await preloadImages(uniqueNewImages);
+
+      if (preloaded.length < batchSize) setLoadedAll(true);
+      setImageUrls((prev) => [...prev, ...preloaded]);
+      setIsInitialLoading(false);
     } catch (err) {
       console.error("Error fetching images:", err);
+      setIsInitialLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchImages();
-  }, []);
+    if (!singleEvent?._id) return;
+    setImageUrls([]);
+    setLoadedAll(false);
+    setIsInitialLoading(true);
+    fetchImages(0);
+  }, [singleEvent]);
 
   useEffect(() => {
     observerRef.current = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore) {
-          fetchImages();
+        if (entries[0].isIntersecting && !loadedAll) {
+          fetchImages(imageUrls.length);
         }
       },
       { rootMargin: "150px" }
@@ -90,7 +130,7 @@ const ClientPhotosView = ({ setWhichView }) => {
         observerRef.current.disconnect();
       }
     };
-  }, [imageUrls, hasMore]);
+  }, [imageUrls, loadedAll]);
 
   const closeModal = () => {
     setModalImage(null);
@@ -196,32 +236,40 @@ const ClientPhotosView = ({ setWhichView }) => {
           <h3 className="text-xl md:text-2xl font-semibold">Highlights</h3>
         </div>
 
-        <div
-          className={`${layoutClasses[adminSettings.layout]} ${
-            spacingClasses[adminSettings.spacing]
-          }`}
-        >
-          {imageUrls.map((url, index) => (
-            <div
-              key={url}
-              className={`mb-4 ${
-                adminSettings.layout === "vertical" ? "break-inside-avoid" : ""
-              } rounded overflow-hidden bg-white shadow hover:shadow-lg transition duration-300 cursor-pointer`}
-              onClick={() => {
-                setModalImage(url);
-                setCurrentImageIndex(index);
-              }}
-            >
-              <img
-                src={url}
-                alt={`img-${index}`}
-                className="w-full h-auto rounded"
-              />
-            </div>
-          ))}
-        </div>
+        {isInitialLoading ? (
+          <div className="text-center py-12 text-gray-500">
+            Loading images...
+          </div>
+        ) : (
+          <div
+            className={`${layoutClasses[adminSettings.layout]} ${
+              spacingClasses[adminSettings.spacing]
+            }`}
+          >
+            {imageUrls.map((url, index) => (
+              <div
+                key={url}
+                className={`mb-4 ${
+                  adminSettings.layout === "vertical"
+                    ? "break-inside-avoid"
+                    : ""
+                } rounded overflow-hidden bg-white shadow hover:shadow-lg transition duration-300 cursor-pointer`}
+                onClick={() => {
+                  setModalImage(url);
+                  setCurrentImageIndex(index);
+                }}
+              >
+                <img
+                  src={url}
+                  alt={`img-${index}`}
+                  className="w-full h-auto rounded"
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
-        {hasMore && (
+        {!loadedAll && imageUrls.length > 0 && (
           <div ref={loaderRef} className="text-center py-6 text-gray-500">
             Loading more images...
           </div>

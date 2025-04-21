@@ -3,11 +3,15 @@ import "../css/Clientview.css";
 import ClientPhotosView from "../component/ClientSideComponent/ClientPhotosView";
 import { useSelector } from "react-redux";
 import UnderClientView from "../component/ClientSideComponent/UnderClientView";
+import { useParams } from "react-router-dom";
+import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
 
 const Clientview = () => {
   const { position } = useSelector((state) => state.coverImg);
   const [whichView, setWhichView] = useState("");
   console.log(whichView);
+  const { eventId } = useParams();
+  useGetSingleEvent(eventId);
 
   const getPositionClasses = () => {
     switch (position) {

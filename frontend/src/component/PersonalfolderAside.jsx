@@ -101,7 +101,7 @@ const PersonalfolderAside = () => {
         {/* Buttons */}
         <div className="flex flex-col sm:flex-row gap-3">
           <button
-            onClick={() => navigate("/1/clientview")}
+            onClick={() => navigate(`/${eventId}/clientview`)}
             className="flex-1 bg-slate hover:bg-primary-dark hover:text-white text-sm py-2.5 rounded-xl font-medium shadow-md transition"
           >
             Preview
