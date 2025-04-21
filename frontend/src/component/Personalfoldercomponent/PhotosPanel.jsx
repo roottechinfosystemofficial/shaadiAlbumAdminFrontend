@@ -45,7 +45,7 @@ const PhotosPanel = () => {
     }
   };
 
-  // Infinite scroll logic
+  // Infinite scroll
   useEffect(() => {
     if (!singleEvent?._id) return;
 
@@ -70,7 +70,6 @@ const PhotosPanel = () => {
 
   return (
     <div className="p-2 sm:p-4">
-      {/* Header with Add Photos Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
         <h2 className="text-lg font-semibold text-gray-800">Photos</h2>
         <button
@@ -81,7 +80,6 @@ const PhotosPanel = () => {
         </button>
       </div>
 
-      {/* Photo Grid or Empty State */}
       {images.length > 0 ? (
         <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {images.map((url, index) => (
@@ -94,7 +92,6 @@ const PhotosPanel = () => {
         </div>
       ) : loadedAll ? (
         <div className="flex flex-col items-center justify-center text-gray-500 mt-10">
-         
           <p className="text-lg font-medium">No photos added yet.</p>
           <p className="text-sm">
             Click "Add Photos" to upload your first image.
@@ -106,17 +103,20 @@ const PhotosPanel = () => {
         </div>
       )}
 
-      {/* Infinite Scroll Loader */}
       {!loadedAll && images.length > 0 && (
         <div ref={loaderRef} className="text-center mt-6 text-gray-500">
           Loading more images...
         </div>
       )}
 
-      {/* Add Photos Modal */}
       <AddPhotosModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onUploadSuccess={() => {
+          setImages([]);
+          setLoadedAll(false);
+          fetchImages(0);
+        }}
       />
     </div>
   );
@@ -124,10 +124,7 @@ const PhotosPanel = () => {
 
 const ImageCard = ({ src, alt }) => {
   const [loaded, setLoaded] = useState(false);
-
-  const handleError = (e) => {
-    e.target.src = "/fallback.jpg"; // fallback image in /public
-  };
+  const handleError = (e) => (e.target.src = "/fallback.jpg");
 
   return (
     <div className="w-full min-w-[180px] max-w-full overflow-hidden rounded-lg shadow relative group">

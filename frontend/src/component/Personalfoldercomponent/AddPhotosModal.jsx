@@ -4,22 +4,23 @@ import imageCompression from "browser-image-compression";
 import { X, CheckCircle, Circle, FolderOpen, ImagePlus } from "lucide-react";
 import { useSelector } from "react-redux";
 
-const AddPhotosModal = ({ isOpen, onClose }) => {
+const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [duplicateHandling, setDuplicateHandling] = useState("skip");
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const { singleEvent } = useSelector((state) => state.event);
-  console.log(singleEvent?._id);
+
   if (!isOpen) return null;
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     setSelectedFiles((prev) => [...prev, ...files]);
   };
+
   const handleClose = () => {
     setSelectedFiles([]);
-    onClose(); // from props
+    onClose();
   };
 
   const handleRemoveFile = (index) => {
@@ -35,21 +36,17 @@ const AddPhotosModal = ({ isOpen, onClose }) => {
   const handleUpload = async () => {
     setUploading(true);
     setUploadProgress(0);
-
     let progressPerFile = 100 / selectedFiles.length;
 
     for (let i = 0; i < selectedFiles.length; i++) {
       const file = selectedFiles[i];
-
       try {
-        // 1. Compress
         const compressed = await imageCompression(file, {
           maxSizeMB: 1,
           maxWidthOrHeight: 1920,
           useWebWorker: true,
         });
 
-        // 2. Get presigned URL
         const { data } = await axios.get(
           "http://localhost:5000/api/v1/api/s3/get-presigned-url",
           {
@@ -60,16 +57,13 @@ const AddPhotosModal = ({ isOpen, onClose }) => {
             },
           }
         );
-        console.log(data);
 
-        // 3. Upload to S3
         await axios.put(data.url, compressed, {
           headers: {
             "Content-Type": compressed.type,
           },
         });
 
-        // 4. Update progress
         setUploadProgress((prev) => prev + progressPerFile);
       } catch (err) {
         console.error("Upload failed for:", file.name, err);
@@ -79,6 +73,7 @@ const AddPhotosModal = ({ isOpen, onClose }) => {
     setUploading(false);
     setSelectedFiles([]);
     onClose();
+    onUploadSuccess(); // Refresh photo panel
   };
 
   return (
@@ -87,7 +82,7 @@ const AddPhotosModal = ({ isOpen, onClose }) => {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Upload Photos</h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-gray-500 hover:text-red-500"
           >
             <X />
@@ -202,7 +197,6 @@ const AddPhotosModal = ({ isOpen, onClose }) => {
             >
               Cancel
             </button>
-
             <button
               onClick={handleUpload}
               disabled={selectedFiles.length === 0 || uploading}

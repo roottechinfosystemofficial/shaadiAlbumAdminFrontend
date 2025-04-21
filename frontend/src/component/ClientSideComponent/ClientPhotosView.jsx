@@ -13,17 +13,7 @@ import {
   FlipHorizontal,
 } from "lucide-react";
 import { useSelector } from "react-redux";
-
-const totalImages = 129;
-const batchSize = 12;
-
-const getImageUrls = (start, count) => {
-  return Array.from({ length: count }, (_, i) => {
-    const imageIndex = start + i + 1;
-    const imageName = `img (${imageIndex})`;
-    return `https://res.cloudinary.com/dzfaikj95/image/upload/w_500,c_scale/shaadialum/${imageName}.jpg`;
-  });
-};
+import axios from "axios";
 
 const ClientPhotosView = ({ setWhichView }) => {
   const { layout, spacing, thumbnail, background } = useSelector(
@@ -38,13 +28,14 @@ const ClientPhotosView = ({ setWhichView }) => {
   };
 
   const [imageUrls, setImageUrls] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [modalImage, setModalImage] = useState(null);
   const [rotation, setRotation] = useState(0);
   const [flip, setFlip] = useState(false);
   const [isSlideshow, setIsSlideshow] = useState(false);
   const [slideshowInterval, setSlideshowInterval] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [loadedAll, setLoadedAll] = useState(false);
   const loaderRef = useRef(null);
   const observerRef = useRef(null);
 
@@ -64,21 +55,28 @@ const ClientPhotosView = ({ setWhichView }) => {
     horizontal: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4",
   };
 
-  const thumbSizeClasses = {
-    small: "h-32",
-    regular: "h-48",
-    large: "h-64",
+  const fetchImages = async () => {
+    try {
+      const res = await axios.get(`/api/images?page=${page}`);
+      const newImages = res.data.images;
+
+      setImageUrls((prev) => [...prev, ...newImages]);
+      setPage((prev) => prev + 1);
+      if (newImages?.length === 0) setHasMore(false);
+    } catch (err) {
+      console.error("Error fetching images:", err);
+    }
   };
 
   useEffect(() => {
-    setImageUrls(getImageUrls(0, batchSize));
+    fetchImages();
   }, []);
 
   useEffect(() => {
     observerRef.current = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !loadedAll) {
-          requestIdleCallback(() => loadMoreImages());
+        if (entries[0].isIntersecting && hasMore) {
+          fetchImages();
         }
       },
       { rootMargin: "150px" }
@@ -92,21 +90,7 @@ const ClientPhotosView = ({ setWhichView }) => {
         observerRef.current.disconnect();
       }
     };
-  }, [imageUrls, loadedAll]);
-
-  const loadMoreImages = () => {
-    const current = imageUrls.length;
-    if (current >= totalImages) {
-      setLoadedAll(true);
-      return;
-    }
-
-    const nextBatch = getImageUrls(
-      current,
-      Math.min(batchSize, totalImages - current)
-    );
-    setImageUrls((prev) => [...prev, ...nextBatch]);
-  };
+  }, [imageUrls, hasMore]);
 
   const closeModal = () => {
     setModalImage(null);
@@ -134,7 +118,7 @@ const ClientPhotosView = ({ setWhichView }) => {
   const handleNextImage = () => {
     stopSlideshowIfRunning();
     setCurrentImageIndex((prevIndex) => {
-      const nextIndex = (prevIndex + 1) % imageUrls.length;
+      const nextIndex = (prevIndex + 1) % imageUrls?.length;
       setModalImage(imageUrls[nextIndex]);
       setRotation(0);
       setFlip(false);
@@ -145,7 +129,7 @@ const ClientPhotosView = ({ setWhichView }) => {
   const handlePreviousImage = () => {
     stopSlideshowIfRunning();
     setCurrentImageIndex((prevIndex) => {
-      const prev = (prevIndex - 1 + imageUrls.length) % imageUrls.length;
+      const prev = (prevIndex - 1 + imageUrls?.length) % imageUrls?.length;
       setModalImage(imageUrls[prev]);
       setRotation(0);
       setFlip(false);
@@ -197,9 +181,9 @@ const ClientPhotosView = ({ setWhichView }) => {
               ShoppingCart,
               Share2,
               ArrowDownToLineIcon,
-            ].map((Icon, index) => (
+            ].map((Icon, i) => (
               <button
-                key={index}
+                key={i}
                 className="flex items-center gap-2 px-3 py-2 text-sm bg-white border rounded shadow hover:bg-gray-200 transition"
               >
                 <Icon className="w-5 h-5" />
@@ -237,7 +221,7 @@ const ClientPhotosView = ({ setWhichView }) => {
           ))}
         </div>
 
-        {!loadedAll && (
+        {hasMore && (
           <div ref={loaderRef} className="text-center py-6 text-gray-500">
             Loading more images...
           </div>
