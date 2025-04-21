@@ -1,12 +1,26 @@
 import React, { useState } from "react";
 import boximg from "../assets/box1.png";
 import { EditIcon, Trash2, MoreVertical, Settings2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
+import { useSelector } from "react-redux";
 
 const PersonalfolderAside = () => {
   const [showOptions, setShowOptions] = useState(false);
   const navigate = useNavigate();
+  const { eventId } = useParams();
+  useGetSingleEvent(eventId);
+  const { singleEvent } = useSelector((state) => state.event);
 
+  const eventDate = singleEvent?.eventDate
+    ? new Date(singleEvent.eventDate).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "No Date Provided";
+
+  const isPublished = singleEvent?.isPublished || false;
   return (
     <aside className="p-4 text-gray-900 space-y-6 sidebar-content">
       {/* Action Buttons */}
@@ -26,10 +40,16 @@ const PersonalfolderAside = () => {
 
       {/* Event Info */}
       <div className="space-y-1">
-        <h2 className="text-2xl font-bold">Dhruv</h2>
+        <h2 className="text-2xl font-bold">{singleEvent?.eventName}</h2>
         <div className="flex justify-between text-sm text-gray-500">
-          <p>Apr 3rd 2025</p>
-          <p className="text-emerald-600 font-semibold">Published</p>
+          <p>{eventDate}</p>
+          <p
+            className={`font-semibold ${
+              isPublished ? "text-green-600" : "text-red-600"
+            }`}
+          >
+            {isPublished ? "Published" : "Unpublished"}
+          </p>
         </div>
         <div className="flex justify-between text-sm text-gray-500">
           <p>Total Images:</p>
@@ -71,7 +91,7 @@ const PersonalfolderAside = () => {
         <div>
           <p className="text-xs text-gray-500">Event Code:</p>
           <div className="flex justify-between items-center">
-            <p className="font-semibold">205462</p>
+            <p className="font-semibold">{singleEvent?.eventCode}</p>
             <button className="text-primary text-xs hover:underline">
               Copy
             </button>

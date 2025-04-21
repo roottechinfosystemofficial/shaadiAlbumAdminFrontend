@@ -34,7 +34,7 @@ const appRouter = createBrowserRouter([
               { path: "/", element: <Dashboard /> },
               { path: "event", element: <EventlistPage /> },
               { path: "setting", element: <MainSetting /> },
-              { path: "personalfolder/:folderId", element: <PersonalFolder /> },
+              { path: "personalfolder/:eventId", element: <PersonalFolder /> },
               { path: "eventsetting", element: <EventSetting /> },
               { path: "users", element: <Users /> },
               { path: "myprofile", element: <MyProfile /> },

@@ -29,7 +29,7 @@ const EventCard = ({ event, onEdit, onDelete }) => {
           alt={eventName} // Display fallback name if eventName is not available
           className="w-full h-40 object-cover"
           onClick={() => {
-            navigate(`/personalfolder/${event?.id || 1}`); // Fall back to 1 if event.id is missing
+            navigate(`/personalfolder/${event?._id || 1}`); // Fall back to 1 if event._id is missing
           }}
         />
         <button

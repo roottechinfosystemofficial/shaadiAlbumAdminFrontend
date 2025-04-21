@@ -1,8 +1,14 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  ListObjectsV2Command,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import dotenv from "dotenv";
 
 dotenv.config();
+
 const s3Client = new S3Client({
   region: "ap-south-1",
   credentials: {
@@ -11,27 +17,78 @@ const s3Client = new S3Client({
   },
 });
 
+// 🔹 Generate Pre-signed URL for Upload
 export const getPresignedUrl = async (req, res) => {
-  const { fileName, fileType } = req.query;
-  console.log("AccessID:", process.env.ACCESSID);
-  console.log("SecretKey:", process.env.SECRETACCESSKEY);
+  const { fileName, fileType, eventId } = req.query;
 
-  if (!fileName || !fileType) {
-    return res.status(400).json({ error: "Missing fileName or fileType" });
+  if (!fileName || !fileType || !eventId) {
+    return res
+      .status(400)
+      .json({ error: "Missing fileName, fileType, or eventId" });
   }
 
+  const key = `eventimages/${eventId}/images/${Date.now()}-${fileName}`;
+
   const command = new PutObjectCommand({
-    Bucket: "shaadialbumdemo",
-    Key: `upload/${Date.now()}-${fileName}`,
+    Bucket: process.env.BUCKET_NAME,
+    Key: key,
     ContentType: fileType,
   });
-  console.log(await s3Client.config.credentials());
 
   try {
-    const signedUrl = await getSignedUrl(s3Client, command);
-    res.status(200).json({ url: signedUrl });
+    const signedUrl = await getSignedUrl(s3Client, command, {
+      expiresIn: 3600, // 1 hour
+    });
+    res.status(200).json({ url: signedUrl, key });
   } catch (err) {
     console.error("Error generating signed URL:", err);
     res.status(500).json({ error: "Could not generate signed URL" });
+  }
+};
+
+// 🔹 List All Images with Pre-signed GET URLs
+export const getEventImages = async (req, res) => {
+  const { eventId, offset = 0, limit = 6 } = req.query;
+
+  if (!eventId) {
+    return res.status(400).json({ error: "Missing eventId" });
+  }
+
+  const prefix = `eventimages/${eventId}/images/`;
+
+  const listCommand = new ListObjectsV2Command({
+    Bucket: process.env.BUCKET_NAME,
+    Prefix: prefix,
+    MaxKeys: 1000, // fetch a large set to allow offset slicing
+  });
+
+  try {
+    const response = await s3Client.send(listCommand);
+    const allItems = response.Contents || [];
+
+    // Sort by most recent first (optional)
+    const sortedItems = allItems.sort(
+      (a, b) => new Date(b.LastModified) - new Date(a.LastModified)
+    );
+
+    const sliced = sortedItems.slice(
+      Number(offset),
+      Number(offset) + Number(limit)
+    );
+
+    const imageUrls = await Promise.all(
+      sliced.map(async (item) => {
+        const getCommand = new GetObjectCommand({
+          Bucket: process.env.BUCKET_NAME,
+          Key: item.Key,
+        });
+        return getSignedUrl(s3Client, getCommand, { expiresIn: 3600 });
+      })
+    );
+
+    res.status(200).json({ images: imageUrls });
+  } catch (err) {
+    console.error("Error fetching images:", err);
+    res.status(500).json({ error: "Could not retrieve images" });
   }
 };

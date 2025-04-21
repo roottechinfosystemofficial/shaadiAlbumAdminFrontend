@@ -6,6 +6,7 @@ import storage from "redux-persist/lib/storage"; // localStorage
 import coverImgReducer from "./Slices/CoverImgSlice";
 import galleryLayoutReducer from "./Slices/GalleryLayoutSlice";
 import userReducer from "./Slices/UserSlice";
+import eventReducer from "./Slices/EventSlice.jsx";
 
 // 🔐 Persist only `authUser` from user slice
 const authUserTransform = createTransform(
@@ -29,6 +30,7 @@ const rootReducer = combineReducers({
   user: userReducer,
   galleryLayout: galleryLayoutReducer,
   coverImg: coverImgReducer,
+  event: eventReducer,
 });
 
 // 🧊 Create persisted reducer

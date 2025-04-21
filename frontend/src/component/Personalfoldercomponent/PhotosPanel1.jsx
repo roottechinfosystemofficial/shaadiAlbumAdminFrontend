@@ -1,58 +1,33 @@
 import React, { useState, useEffect, useRef, memo } from "react";
-import axios from "axios";
-import { useSelector } from "react-redux";
 import AddPhotosModal from "./AddPhotosModal";
 
+const totalImages = 129;
 const batchSize = 6;
 
+const getImageUrls = (start, count) => {
+  return Array.from({ length: count }, (_, i) => {
+    const imageIndex = start + i + 1;
+    const imageName = `img (${imageIndex})`;
+    return `https://res.cloudinary.com/dzfaikj95/image/upload/w_500,c_scale/shaadialum/${imageName}.jpg`;
+  });
+};
+
 const PhotosPanel = () => {
-  const [images, setImages] = useState([]);
+  const [visibleImages, setVisibleImages] = useState([]);
   const [loadedAll, setLoadedAll] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const loaderRef = useRef(null);
   const observerRef = useRef(null);
-  const { singleEvent } = useSelector((state) => state.event);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Load initial batch
   useEffect(() => {
-    if (!singleEvent?._id) return;
-    setImages([]);
-    setLoadedAll(false);
-    fetchImages(0);
-  }, [singleEvent]);
+    setVisibleImages(getImageUrls(0, batchSize));
+  }, []);
 
-  const fetchImages = async (offset) => {
-    try {
-      const { data } = await axios.get(
-        "http://localhost:5000/api/v1/list-images",
-        {
-          params: {
-            eventId: singleEvent._id,
-            offset,
-            limit: batchSize,
-          },
-        }
-      );
-
-      const newImages = data.images || [];
-      const uniqueNewImages = newImages.filter((url) => !images.includes(url));
-
-      if (uniqueNewImages.length < batchSize) setLoadedAll(true);
-
-      setImages((prev) => [...prev, ...uniqueNewImages]);
-    } catch (err) {
-      console.error("Error fetching images:", err);
-    }
-  };
-
-  // Infinite scroll logic
   useEffect(() => {
-    if (!singleEvent?._id) return;
-
     observerRef.current = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !loadedAll) {
-          fetchImages(images.length);
+          requestIdleCallback(() => loadMoreImages());
         }
       },
       { rootMargin: "150px" }
@@ -66,7 +41,21 @@ const PhotosPanel = () => {
         observerRef.current.disconnect();
       }
     };
-  }, [images, loadedAll, singleEvent]);
+  }, [visibleImages, loadedAll]);
+
+  const loadMoreImages = () => {
+    const current = visibleImages.length;
+    if (current >= totalImages) {
+      setLoadedAll(true);
+      return;
+    }
+
+    const nextBatch = getImageUrls(
+      current,
+      Math.min(batchSize, totalImages - current)
+    );
+    setVisibleImages((prev) => [...prev, ...nextBatch]);
+  };
 
   return (
     <div className="p-2 sm:p-4">
@@ -81,39 +70,25 @@ const PhotosPanel = () => {
         </button>
       </div>
 
-      {/* Photo Grid or Empty State */}
-      {images.length > 0 ? (
-        <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {images.map((url, index) => (
-            <MemoizedImageCard
-              key={url + index}
-              src={url}
-              alt={`Photo ${index + 1}`}
-            />
-          ))}
-        </div>
-      ) : loadedAll ? (
-        <div className="flex flex-col items-center justify-center text-gray-500 mt-10">
-         
-          <p className="text-lg font-medium">No photos added yet.</p>
-          <p className="text-sm">
-            Click "Add Photos" to upload your first image.
-          </p>
-        </div>
-      ) : (
-        <div className="flex justify-center mt-10 text-gray-400 animate-pulse">
-          <p>Loading images...</p>
-        </div>
-      )}
+      {/* Responsive Photo Grid */}
+      <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {visibleImages.map((photo, index) => (
+          <MemoizedImageCard
+            key={photo}
+            src={photo}
+            alt={`Photo ${index + 1}`}
+          />
+        ))}
+      </div>
 
-      {/* Infinite Scroll Loader */}
-      {!loadedAll && images.length > 0 && (
+      {/* Loader */}
+      {!loadedAll && (
         <div ref={loaderRef} className="text-center mt-6 text-gray-500">
           Loading more images...
         </div>
       )}
 
-      {/* Add Photos Modal */}
+      {/* Add Photo Modal */}
       <AddPhotosModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -126,12 +101,15 @@ const ImageCard = ({ src, alt }) => {
   const [loaded, setLoaded] = useState(false);
 
   const handleError = (e) => {
-    e.target.src = "/fallback.jpg"; // fallback image in /public
+    e.target.src = "/fallback.jpg"; // Replace with your fallback image path
   };
 
   return (
     <div className="w-full min-w-[180px] max-w-full overflow-hidden rounded-lg shadow relative group">
+      {/* Container to maintain full height */}
       <div className="relative h-[300px]">
+        {" "}
+        {/* Set a fixed height or use dynamic height */}
         <img
           loading="lazy"
           src={src}
@@ -142,6 +120,7 @@ const ImageCard = ({ src, alt }) => {
             loaded ? "opacity-100 scale-100" : "opacity-0"
           } group-hover:scale-105`}
         />
+        {/* Placeholder loader */}
         {!loaded && (
           <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-lg" />
         )}

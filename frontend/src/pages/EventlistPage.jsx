@@ -7,6 +7,7 @@ import EditEventModal from "../component/EventlistingComponent/EditEventModal";
 import EventModal from "../component/EventlistingComponent/EventModal";
 import { useDispatch, useSelector } from "react-redux";
 import apiRequest from "../utils/apiRequest";
+import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
 
 const EventlistPage = () => {
   const [showModal, setShowModal] = useState(false);
@@ -14,7 +15,8 @@ const EventlistPage = () => {
   const [eventDate, setEventDate] = useState("");
   const [editingEvent, setEditingEvent] = useState(null);
   const [events, setEvents] = useState([]);
-  const { accessToken } = useSelector((state) => state.user); // ✅ include refreshToken
+  const { accessToken } = useSelector((state) => state.user);
+  const [useEvenetId, setUseEventId] = useState();
   const dispatch = useDispatch();
 
   const [editForm, setEditForm] = useState({
@@ -59,6 +61,8 @@ const EventlistPage = () => {
     setShowModal(false);
   };
 
+  useGetSingleEvent(useEvenetId);
+  //make this using hook
   const fetchEvent = async (eventId) => {
     try {
       const endpoint = `${EVENT_API_END_POINT}/getEventById/${eventId}`;
@@ -78,8 +82,8 @@ const EventlistPage = () => {
       console.error("Error fetching event:", err);
     }
   };
-
   const handleEdit = (id) => {
+    setUseEventId(id);
     fetchEvent(id);
   };
 

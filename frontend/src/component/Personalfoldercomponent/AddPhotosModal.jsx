@@ -2,18 +2,24 @@ import React, { useState } from "react";
 import axios from "axios";
 import imageCompression from "browser-image-compression";
 import { X, CheckCircle, Circle, FolderOpen, ImagePlus } from "lucide-react";
+import { useSelector } from "react-redux";
 
 const AddPhotosModal = ({ isOpen, onClose }) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [duplicateHandling, setDuplicateHandling] = useState("skip");
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-
+  const { singleEvent } = useSelector((state) => state.event);
+  console.log(singleEvent?._id);
   if (!isOpen) return null;
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     setSelectedFiles((prev) => [...prev, ...files]);
+  };
+  const handleClose = () => {
+    setSelectedFiles([]);
+    onClose(); // from props
   };
 
   const handleRemoveFile = (index) => {
@@ -50,6 +56,7 @@ const AddPhotosModal = ({ isOpen, onClose }) => {
             params: {
               fileName: compressed.name,
               fileType: compressed.type,
+              eventId: singleEvent?._id,
             },
           }
         );
@@ -190,11 +197,12 @@ const AddPhotosModal = ({ isOpen, onClose }) => {
           </p>
           <div className="flex gap-2">
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="px-4 py-2 rounded bg-slate text-gray-700 hover:bg-slate-dark transition"
             >
               Cancel
             </button>
+
             <button
               onClick={handleUpload}
               disabled={selectedFiles.length === 0 || uploading}
