@@ -1,6 +1,8 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import dotenv from "dotenv";
 
+dotenv.config();
 const s3Client = new S3Client({
   region: "ap-south-1",
   credentials: {
@@ -11,6 +13,8 @@ const s3Client = new S3Client({
 
 export const getPresignedUrl = async (req, res) => {
   const { fileName, fileType } = req.query;
+  console.log("AccessID:", process.env.ACCESSID);
+  console.log("SecretKey:", process.env.SECRETACCESSKEY);
 
   if (!fileName || !fileType) {
     return res.status(400).json({ error: "Missing fileName or fileType" });
@@ -21,6 +25,7 @@ export const getPresignedUrl = async (req, res) => {
     Key: `upload/${Date.now()}-${fileName}`,
     ContentType: fileType,
   });
+  console.log(await s3Client.config.credentials());
 
   try {
     const signedUrl = await getSignedUrl(s3Client, command);
