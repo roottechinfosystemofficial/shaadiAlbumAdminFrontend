@@ -95,7 +95,7 @@ export const user = async (req, res) => {
 export const findEventByEventcode = async (req, res) => {
   try {
     const { eventCode } = req.body;
-    const userId = req.userId;
+    const userId = req.userId; // Make sure this is set by your auth middleware
 
     if (!eventCode) {
       return res.status(400).json({
@@ -113,17 +113,20 @@ export const findEventByEventcode = async (req, res) => {
       });
     }
 
-    // ✅ Update user's event list
     if (userId) {
       const user = await AppUser.findById(userId);
 
-      if (user && !user.event.includes(eventCode)) {
-        user.eventNames.push(eventCode);
-        await user.save();
+      if (user) {
+        const alreadyJoined = user.searchEvent.some(
+          (e) => e.toString() === findedEvent._id.toString()
+        );
+
+        if (!alreadyJoined) {
+          user.searchEvent.push(findedEvent._id);
+          await user.save();
+        }
       }
     }
-
-    console.log("Event found:", findedEvent);
 
     return res.status(200).json({
       success: true,

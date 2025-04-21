@@ -18,7 +18,7 @@ const appUserSchema = new mongoose.Schema(
     otpExpiry: { type: Date, default: null },
     refreshTokenExpiry: { type: Date, default: null },
 
-    event: [{ type: mongoose.Schema.Types.ObjectId, ref: "Event" }],
+    searchEvent: [{ type: mongoose.Schema.Types.ObjectId, ref: "Event" }],
   },
   { timestamps: true }
 );
