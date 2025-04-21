@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import axios from "axios";
-import imageCompression from "browser-image-compression";
 import { X, CheckCircle, Circle, FolderOpen, ImagePlus } from "lucide-react";
 
 const AddPhotosModal = ({ isOpen, onClose }) => {
@@ -36,33 +35,25 @@ const AddPhotosModal = ({ isOpen, onClose }) => {
       const file = selectedFiles[i];
 
       try {
-        // 1. Compress
-        const compressed = await imageCompression(file, {
-          maxSizeMB: 1,
-          maxWidthOrHeight: 1920,
-          useWebWorker: true,
-        });
-
-        // 2. Get presigned URL
+        // 1. Get presigned URL
         const { data } = await axios.get(
           "http://localhost:5000/api/v1/api/s3/get-presigned-url",
           {
             params: {
-              fileName: compressed.name,
-              fileType: compressed.type,
+              fileName: file.name,
+              fileType: file.type,
             },
           }
         );
-        console.log(data);
 
-        // 3. Upload to S3
-        await axios.put(data.url, compressed, {
+        // 2. Upload to S3
+        await axios.put(data.url, file, {
           headers: {
-            "Content-Type": compressed.type,
+            "Content-Type": file.type,
           },
         });
 
-        // 4. Update progress
+        // 3. Update progress
         setUploadProgress((prev) => prev + progressPerFile);
       } catch (err) {
         console.error("Upload failed for:", file.name, err);
