@@ -177,8 +177,12 @@ const ClientPhotosView = ({ setWhichView }) => {
 
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between pb-6 gap-4">
           <div>
-            <h2 className="text-2xl font-bold">Dhruv</h2>
-            <p className="text-sm text-gray-500">dyhrf</p>
+            <h2 className="text-2xl font-bold">
+              {singleEvent?.eventName || "Event Name"}
+            </h2>
+            <p className="text-sm text-gray-500">
+              {singleEvent?.eventCode || "Event Code"}
+            </p>
           </div>
           <div className="flex flex-wrap gap-3 text-black">
             {[
@@ -204,8 +208,30 @@ const ClientPhotosView = ({ setWhichView }) => {
         </div>
 
         {isInitialLoading ? (
-          <div className="text-center py-12 text-gray-500">
-            Loading images...
+          <div className="flex flex-col items-center justify-center py-20 text-gray-500 animate-pulse">
+            <svg
+              className="animate-spin h-8 w-8 mb-4 text-gray-400"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 018 8h-4l3 3 3-3h-4a8 8 0 01-8 8v-4l-3 3 3 3v-4a8 8 0 01-8-8z"
+              ></path>
+            </svg>
+            <p className="text-sm font-medium">
+              Just a moment — your memories are being beautifully unwrapped 🎁
+            </p>
           </div>
         ) : (
           <div
