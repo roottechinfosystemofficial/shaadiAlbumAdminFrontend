@@ -4,8 +4,9 @@ import {
   View,
   TextInput,
   TouchableOpacity,
+  Alert,
 } from "react-native";
-import React from "react";
+import React, { useState } from "react";
 import {
   Ionicons,
   FontAwesome5,
@@ -13,16 +14,53 @@ import {
 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { theme } from "../constants/themes";
+import useAuth from "../Context/UserContext";
+import EventCard from "../Components/EventCard";
 
 const Home = () => {
   const navigation = useNavigation();
+  const [eventCode, setEventCode] = useState("");
+  const [eventData, setEventData] = useState(null);
+  const { token, user } = useAuth();
+  const handleEventCodeChange = async (text) => {
+    setEventCode(text);
+
+    if (text.length === 6) {
+      try {
+        const response = await fetch(
+          "http://192.168.1.66:5000/api/v1/app-event/findEventByEventcode",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token,
+            },
+            body: JSON.stringify({ eventCode: text }),
+          }
+        );
+
+        const data = await response.json();
+
+        if (response.ok) {
+          console.log("Event data:", data);
+          setEventData(data.event);
+        } else {
+          Alert.alert("Invalid Code", data.message || "Event not found.");
+        }
+      } catch (error) {
+        console.error("Error fetching event:", error);
+        Alert.alert("Error", "Something went wrong. Please try again.");
+      }
+    }
+  };
+  console.log("User", user);
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View style={{ flexDirection: "row", gap: 5 }}>
           <Text style={styles.greeting}>Hi!</Text>
-          <Text style={styles.name}>Priyank</Text>
+          <Text style={styles.name}>{user?.name}</Text>
         </View>
         <TouchableOpacity style={styles.bell}>
           <Ionicons name="notifications-outline" size={24} color="#65350F" />
@@ -41,6 +79,9 @@ const Home = () => {
           placeholder="Event Id"
           placeholderTextColor="#65350F"
           style={styles.input}
+          value={eventCode}
+          onChangeText={handleEventCodeChange}
+          maxLength={6}
         />
         <TouchableOpacity
           onPress={() => {
@@ -55,6 +96,7 @@ const Home = () => {
           />
         </TouchableOpacity>
       </View>
+      {eventData && <EventCard event={eventData} />}
     </View>
   );
 };

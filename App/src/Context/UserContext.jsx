@@ -45,7 +45,7 @@ export const UserProvider = ({ children }) => {
       }
 
       const response = await fetch(
-        "http://192.168.1.101:5000/api/v1/app-user/user",
+        "http://192.168.1.66:5000/api/v1/app-user/user",
         {
           method: "GET",
           headers: {
@@ -64,8 +64,8 @@ export const UserProvider = ({ children }) => {
       }
       const { data } = await response.json(); // ✅ Get 'data' first
       console.log(data);
-      const user = data.user; // ✅ Extract user from data
-      setUser(user);
+      // const user = data // ✅ Extract user from data
+      setUser(data);
 
       // ✅ Only navigate if needed
       if (navigation) {
