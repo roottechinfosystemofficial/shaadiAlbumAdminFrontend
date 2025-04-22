@@ -56,16 +56,19 @@ const ClientPhotosView = ({ singleEvent, setSingleEvent }) => {
         (img) => typeof img === "string" && img.trim() !== ""
       );
 
-      // Replace images on first page, append for subsequent pages
-      setImages((prevImages) =>
-        page === 1 ? allImages : [...prevImages, ...allImages]
-      );
+      // Simulate an additional loading time of 2 seconds after fetching the images
+      setTimeout(() => {
+        // Replace images on first page, append for subsequent pages
+        setImages((prevImages) =>
+          page === 1 ? allImages : [...prevImages, ...allImages]
+        );
 
-      if (allImages.length < 30) {
-        setLoadedAll(true);
-      }
+        if (allImages.length < 30) {
+          setLoadedAll(true);
+        }
 
-      setLoadingImages(false); // Set loadingImages to false once all images are fetched
+        setLoadingImages(false); // Set loadingImages to false once all images are fetched
+      }, 2000); // 2 seconds delay
     } catch (err) {
       console.error("Error fetching images:", err);
     }
