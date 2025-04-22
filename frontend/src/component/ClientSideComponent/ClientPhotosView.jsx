@@ -10,18 +10,20 @@ import {
   ArrowDownToLineIcon,
 } from "lucide-react";
 
-const ClientPhotosView = ({ singleEvent }) => {
+const ClientPhotosView = ({ singleEvent, setSingleEvent }) => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const [images, setImages] = useState([]);
   const [loadedAll, setLoadedAll] = useState(false);
   const [page, setPage] = useState(1);
+  const [loadingImages, setLoadingImages] = useState(true); // Track image loading status
 
   useEffect(() => {
     if (!eventId) return;
     setImages([]);
     setLoadedAll(false);
     setPage(1);
+    setLoadingImages(true); // Start loading images
     fetchEvent();
   }, [eventId]);
 
@@ -46,26 +48,26 @@ const ClientPhotosView = ({ singleEvent }) => {
       const { data } = await axios.get(
         "http://localhost:5000/api/v1/list-images",
         {
-          params: { eventId: eventId, page, limit: 30 },
+          params: { eventId: eventId, page, limit: 10 },
         }
       );
 
-      const allImages = data.images || [];
-      setImages((prevImages) => [...prevImages, ...allImages]);
+      const allImages = (data.images || []).filter(
+        (img) => typeof img === "string" && img.trim() !== ""
+      );
+
+      // Replace images on first page, append for subsequent pages
+      setImages((prevImages) =>
+        page === 1 ? allImages : [...prevImages, ...allImages]
+      );
 
       if (allImages.length < 30) {
         setLoadedAll(true);
       }
+
+      setLoadingImages(false); // Set loadingImages to false once all images are fetched
     } catch (err) {
       console.error("Error fetching images:", err);
-    }
-  };
-
-  const handleScroll = (e) => {
-    const bottom =
-      e.target.scrollHeight === e.target.scrollTop + e.target.clientHeight;
-    if (bottom && !loadedAll) {
-      setPage((prevPage) => prevPage + 1);
     }
   };
 
@@ -74,10 +76,7 @@ const ClientPhotosView = ({ singleEvent }) => {
   };
 
   return (
-    <div
-      className="container mx-auto p-4 h-[90vh] overflow-y-auto overflow-x-hidden"
-      onScroll={handleScroll}
-    >
+    <div className="container mx-auto p-4 pb-24">
       {/* Back Button */}
       <button
         onClick={goBack}
@@ -115,32 +114,47 @@ const ClientPhotosView = ({ singleEvent }) => {
         </div>
       </div>
 
-      {/* Image Gallery */}
-      <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
-        {images.map((image, index) => (
-          <div
-            key={index}
-            className="mb-4 break-inside-avoid rounded-lg overflow-hidden bg-gray-100 min-h-[200px]"
-          >
-            <img
-              src={image}
-              alt={`Image ${index}`}
-              className="w-full h-auto transition-opacity duration-500 ease-in-out opacity-0 blur-sm"
-              loading="lazy"
-              onLoad={(e) =>
-                e.currentTarget.classList.remove("opacity-0", "blur-sm")
-              }
-            />
-          </div>
-        ))}
+      {/* Masonry Image Grid using CSS columns */}
+      <div
+        className="masonry-grid"
+        style={{
+          columnCount: 4,
+          columnGap: "1rem",
+        }}
+      >
+        {/* Display skeleton loader if images are loading */}
+        {loadingImages
+          ? [...Array(10)].map((_, index) => (
+              <div
+                key={index}
+                className="masonry-item break-inside-avoid rounded-lg overflow-hidden bg-gray-100"
+                style={{ marginBottom: "1rem" }}
+              >
+                {/* Skeleton Loader using Tailwind CSS */}
+                <div className="w-full h-48 bg-gray-300 animate-pulse rounded-lg"></div>
+              </div>
+            ))
+          : // Display images once loading is finished
+            [...images].reverse().map((image, index) => (
+              <div
+                key={index}
+                className="masonry-item break-inside-avoid rounded-lg overflow-hidden bg-gray-100"
+                style={{ marginBottom: "1rem" }}
+              >
+                <img
+                  src={image}
+                  alt={`Image ${index}`}
+                  loading="lazy"
+                  className="w-full h-auto object-cover transition-opacity duration-500 ease-in-out opacity-0 blur-sm"
+                  onLoad={(e) =>
+                    e.currentTarget.classList.remove("opacity-0", "blur-sm")
+                  }
+                />
+              </div>
+            ))}
       </div>
 
-      {!loadedAll && (
-        <div className="text-center py-4">
-          <span className="inline-block w-6 h-6 border-4 border-t-transparent border-gray-400 rounded-full animate-spin" />
-        </div>
-      )}
-
+      {/* No Images Available Message */}
       {loadedAll && images.length === 0 && (
         <p className="text-center text-gray-500">
           No images available for this event.
