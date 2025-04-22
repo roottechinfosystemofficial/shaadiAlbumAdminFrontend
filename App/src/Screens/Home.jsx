@@ -5,8 +5,9 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
+  ScrollView,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Ionicons,
   FontAwesome5,
@@ -16,11 +17,13 @@ import { useNavigation } from "@react-navigation/native";
 import { theme } from "../constants/themes";
 import useAuth from "../Context/UserContext";
 import EventCard from "../Components/EventCard";
+import ScreenWrapper from "../Components/ScreenWrapper";
 
 const Home = () => {
   const navigation = useNavigation();
   const [eventCode, setEventCode] = useState("");
-  const [eventData, setEventData] = useState(null);
+  const [eventData, setEventData] = useState([]);
+  const [eventList, setEventList] = useState([]);
   const { token, user } = useAuth();
   const handleEventCodeChange = async (text) => {
     setEventCode(text);
@@ -42,8 +45,19 @@ const Home = () => {
         const data = await response.json();
 
         if (response.ok) {
-          console.log("Event data:", data);
-          setEventData(data.event);
+          const newEvent = data.event;
+          console.log("Fetched Event:", newEvent);
+
+          // Check if already exists in the list
+          const exists = eventList.some((e) => e._id === newEvent._id);
+
+          if (!exists) {
+            setEventList((prev) => [newEvent, ...prev]);
+          } else {
+            Alert.alert("Event already added.");
+          }
+
+          setEventCode(""); // Clear input after successful fetch
         } else {
           Alert.alert("Invalid Code", data.message || "Event not found.");
         }
@@ -53,51 +67,62 @@ const Home = () => {
       }
     }
   };
-  console.log("User", user);
-  return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={{ flexDirection: "row", gap: 5 }}>
-          <Text style={styles.greeting}>Hi!</Text>
-          <Text style={styles.name}>{user?.name}</Text>
-        </View>
-        <TouchableOpacity style={styles.bell}>
-          <Ionicons name="notifications-outline" size={24} color="#65350F" />
-        </TouchableOpacity>
-      </View>
 
-      {/* Event ID Input */}
-      <View style={styles.inputContainer}>
-        <FontAwesome5
-          name="ticket-alt"
-          size={16}
-          color="#65350F"
-          style={styles.icon}
-        />
-        <TextInput
-          placeholder="Event Id"
-          placeholderTextColor="#65350F"
-          style={styles.input}
-          value={eventCode}
-          onChangeText={handleEventCodeChange}
-          maxLength={6}
-        />
-        <TouchableOpacity
-          onPress={() => {
-            navigation.navigate("QRScanner");
-          }}
-        >
-          <MaterialCommunityIcons
-            name="qrcode-scan"
-            size={22}
+  useEffect(() => {
+    if (user?.searchEvent?.length) {
+      setEventList(user.searchEvent);
+    }
+  }, [user]);
+  return (
+    <ScreenWrapper bg="white">
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={{ flexDirection: "row", gap: 5 }}>
+            <Text style={styles.greeting}>Hi!</Text>
+            <Text style={styles.name}>{user?.name}</Text>
+          </View>
+          <TouchableOpacity style={styles.bell}>
+            <Ionicons name="notifications-outline" size={24} color="#65350F" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Event ID Input */}
+        <View style={styles.inputContainer}>
+          <FontAwesome5
+            name="ticket-alt"
+            size={16}
             color="#65350F"
-            style={styles.qrIcon}
+            style={styles.icon}
           />
-        </TouchableOpacity>
+          <TextInput
+            placeholder="Event Id"
+            placeholderTextColor="#65350F"
+            style={styles.input}
+            value={eventCode}
+            onChangeText={handleEventCodeChange}
+            maxLength={6}
+          />
+          <TouchableOpacity
+            onPress={() => {
+              navigation.navigate("QRScanner");
+            }}
+          >
+            <MaterialCommunityIcons
+              name="qrcode-scan"
+              size={22}
+              color="#65350F"
+              style={styles.qrIcon}
+            />
+          </TouchableOpacity>
+        </View>
+        <ScrollView style={{ marginTop: 5 }}>
+          {eventList.map((event) => (
+            <EventCard key={event._id} event={event} />
+          ))}
+        </ScrollView>
       </View>
-      {eventData && <EventCard event={eventData} />}
-    </View>
+    </ScreenWrapper>
   );
 };
 
@@ -108,7 +133,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
     paddingHorizontal: 20,
-    paddingTop: 40,
+    // paddingTop: 30,
   },
   qrIcon: {
     marginRight: 7,
@@ -140,7 +165,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 7,
-    marginTop: 30,
+    marginTop: 20,
   },
   icon: {
     marginRight: 8,

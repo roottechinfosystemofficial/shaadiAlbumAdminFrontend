@@ -7,10 +7,16 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
 const EventCard = ({ event }) => {
+  const navigation = useNavigation();
+  const id = event?._id;
   return (
-    <TouchableOpacity style={styles.card}>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => navigation.navigate("EventImages", { id })}
+    >
       <ImageBackground
         source={{ uri: event.eventImage }}
         style={styles.image}

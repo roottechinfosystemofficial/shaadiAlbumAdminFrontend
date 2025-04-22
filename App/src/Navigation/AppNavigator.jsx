@@ -17,10 +17,11 @@ import Account from "../Screens/Account";
 import Favorites from "../Screens/Favorites";
 import EditProfile from "../Screens/EditProfile";
 import AlbumScreen from "../Screens/AlbumScreen";
-import FlipbookScreen from "../Screens/FlipBookScreen";
 import QRScanner from "../Components/QRScanner";
 import SelfieWithFaceDetector from "../Components/SelfieWithFaceDetector";
 import FaceIDVerification from "../Components/FaceIDVerification/FaceIDVerification";
+import FlipBookScreen from "../Screens/FlipBookScreen";
+import EventImages from "../Screens/EventImages";
 
 const Stack = createStackNavigator();
 
@@ -45,9 +46,10 @@ const AppNavigator = () => {
       <Stack.Screen name="Favorites" component={Favorites} />
       <Stack.Screen name="EditProfile" component={EditProfile} />
       <Stack.Screen name="AlbumScreen" component={AlbumScreen} />
-      <Stack.Screen name="Flipbook" component={FlipbookScreen} />
+      <Stack.Screen name="Flipbook" component={FlipBookScreen} />
       <Stack.Screen name="QRScanner" component={QRScanner} />
       <Stack.Screen name="FaceIDVerification" component={FaceIDVerification} />
+      <Stack.Screen name="EventImages" component={EventImages} />
       <Stack.Screen
         name="SelfieWithFaceDetector"
         component={SelfieWithFaceDetector}
