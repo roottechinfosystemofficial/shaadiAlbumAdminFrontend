@@ -272,33 +272,37 @@ export const editPofile = async (req, res) => {
 
 export const logoutUser = async (req, res) => {
   try {
-    const userId = req.userId;
+    const token = req.cookies?.accessToken;
+
+    if (!token) {
+      return res
+        .status(200)
+        .json(new ApiResponse(200, {}, "Already logged out"));
+    }
+
+    // Decode without verifying (because token may be expired)
+    const decoded = jwt.decode(token);
+    const userId = decoded?.userId;
 
     if (!userId) {
-      return res.status(400).json(new ApiResponse(400, {}, "User not found"));
+      return res
+        .status(200)
+        .json(new ApiResponse(200, {}, "Already logged out"));
     }
 
-    // Find and update the user's refreshToken in the database
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { $set: { refreshToken: "", refreshTokenExpiry: "" } }, // Clear refresh token and expiry
-      { new: true }
-    );
+    // Clear refreshToken
+    await User.findByIdAndUpdate(userId, {
+      $set: { refreshToken: "", refreshTokenExpiry: "" },
+    });
 
-    // If the user isn't found or the refreshToken doesn't match
-    if (!user) {
-      throw new ApiError(404, "User not found");
-    }
-
-    // Send success response
     return res
       .status(200)
       .json(new ApiResponse(200, {}, "User logged out successfully"));
   } catch (error) {
-    console.error("🔴 Error in logoutUser:", error);
+    console.error("Logout Error:", error);
     return res
       .status(500)
-      .json(new ApiResponse(500, null, "Internal Server Error"));
+      .json(new ApiResponse(500, {}, "Internal Server Error"));
   }
 };
 

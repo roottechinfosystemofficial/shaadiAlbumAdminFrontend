@@ -27,7 +27,7 @@ userRouter.post("/refreshAccessToken", verifyJWT, refreshAccessToken);
 
 userRouter.put("/user/edit-profile", verifyJWT, editPofile);
 
-userRouter.post("/user/logout", verifyJWT, logoutUser);
+userRouter.post("/user/logout", logoutUser);
 userRouter.get("/user/checkAuth", verifyJWT, checkAuth);
 
 export default userRouter;

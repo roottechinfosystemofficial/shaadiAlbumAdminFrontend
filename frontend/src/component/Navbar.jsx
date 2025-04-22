@@ -16,6 +16,7 @@ import { USER_API_END_POINT } from "../constant";
 import apiRequest from "../utils/apiRequest";
 import Cookies from "js-cookie";
 import toast from "../utils/toast.js";
+import { logoutUser } from "../utils/logoutUser.js";
 
 const Navbar = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -43,32 +44,8 @@ const Navbar = () => {
     setIsSettingsOpen(false);
   };
 
-  const logoutHandler = async () => {
-    try {
-      console.log(accessToken);
-      console.log();
-
-      const endpoint = `${USER_API_END_POINT}/logout`;
-
-      const res = await apiRequest("POST", endpoint, {}, accessToken, dispatch);
-
-      if (res.status === 200) {
-        Cookies.remove("accessToken");
-        dispatch(setAuthUser(null));
-        dispatch(setAccessToken(null));
-        dispatch(setRefreshToken(null));
-        Cookies.remove("refreshToken");
-
-        navigate("/login");
-
-        toast.success("You have successfully logged out!");
-      }
-    } catch (error) {
-      console.error("Logout failed:", error.message);
-      toast.error(
-        "Unable to logout. Please check your connection and try again."
-      );
-    }
+  const logoutHandler = () => {
+    logoutUser({ accessToken, dispatch, navigate });
   };
 
   return (
