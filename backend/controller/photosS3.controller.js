@@ -75,12 +75,8 @@ export const getEventImages = async (req, res) => {
         : null;
     } while (continuationToken);
 
-    const sortedItems = allItems.sort(
-      (a, b) => new Date(b.LastModified) - new Date(a.LastModified)
-    );
-
     const startIndex = (page - 1) * pageSize;
-    const paginatedItems = sortedItems.slice(startIndex, startIndex + pageSize);
+    const paginatedItems = allItems.slice(startIndex, startIndex + pageSize);
 
     const imageUrls = await Promise.all(
       paginatedItems.map(async (item) => {

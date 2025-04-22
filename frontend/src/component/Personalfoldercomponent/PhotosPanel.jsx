@@ -1,7 +1,7 @@
 import React, { useState, useEffect, memo } from "react";
 import axios from "axios";
-import { useSelector } from "react-redux";
 import AddPhotosModal from "./AddPhotosModal";
+import { useParams } from "react-router-dom";
 
 const PhotosPanel = () => {
   const [images, setImages] = useState([]);
@@ -9,27 +9,29 @@ const PhotosPanel = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedImages, setSelectedImages] = useState(new Set());
   const [page, setPage] = useState(1);
-  const { singleEvent } = useSelector((state) => state.event);
+  const { eventId } = useParams();
 
   useEffect(() => {
-    if (!singleEvent?._id) return;
+    if (!eventId) return;
     setImages([]);
     setSelectedImages(new Set());
     setLoadedAll(false);
     setPage(1);
-  }, [singleEvent]);
+  }, [eventId]);
 
   useEffect(() => {
-    if (!singleEvent?._id) return;
+    if (!eventId) return;
     fetchImages();
-  }, [page, singleEvent]);
+  }, [page, eventId]);
 
   const fetchImages = async () => {
     try {
+      console.log(eventId);
+
       const { data } = await axios.get(
         "http://localhost:5000/api/v1/list-images",
         {
-          params: { eventId: singleEvent._id, page, limit: 300 },
+          params: { eventId: eventId, page, limit: 300 },
         }
       );
 

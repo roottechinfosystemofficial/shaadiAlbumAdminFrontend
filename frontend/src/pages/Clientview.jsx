@@ -54,7 +54,10 @@ const Clientview = () => {
         </div>
       </div>
       {whichView === "photos" ? (
-        <ClientPhotosView setWhichView={setWhichView} />
+        <ClientPhotosView
+          setWhichView={setWhichView}
+          singleEvent={singleEvent}
+        />
       ) : (
         <UnderClientView setWhichView={setWhichView} />
       )}
