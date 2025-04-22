@@ -56,17 +56,25 @@ export const getEventImages = async (req, res) => {
 
   const prefix = `eventimages/${eventId}/images/`;
 
-  const listCommand = new ListObjectsV2Command({
-    Bucket: process.env.BUCKET_NAME,
-    Prefix: prefix,
-    MaxKeys: 1000,
-  });
+  let allItems = [];
+  let continuationToken;
 
   try {
-    const response = await s3Client.send(listCommand);
-    const allItems = response.Contents || [];
+    do {
+      const listCommand = new ListObjectsV2Command({
+        Bucket: process.env.BUCKET_NAME,
+        Prefix: prefix,
+        MaxKeys: 1000,
+        ContinuationToken: continuationToken,
+      });
 
-    // Sort by most recent first (optional)
+      const response = await s3Client.send(listCommand);
+      allItems = [...allItems, ...(response.Contents || [])];
+      continuationToken = response.IsTruncated
+        ? response.NextContinuationToken
+        : null;
+    } while (continuationToken);
+
     const sortedItems = allItems.sort(
       (a, b) => new Date(b.LastModified) - new Date(a.LastModified)
     );
@@ -87,3 +95,4 @@ export const getEventImages = async (req, res) => {
     res.status(500).json({ error: "Could not retrieve images" });
   }
 };
+
