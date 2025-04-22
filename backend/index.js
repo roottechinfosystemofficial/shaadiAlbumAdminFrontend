@@ -6,7 +6,7 @@ import { dbConnect } from "./utils/db.js";
 import userRouter from "./routes/user.route.js";
 import eventRouter from "./routes/event.route.js";
 import appUserRouter from "./routes/appUser.route.js";
-import photoUploadRouter from "./routes/photoUpload.route.js";
+import photoS3Router from "./routes/photoS3route.js";
 
 dotenv.config();
 
@@ -33,8 +33,7 @@ app.use(cors(corsOptions));
 app.use("/api/v1", userRouter);
 app.use("/api/v1", appUserRouter);
 app.use("/api/v1", eventRouter);
-app.use("/api/v1", photoUploadRouter);
-
+app.use("/api/v1", photoS3Router);
 
 dbConnect();
 

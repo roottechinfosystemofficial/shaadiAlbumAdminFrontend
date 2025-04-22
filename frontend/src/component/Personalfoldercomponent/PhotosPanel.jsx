@@ -10,7 +10,6 @@ const PhotosPanel = () => {
   const [selectedImages, setSelectedImages] = useState(new Set());
   const { singleEvent } = useSelector((state) => state.event);
 
-  // Load all images once
   useEffect(() => {
     if (!singleEvent?._id) return;
     setImages([]);
