@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import { useDispatch, useSelector } from "react-redux";
 import { EVENT_API_END_POINT } from "../constant";
 import EventCard from "../component/EventlistingComponent/EventCard";
 import EditEventModal from "../component/EventlistingComponent/EditEventModal";
 import EventModal from "../component/EventlistingComponent/EventModal";
-import { useDispatch, useSelector } from "react-redux";
 import apiRequest from "../utils/apiRequest";
 import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
 
@@ -15,9 +14,11 @@ const EventlistPage = () => {
   const [eventDate, setEventDate] = useState("");
   const [editingEvent, setEditingEvent] = useState(null);
   const [events, setEvents] = useState([]);
-  const { accessToken } = useSelector((state) => state.user);
-  const [useEvenetId, setUseEventId] = useState();
+  const [useEventId, setUseEventId] = useState();
+
   const dispatch = useDispatch();
+  const { accessToken } = useSelector((state) => state.user);
+  const { singleEvent } = useSelector((state) => state.event);
 
   const [editForm, setEditForm] = useState({
     eventName: "",
@@ -30,8 +31,8 @@ const EventlistPage = () => {
   const getAllEventsOfUser = async () => {
     try {
       const endpoint = `${EVENT_API_END_POINT}/getAllEventsOfUser`;
-      const res = await apiRequest("GET", endpoint, {}, accessToken, dispatch); // ✅ pass dispatch
-      if (res.status === 200) setEvents(res.data.data);
+      const res = await apiRequest("GET", endpoint, {}, accessToken, dispatch);
+      if (res?.status === 200) setEvents(res?.data?.data || []);
     } catch (error) {
       console.error("Error fetching events:", error);
     }
@@ -52,8 +53,8 @@ const EventlistPage = () => {
         eventDetails,
         accessToken,
         dispatch
-      ); // ✅ pass dispatch
-      if (res.status === 200) getAllEventsOfUser();
+      );
+      if (res?.status === 200) getAllEventsOfUser();
     } catch (error) {
       console.error("Error adding event:", error);
     }
@@ -61,30 +62,25 @@ const EventlistPage = () => {
     setShowModal(false);
   };
 
-  useGetSingleEvent(useEvenetId);
-  //make this using hook
-  const fetchEvent = async (eventId) => {
-    try {
-      const endpoint = `${EVENT_API_END_POINT}/getEventById/${eventId}`;
-      const res = await apiRequest("GET", endpoint, {}, accessToken, dispatch); // ✅ pass dispatch
-      if (res.status === 200) {
-        const data = res.data.data;
-        setEditingEvent(data);
-        setEditForm({
-          eventName: data.eventName || "",
-          eventDate: data.eventDate?.substring(0, 10) || "",
-          deleteDate: data.eventDeleteDate?.substring(0, 10) || "",
-          eventCode: data.eventCode || "",
-          eventPassword: data.eventPassword || "",
-        });
-      }
-    } catch (err) {
-      console.error("Error fetching event:", err);
+  // Fetch single event with custom hook
+  useGetSingleEvent(useEventId);
+
+  // Update edit form when event is fetched
+  useEffect(() => {
+    if (singleEvent?._id === useEventId) {
+      setEditingEvent(singleEvent);
+      setEditForm({
+        eventName: singleEvent?.eventName || "",
+        eventDate: singleEvent?.eventDate?.substring(0, 10) || "",
+        deleteDate: singleEvent?.eventDeleteDate?.substring(0, 10) || "",
+        eventCode: singleEvent?.eventCode || "",
+        eventPassword: singleEvent?.eventPassword || "",
+      });
     }
-  };
+  }, [singleEvent, useEventId]);
+
   const handleEdit = (id) => {
     setUseEventId(id);
-    fetchEvent(id);
   };
 
   const handleDelete = (id) => {
@@ -129,9 +125,9 @@ const EventlistPage = () => {
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {events.map((event) => (
+          {events?.map((event) => (
             <EventCard
-              key={event._id}
+              key={event?._id}
               event={event}
               onEdit={handleEdit}
               onDelete={handleDelete}

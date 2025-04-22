@@ -1,17 +1,24 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 const EditEventModal = ({ editForm, setEditForm, setEditingEvent }) => {
   const [hasChanges, setHasChanges] = useState(false);
+  const initialEditFormRef = useRef(null); // store original data here
 
-  // Track if the editForm is different from the initial one to enable/disable Save button
+  // Save the original form only once when modal opens
   useEffect(() => {
-    const isFormChanged = Object.keys(editForm).some(
-      (key) => editForm[key] !== initialEditForm[key]
-    );
-    setHasChanges(isFormChanged);
+    if (editForm && !initialEditFormRef.current) {
+      initialEditFormRef.current = { ...editForm };
+    }
   }, [editForm]);
 
-  const initialEditForm = { ...editForm }; // Keep a copy of the initial form state
+  // Track changes between original and current form
+  useEffect(() => {
+    const initial = initialEditFormRef.current;
+    const isChanged = Object.keys(editForm || {}).some(
+      (key) => editForm[key] !== initial?.[key]
+    );
+    setHasChanges(isChanged);
+  }, [editForm]);
 
   const handleEditFormChange = (field, value) => {
     setEditForm((prev) => ({ ...prev, [field]: value }));
@@ -20,7 +27,7 @@ const EditEventModal = ({ editForm, setEditForm, setEditingEvent }) => {
   const handleEditSubmit = (e) => {
     e.preventDefault();
     console.log("Edited Event Details:", editForm);
-    // Add API update logic here if needed
+    // TODO: Add API call to update event
   };
 
   return (
@@ -30,7 +37,10 @@ const EditEventModal = ({ editForm, setEditForm, setEditingEvent }) => {
           <h2 className="text-xl font-bold">Edit Event</h2>
           <button
             className="text-gray-500 hover:text-gray-700 text-lg"
-            onClick={() => setEditingEvent(null)}
+            onClick={() => {
+              setEditingEvent(null);
+              initialEditFormRef.current = null;
+            }}
           >
             ×
           </button>
@@ -41,7 +51,7 @@ const EditEventModal = ({ editForm, setEditForm, setEditingEvent }) => {
           </label>
           <input
             type="text"
-            value={editForm.eventName}
+            value={editForm?.eventName || ""}
             onChange={(e) => handleEditFormChange("eventName", e.target.value)}
             className="w-full border p-2 rounded-md mb-3"
           />
@@ -50,7 +60,7 @@ const EditEventModal = ({ editForm, setEditForm, setEditingEvent }) => {
           </label>
           <input
             type="date"
-            value={editForm.eventDate}
+            value={editForm?.eventDate || ""}
             onChange={(e) => handleEditFormChange("eventDate", e.target.value)}
             className="w-full border p-2 rounded-md mb-3"
           />
@@ -60,7 +70,7 @@ const EditEventModal = ({ editForm, setEditForm, setEditingEvent }) => {
           <input
             type="date"
             min={new Date().toISOString().split("T")[0]}
-            value={editForm.deleteDate}
+            value={editForm?.deleteDate || ""}
             onChange={(e) => handleEditFormChange("deleteDate", e.target.value)}
             className="w-full border p-2 rounded-md mb-3"
           />
@@ -68,9 +78,9 @@ const EditEventModal = ({ editForm, setEditForm, setEditingEvent }) => {
           <div className="flex items-center mb-2 gap-2">
             <input
               type="checkbox"
-              checked={editForm.showEditCode}
+              checked={editForm?.showEditCode || false}
               onChange={() =>
-                handleEditFormChange("showEditCode", !editForm.showEditCode)
+                handleEditFormChange("showEditCode", !editForm?.showEditCode)
               }
               className="accent-blue-600 w-4 h-4"
               id="editCode"
@@ -82,10 +92,10 @@ const EditEventModal = ({ editForm, setEditForm, setEditingEvent }) => {
               Change Event ID
             </label>
           </div>
-          {editForm.showEditCode && (
+          {editForm?.showEditCode && (
             <input
               type="text"
-              value={editForm.eventCode}
+              value={editForm?.eventCode || ""}
               onChange={(e) =>
                 handleEditFormChange("eventCode", e.target.value)
               }
@@ -96,11 +106,11 @@ const EditEventModal = ({ editForm, setEditForm, setEditingEvent }) => {
           <div className="flex items-center mb-2 gap-2">
             <input
               type="checkbox"
-              checked={editForm.showEditPassword}
+              checked={editForm?.showEditPassword || false}
               onChange={() =>
                 handleEditFormChange(
                   "showEditPassword",
-                  !editForm.showEditPassword
+                  !editForm?.showEditPassword
                 )
               }
               className="accent-blue-600 w-4 h-4"
@@ -113,10 +123,10 @@ const EditEventModal = ({ editForm, setEditForm, setEditingEvent }) => {
               Change Password
             </label>
           </div>
-          {editForm.showEditPassword && (
+          {editForm?.showEditPassword && (
             <input
               type="text"
-              value={editForm.eventPassword}
+              value={editForm?.eventPassword || ""}
               onChange={(e) =>
                 handleEditFormChange("eventPassword", e.target.value)
               }
@@ -128,10 +138,14 @@ const EditEventModal = ({ editForm, setEditForm, setEditingEvent }) => {
             <button
               type="button"
               className="bg-muted px-4 py-2 rounded-md hover:bg-muted-dark"
-              onClick={() => setEditingEvent(null)}
+              onClick={() => {
+                setEditingEvent(null);
+                initialEditFormRef.current = null;
+              }}
             >
               Cancel
             </button>
+
             <button
               type="submit"
               className={`${
