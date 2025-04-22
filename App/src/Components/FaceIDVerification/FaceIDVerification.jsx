@@ -6,7 +6,7 @@ import { theme } from "../../constants/themes";
 import ScreenWrapper from "../ScreenWrapper";
 import BackButton from "../BackButton";
 import { wp } from "../../helpers/Common";
-import UserSelfieIcon from "../../../assets/Icons/UserSelfieIcon";
+import SelfIcon from "../../../assets/Icons/SelfIcon";
 
 const FaceIDVerification = () => {
   const navigation = useNavigation();
@@ -28,7 +28,7 @@ const FaceIDVerification = () => {
         </View>
 
         <View style={styles.imageContainer}>
-          <UserSelfieIcon />
+          <SelfIcon />
         </View>
 
         <View style={styles.rulesContainer}>
@@ -92,6 +92,7 @@ const styles = StyleSheet.create({
   imageContainer: {
     alignItems: "center",
     marginBottom: 30,
+    height: 200,
   },
   iconWithCross: {
     position: "relative",
