@@ -6,6 +6,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import dotenv from "dotenv";
+import sharp from "sharp";
 
 dotenv.config();
 
@@ -133,14 +134,39 @@ export const getAppEventImages = async (req, res) => {
     const startIndex = (page - 1) * pageSize;
     const paginatedItems = sortedItems.slice(startIndex, startIndex + pageSize);
 
-    // Generate signed URLs for the images
+    // Generate signed URLs for the images and resize them
     const imageUrls = await Promise.all(
       paginatedItems.map(async (item) => {
         const getCommand = new GetObjectCommand({
           Bucket: process.env.BUCKET_NAME,
           Key: item.Key,
         });
-        return getSignedUrl(s3Client, getCommand, { expiresIn: 3600 });
+
+        // Fetch image from S3
+        const image = await s3Client.send(getCommand);
+
+        // Resize and compress the image using Sharp
+        const resizedImage = await sharp(image.Body)
+          .resize(800) // Resize to width 800px (you can adjust this based on your needs)
+          .jpeg({ quality: 50 }) // Reduce quality to 50 (you can adjust as needed)
+          .toBuffer();
+
+        // Upload the resized image to S3 or return it directly
+        const resizedKey = `resized/${item.Key}`; // Save the resized image with a new name (optional)
+
+        // (Optional) You could upload the resized image back to S3 if you want to keep it
+        // await s3Client.send(new PutObjectCommand({
+        //   Bucket: process.env.BUCKET_NAME,
+        //   Key: resizedKey,
+        //   Body: resizedImage,
+        // }));
+
+        // Generate signed URL for the resized image
+        const resizedImageUrl = await getSignedUrl(s3Client, getCommand, {
+          expiresIn: 3600,
+        });
+
+        return resizedImageUrl;
       })
     );
 

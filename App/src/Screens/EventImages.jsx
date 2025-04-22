@@ -58,6 +58,24 @@ const EventImages = () => {
     })();
   }, []);
 
+  useEffect(() => {
+    if (modalVisible && selectedImage && modalFlatListRef.current) {
+      const index = images.findIndex((img) => img.id === selectedImage.id);
+      if (index !== -1) {
+        setTimeout(() => {
+          try {
+            modalFlatListRef.current?.scrollToIndex({
+              index,
+              animated: false,
+            });
+          } catch (e) {
+            console.log("scrollToIndex error:", e);
+          }
+        }, 100); // allow layout to settle
+      }
+    }
+  }, [modalVisible, selectedImage, images]);
+
   const getImageStyle = (type) => {
     switch (type) {
       case "vertical":
@@ -162,8 +180,11 @@ const EventImages = () => {
       } else {
         const processedImages = await Promise.all(
           newImages.map(async (url, index) => {
-            // Get image dimensions using Image component to determine type
+            // Get image dimensions to determine type
             const { width, height } = await getImageDimensions(url);
+
+            // Prefetch image for faster display
+            Image.prefetch(url); // Prefetch image URL here
 
             // Determine image type based on its aspect ratio
             let type = "square"; // Default to square
@@ -175,7 +196,7 @@ const EventImages = () => {
 
             return {
               id: url,
-              uri: { uri: url },
+              uri: { uri: url }, // Ensure this is the correct format
               type: type,
             };
           })
@@ -227,12 +248,13 @@ const EventImages = () => {
           activeOpacity={0.9}
         >
           <View style={[styles.card, imgStyle]}>
+            {/* Log image source for debugging */}
             <Image
-              source={item.uri}
+              source={item.uri} // Ensure the URI is valid
               style={[styles.image, imgStyle]}
               resizeMode="cover"
+              onError={(error) => console.error("Image Load Error: ", error)} // Handle image load errors
             />
-
             <TouchableOpacity
               style={styles.heartIcon}
               onPress={() => toggleFavorite(item.id)}
@@ -243,7 +265,6 @@ const EventImages = () => {
                 color={theme.colours.primary}
               />
             </TouchableOpacity>
-
             <TouchableOpacity
               style={styles.downloadIcon}
               onPress={() => downloadImage(item.uri)}
@@ -266,7 +287,7 @@ const EventImages = () => {
         <View style={styles.header}>
           <Text style={styles.title}>Favorite List</Text>
           <View style={{ flexDirection: "row", gap: 10 }}>
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={styles.gridButton}
               onPress={handleSelfieCapture}
             >
@@ -275,7 +296,7 @@ const EventImages = () => {
                 size={28}
                 color={theme.colours.primary}
               />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
             <TouchableOpacity style={styles.gridButton} onPress={toggleGrid}>
               <Ionicons
@@ -328,28 +349,26 @@ const EventImages = () => {
                 ref={modalFlatListRef}
                 horizontal
                 pagingEnabled
+                windowSize={3}
+                initialNumToRender={1}
+                maxToRenderPerBatch={2}
+                removeClippedSubviews={true}
                 showsHorizontalScrollIndicator={false}
                 data={images}
                 keyExtractor={(item) => item.id}
-                initialScrollIndex={images.findIndex(
-                  (img) => img.id === selectedImage?.id
-                )}
-                getItemLayout={(data, index) => ({
-                  length: screenWidth,
-                  offset: screenWidth * index,
-                  index,
-                })}
-                renderItem={({ item }) => (
-                  <TouchableWithoutFeedback onPress={closeModal}>
-                    <View style={styles.imageWrapper}>
-                      <Image
-                        source={{ uri: item.uri }}
-                        style={styles.fullscreenImage}
-                        resizeMode="contain"
-                      />
-                    </View>
-                  </TouchableWithoutFeedback>
-                )}
+                renderItem={({ item }) => {
+                  return (
+                    <TouchableWithoutFeedback onPress={closeModal}>
+                      <View style={styles.imageWrapper}>
+                        <Image
+                          source={item.fullUri} // Load full image here
+                          style={styles.fullscreenImage}
+                          resizeMode="contain"
+                        />
+                      </View>
+                    </TouchableWithoutFeedback>
+                  );
+                }}
               />
             </View>
           </Modal>
@@ -441,7 +460,6 @@ const styles = StyleSheet.create({
   fullscreenImage: {
     width: Dimensions.get("window").width,
     height: Dimensions.get("window").height,
-    resizeMode: "contain",
   },
   imageCenter: {
     // flex: 1,
