@@ -8,6 +8,7 @@ const PhotosPanel = () => {
   const [loadedAll, setLoadedAll] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedImages, setSelectedImages] = useState(new Set());
+  const [page, setPage] = useState(1);
   const { singleEvent } = useSelector((state) => state.event);
 
   useEffect(() => {
@@ -15,15 +16,20 @@ const PhotosPanel = () => {
     setImages([]);
     setSelectedImages(new Set());
     setLoadedAll(false);
-    fetchImages();
+    setPage(1);
   }, [singleEvent]);
+
+  useEffect(() => {
+    if (!singleEvent?._id) return;
+    fetchImages();
+  }, [page, singleEvent]);
 
   const fetchImages = async () => {
     try {
       const { data } = await axios.get(
         "http://localhost:5000/api/v1/list-images",
         {
-          params: { eventId: singleEvent._id },
+          params: { eventId: singleEvent._id, page, limit: 300 },
         }
       );
 
@@ -67,16 +73,37 @@ const PhotosPanel = () => {
       </div>
 
       {images.length > 0 && (
-        <div className="mb-3 flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={allSelected}
-            onChange={selectAll}
-            className="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary"
-          />
-          <label className="text-sm text-gray-700">
-            Select All ({selectedImages.size}/{images.length})
-          </label>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={selectAll}
+              className="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary"
+            />
+            <label className="text-sm text-gray-700">
+              Select All ({selectedImages.size}/{images.length})
+            </label>
+          </div>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+              disabled={page === 1}
+              className="px-3 py-1 text-sm rounded-md bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="text-sm font-medium text-gray-700">
+              Page {page}
+            </span>
+            <button
+              onClick={() => setPage((prev) => prev + 1)}
+              disabled={images.length < 300}
+              className="px-3 py-1 text-sm rounded-md bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
 
@@ -145,7 +172,6 @@ const ImageCard = ({ src, alt, selected, onToggleSelect }) => {
         )}
       </div>
 
-      {/* Checkbox overlay */}
       <div className="absolute top-2 left-2 bg-white bg-opacity-75 p-1 rounded shadow">
         <input
           type="checkbox"
@@ -159,5 +185,4 @@ const ImageCard = ({ src, alt, selected, onToggleSelect }) => {
 };
 
 const MemoizedImageCard = memo(ImageCard);
-
 export default PhotosPanel;

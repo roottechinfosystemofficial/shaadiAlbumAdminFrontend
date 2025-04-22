@@ -46,9 +46,9 @@ export const getPresignedUrl = async (req, res) => {
   }
 };
 
-// 🔹 List All Images with Pre-signed GET URLs
 export const getEventImages = async (req, res) => {
-  const { eventId } = req.query;
+  const { eventId, page = 1 } = req.query;
+  const pageSize = 300;
 
   if (!eventId) {
     return res.status(400).json({ error: "Missing eventId" });
@@ -64,7 +64,7 @@ export const getEventImages = async (req, res) => {
       const listCommand = new ListObjectsV2Command({
         Bucket: process.env.BUCKET_NAME,
         Prefix: prefix,
-        MaxKeys: 1000,
+        MaxKeys: 1000, // Get all items, we paginate manually
         ContinuationToken: continuationToken,
       });
 
@@ -79,8 +79,11 @@ export const getEventImages = async (req, res) => {
       (a, b) => new Date(b.LastModified) - new Date(a.LastModified)
     );
 
+    const startIndex = (page - 1) * pageSize;
+    const paginatedItems = sortedItems.slice(startIndex, startIndex + pageSize);
+
     const imageUrls = await Promise.all(
-      sortedItems.map(async (item) => {
+      paginatedItems.map(async (item) => {
         const getCommand = new GetObjectCommand({
           Bucket: process.env.BUCKET_NAME,
           Key: item.Key,
@@ -95,4 +98,3 @@ export const getEventImages = async (req, res) => {
     res.status(500).json({ error: "Could not retrieve images" });
   }
 };
-
