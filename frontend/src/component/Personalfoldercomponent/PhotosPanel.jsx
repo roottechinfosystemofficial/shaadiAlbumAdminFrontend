@@ -73,7 +73,23 @@ const PhotosPanel = () => {
           + Add Photos
         </button>
       </div>
-
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+          disabled={page === 1}
+          className="px-3 py-1 text-sm rounded-md bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+        >
+          Previous
+        </button>
+        <span className="text-sm font-medium text-gray-700">Page {page}</span>
+        <button
+          onClick={() => setPage((prev) => prev + 1)}
+          disabled={images.length < 300}
+          className="px-3 py-1 text-sm rounded-md bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
       {images.length > 0 && (
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -86,25 +102,6 @@ const PhotosPanel = () => {
             <label className="text-sm text-gray-700">
               Select All ({selectedImages.size}/{images.length})
             </label>
-          </div>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-              disabled={page === 1}
-              className="px-3 py-1 text-sm rounded-md bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <span className="text-sm font-medium text-gray-700">
-              Page {page}
-            </span>
-            <button
-              onClick={() => setPage((prev) => prev + 1)}
-              disabled={images.length < 300}
-              className="px-3 py-1 text-sm rounded-md bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
-            >
-              Next
-            </button>
           </div>
         </div>
       )}
