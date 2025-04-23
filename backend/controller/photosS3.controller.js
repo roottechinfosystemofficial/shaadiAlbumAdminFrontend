@@ -21,6 +21,8 @@ const s3Client = new S3Client({
 const BATCH_SIZE = 50;
 const MAX_FILE_SIZE_MB = 10;
 
+const MAX_FILE_SIZE_MB = 10; // 10 MB limit in the backend
+
 export const getPresignedUrl = async (req, res) => {
   const { files, eventId } = req.body;
 
@@ -44,8 +46,14 @@ export const getPresignedUrl = async (req, res) => {
     // Process each batch
     for (const batch of batches) {
       const batchUrls = await Promise.all(
-        batch.map(async ({ fileName, fileType }, index) => {
+        batch.map(async ({ fileName, fileType, fileSize }, index) => {
           // Ensure the file size doesn't exceed the limit
+          if (fileSize > MAX_FILE_SIZE_MB * 1024 * 1024) {
+            // size in bytes
+            throw new Error(
+              `File ${fileName} exceeds the size limit of ${MAX_FILE_SIZE_MB} MB.`
+            );
+          }
 
           const uniqueKey = `eventimages/${eventId}/images/${timestamp}-${index}-${fileName}`;
           const command = new PutObjectCommand({
