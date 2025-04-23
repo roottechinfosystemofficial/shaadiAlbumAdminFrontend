@@ -4,6 +4,9 @@ import imageCompression from "browser-image-compression";
 import { X, CheckCircle, Circle, FolderOpen, ImagePlus } from "lucide-react";
 import { useSelector } from "react-redux";
 
+const BATCH_SIZE = 100;
+const CONCURRENCY_LIMIT = 5;
+
 const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [duplicateHandling, setDuplicateHandling] = useState("skip");
@@ -11,9 +14,10 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedCount, setUploadedCount] = useState(0);
   const [uploadStartTime, setUploadStartTime] = useState(null);
-  const { singleEvent } = useSelector((state) => state.event); // Assuming `singleEvent` is available from the Redux store
+  const [compressionProgress, setCompressionProgress] = useState(0);
+  const { singleEvent } = useSelector((state) => state.event);
 
-  if (!isOpen) return null; // Don't render the modal if it's not open
+  if (!isOpen) return null;
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
@@ -25,7 +29,7 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
     setUploadProgress(0);
     setUploadedCount(0);
     setUploading(false);
-    onClose(); // Close the modal
+    onClose();
   };
 
   const handleRemoveFile = (index) => {
@@ -35,20 +39,36 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
   };
 
   const handleDuplicateOption = (mode) => {
-    setDuplicateHandling(mode); // Set the duplicate handling option (either "skip" or "overwrite")
+    setDuplicateHandling(mode);
   };
 
   const getTimeLeft = () => {
     if (!uploadStartTime || uploadedCount === 0) return "Calculating...";
-
-    const elapsed = (Date.now() - uploadStartTime) / 1000; // seconds
-    const avgTimePerFile = elapsed / uploadedCount;
-    const remaining = (selectedFiles.length - uploadedCount) * avgTimePerFile;
-
+    const elapsed = (Date.now() - uploadStartTime) / 1000;
+    const avgTime = elapsed / uploadedCount;
+    const remaining = (selectedFiles.length - uploadedCount) * avgTime;
     const mins = Math.floor(remaining / 60);
     const secs = Math.floor(remaining % 60);
-
     return `${mins}m ${secs}s`;
+  };
+
+  const compressBatch = async (batch, index) => {
+    const result = [];
+    for (let file of batch) {
+      const compressed = await imageCompression(file, {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+      });
+      result.push({
+        file: compressed,
+        fileName: compressed.name,
+        fileType: compressed.type,
+      });
+      // Update compression progress based on batch completion
+      setCompressionProgress(((index + 1) / selectedFiles.length) * 100);
+    }
+    return result;
   };
 
   const handleUpload = async () => {
@@ -58,51 +78,55 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
     setUploadStartTime(Date.now());
 
     try {
-      const compressedList = [];
+      for (let i = 0; i < selectedFiles.length; i += BATCH_SIZE) {
+        const fileBatch = selectedFiles.slice(i, i + BATCH_SIZE);
+        const compressedList = await compressBatch(fileBatch, i);
 
-      // Compress the files before uploading
-      for (let file of selectedFiles) {
-        const compressed = await imageCompression(file, {
-          maxSizeMB: 1,
-          maxWidthOrHeight: 1920,
-          useWebWorker: true,
-        });
+        // Notify that compression is complete and proceed to uploading
+        setCompressionProgress(100);
 
-        compressedList.push({
-          file: compressed,
-          fileName: compressed.name,
-          fileType: compressed.type,
-        });
+        const { data } = await axios.post(
+          "http://localhost:5000/api/v1/api/s3/get-presigned-url",
+          {
+            eventId: singleEvent?._id,
+            files: compressedList.map(({ fileName, fileType }) => ({
+              fileName,
+              fileType,
+            })),
+          }
+        );
+
+        const uploadFile = async (url, file) => {
+          await axios.put(url, file, {
+            headers: { "Content-Type": file.type },
+          });
+          setUploadedCount((count) => {
+            const newCount = count + 1;
+            setUploadProgress((newCount / selectedFiles.length) * 100);
+            return newCount;
+          });
+        };
+
+        let index = 0;
+        const startNext = async () => {
+          if (index >= compressedList.length) return;
+          const currentIndex = index++;
+          await uploadFile(
+            data.urls[currentIndex].url,
+            compressedList[currentIndex].file
+          );
+          await startNext();
+        };
+
+        await Promise.all(
+          new Array(CONCURRENCY_LIMIT).fill(null).map(() => startNext())
+        );
       }
 
-      // Step 1: Get presigned URLs from the backend
-      const { data } = await axios.post(
-        "http://localhost:5000/api/v1/api/s3/get-presigned-url",
-        {
-          eventId: singleEvent?._id, // Assuming `singleEvent` has the event ID
-          files: compressedList.map(({ fileName, fileType }) => ({
-            fileName,
-            fileType,
-          })),
-        }
-      );
-
-      // Step 2: Upload files to S3
-      for (let i = 0; i < data.urls.length; i++) {
-        await axios.put(data.urls[i].url, compressedList[i].file, {
-          headers: { "Content-Type": compressedList[i].file.type },
-        });
-
-        // Update progress and count
-        setUploadedCount((count) => count + 1);
-        setUploadProgress(((i + 1) / selectedFiles.length) * 100);
-      }
-
-      // After uploading is complete, call the success callback
       setUploading(false);
       setSelectedFiles([]);
-      onUploadSuccess(); // Trigger the callback to refresh images in the parent component
-      handleClose(); // Close the modal
+      onUploadSuccess();
+      handleClose();
     } catch (err) {
       console.error("Upload error:", err);
       setUploading(false);
@@ -112,7 +136,6 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
       <div className="bg-white rounded-xl px-6 py-10 w-[95%] max-w-2xl shadow-2xl relative animate-fadeIn flex flex-col gap-4">
-        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Upload Photos</h2>
           <button
@@ -123,7 +146,6 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
           </button>
         </div>
 
-        {/* Duplicate Handling */}
         <div className="flex items-center gap-4 mb-4">
           {["skip", "overwrite"].map((mode) => (
             <button
@@ -145,7 +167,6 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
           ))}
         </div>
 
-        {/* File Upload UI */}
         <div className="flex flex-col sm:flex-row gap-4 mb-4">
           <label className="flex-1 border-2 border-dashed border-slate p-4 text-center text-sm rounded-lg cursor-pointer hover:border-primary transition flex flex-col items-center gap-2">
             <ImagePlus size={24} />
@@ -158,7 +179,6 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
               className="hidden"
             />
           </label>
-
           <label className="flex-1 border-2 border-dashed border-slate p-4 text-center text-sm rounded-lg cursor-pointer hover:border-primary transition flex flex-col items-center gap-2">
             <FolderOpen size={24} />
             <p>Select folder</p>
@@ -174,7 +194,6 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
           </label>
         </div>
 
-        {/* File List */}
         {selectedFiles.length > 0 && (
           <div className="mb-4 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
             {selectedFiles.map((file, index) => (
@@ -196,7 +215,6 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
           </div>
         )}
 
-        {/* Upload Progress */}
         {uploading && (
           <div className="mb-4">
             <div className="w-full bg-gray-200 rounded-full h-2">
@@ -211,10 +229,14 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
             <p className="text-xs text-center text-gray-500">
               Time left: {getTimeLeft()}
             </p>
+            <div className="mt-2 text-center">
+              <p className="text-sm text-gray-600">
+                Compression Progress: {Math.round(compressionProgress)}%
+              </p>
+            </div>
           </div>
         )}
 
-        {/* Footer Buttons */}
         <div className="flex justify-between items-center">
           <p className="text-sm text-gray-500">
             {selectedFiles.length} file{selectedFiles.length !== 1 && "s"}{" "}
