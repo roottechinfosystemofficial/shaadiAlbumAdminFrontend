@@ -162,6 +162,7 @@ const EventImages = () => {
       let data;
       try {
         data = JSON.parse(responseText); // Try parsing the response text
+        console.log("Parsed data:", data);
       } catch (error) {
         console.error("JSON Parse error:", error);
         Alert.alert("Error", "Failed to parse image data.");
@@ -285,7 +286,7 @@ const EventImages = () => {
       <StatusBar backgroundColor="transparent" translucent />
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Favorite List</Text>
+          <Text style={styles.title}>Event Images</Text>
           <View style={{ flexDirection: "row", gap: 10 }}>
             {/* <TouchableOpacity
               style={styles.gridButton}
@@ -309,27 +310,57 @@ const EventImages = () => {
         </View>
 
         <FlatList
-          ref={flatListRef}
           data={images}
-          keyExtractor={(item, index) => `${item.id}-${index}`}
-          renderItem={() => null} // We use ListHeaderComponent for layout
+          keyExtractor={(item) => item.id}
+          key={gridCount}
+          numColumns={gridCount}
+          renderItem={({ item }) => {
+            const isFavorite = favorites.includes(item.id);
+            const imgStyle = getImageStyle(item.type);
+            return (
+              <TouchableOpacity
+                onPress={() => openImageModal(item)}
+                activeOpacity={0.9}
+                style={{ flex: 1 / gridCount, padding: imagePadding / 2 }}
+              >
+                <View style={[styles.card, imgStyle]}>
+                  <Image
+                    source={item.uri}
+                    style={[styles.image, imgStyle]}
+                    resizeMode="cover"
+                    onError={(error) =>
+                      console.error("Image Load Error: ", error)
+                    }
+                  />
+                  <TouchableOpacity
+                    style={styles.heartIcon}
+                    onPress={() => toggleFavorite(item.id)}
+                  >
+                    <Ionicons
+                      name={isFavorite ? "heart" : "heart-outline"}
+                      size={20}
+                      color={theme.colours.primary}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.downloadIcon}
+                    onPress={() => downloadImage(item.uri)}
+                  >
+                    <Ionicons
+                      name="download-outline"
+                      size={20}
+                      color={theme.colours.primary}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            );
+          }}
           onEndReached={() => {
-            if (hasMore) fetchEventImages(page + 1);
+            if (hasMore && !loading) fetchEventImages(page + 1);
           }}
           onEndReachedThreshold={0.5}
           ListFooterComponent={loading && <Text>Loading...</Text>}
-          ListHeaderComponent={
-            <ScrollView contentContainerStyle={{ flexDirection: "row" }}>
-              {columns.map((col, index) => (
-                <View
-                  key={index}
-                  style={{ flex: 1 / gridCount, paddingHorizontal: 4 }}
-                >
-                  {renderColumn(col)}
-                </View>
-              ))}
-            </ScrollView>
-          }
         />
 
         {modalVisible && (
@@ -348,6 +379,11 @@ const EventImages = () => {
               <FlatList
                 ref={modalFlatListRef}
                 horizontal
+                getItemLayout={(data, index) => ({
+                  length: Dimensions.get("window").width,
+                  offset: Dimensions.get("window").width * index,
+                  index,
+                })}
                 pagingEnabled
                 windowSize={3}
                 initialNumToRender={1}
@@ -361,7 +397,7 @@ const EventImages = () => {
                     <TouchableWithoutFeedback onPress={closeModal}>
                       <View style={styles.imageWrapper}>
                         <Image
-                          source={item.fullUri} // Load full image here
+                          source={item.uri} // Load full image here
                           style={styles.fullscreenImage}
                           resizeMode="contain"
                         />
