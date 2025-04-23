@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { RefreshCw, MoreVertical, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const EventCard = ({ event, onEdit, onDelete }) => {
+const EventCard = ({ event, onEdit, onDelete, setOpenEditModel }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const navigate = useNavigate();
@@ -45,6 +45,7 @@ const EventCard = ({ event, onEdit, onDelete }) => {
             <button
               onClick={() => {
                 onEdit(event?._id);
+                setOpenEditModel(true);
                 setIsDropdownOpen(false);
               }}
               className="block w-full text-left px-4 py-2 hover:bg-gray-100"

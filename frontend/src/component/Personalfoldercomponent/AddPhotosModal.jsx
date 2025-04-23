@@ -103,7 +103,7 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
     setUploadedCount(0);
 
     // Batch the files in groups of 10 for uploading
-    const batchSize = 0; // Adjust batch size based on your preference
+    const batchSize = 50; // Adjust batch size based on your preference
     const compressedBatch = [];
 
     try {
