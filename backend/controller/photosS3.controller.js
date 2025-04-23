@@ -20,81 +20,77 @@ const s3Client = new S3Client({
 
 // 🔹 Generate Pre-signed URL for Upload
 export const getPresignedUrl = async (req, res) => {
-  const { fileName, fileType, eventId } = req.query;
+  const { files, eventId } = req.body;
 
-  if (!fileName || !fileType || !eventId) {
-    return res
-      .status(400)
-      .json({ error: "Missing fileName, fileType, or eventId" });
+  if (!files || !Array.isArray(files) || !eventId) {
+    return res.status(400).json({ error: "Missing files or eventId" });
   }
 
-  const key = `eventimages/${eventId}/images/${Date.now()}-${fileName}`;
-
-  const command = new PutObjectCommand({
-    Bucket: process.env.BUCKET_NAME,
-    Key: key,
-    ContentType: fileType,
-  });
-
   try {
-    const signedUrl = await getSignedUrl(s3Client, command, {
-      expiresIn: 3600, // 1 hour
-    });
-    res.status(200).json({ url: signedUrl, key });
+    const signedUrls = await Promise.all(
+      files.map(({ fileName, fileType }) => {
+        const key = `eventimages/${eventId}/images/${Date.now()}-${fileName}`;
+        const command = new PutObjectCommand({
+          Bucket: process.env.BUCKET_NAME,
+          Key: key,
+          ContentType: fileType,
+        });
+
+        return getSignedUrl(s3Client, command).then((url) => ({
+          url,
+          key,
+          fileName,
+        }));
+      })
+    );
+    console.log(signedUrls);
+
+    res.status(200).json({ urls: signedUrls });
   } catch (err) {
-    console.error("Error generating signed URL:", err);
-    res.status(500).json({ error: "Could not generate signed URL" });
+    console.error("Error generating batch signed URLs:", err);
+    res.status(500).json({ error: "Could not generate signed URLs" });
   }
 };
 
 export const getEventImages = async (req, res) => {
-  const { eventId, page = 1 } = req.query;
-  const pageSize = 300;
+  const { eventId, continuationToken } = req.query;
+  const pageSize = 10;
 
   if (!eventId) {
     return res.status(400).json({ error: "Missing eventId" });
   }
 
-  const prefix = `eventimages/${eventId}/images/`;
-
-  let allItems = [];
-  let continuationToken;
-
   try {
-    do {
-      const listCommand = new ListObjectsV2Command({
-        Bucket: process.env.BUCKET_NAME,
-        Prefix: prefix,
-        MaxKeys: 1000, // Get all items, we paginate manually
-        ContinuationToken: continuationToken,
-      });
+    const listCommand = new ListObjectsV2Command({
+      Bucket: process.env.BUCKET_NAME,
+      Prefix: `eventimages/${eventId}/images/`,
+      MaxKeys: pageSize,
+      ContinuationToken: continuationToken || undefined,
+    });
 
-      const response = await s3Client.send(listCommand);
-      allItems = [...allItems, ...(response.Contents || [])];
-      continuationToken = response.IsTruncated
-        ? response.NextContinuationToken
-        : null;
-    } while (continuationToken);
-
-    const startIndex = (page - 1) * pageSize;
-    const paginatedItems = allItems.slice(startIndex, startIndex + pageSize);
+    const response = await s3Client.send(listCommand);
 
     const imageUrls = await Promise.all(
-      paginatedItems.map(async (item) => {
+      (response.Contents || []).map(async (item) => {
         const getCommand = new GetObjectCommand({
           Bucket: process.env.BUCKET_NAME,
           Key: item.Key,
         });
-        return getSignedUrl(s3Client, getCommand, { expiresIn: 3600 });
+        return getSignedUrl(s3Client, getCommand);
       })
     );
+    console.log(imageUrls.length);
 
-    res.status(200).json({ images: imageUrls });
+    res.status(200).json({
+      images: imageUrls,
+      nextToken: response.NextContinuationToken || null,
+    });
   } catch (err) {
-    console.error("Error fetching images:", err);
+    console.error("Error fetching paginated images:", err);
     res.status(500).json({ error: "Could not retrieve images" });
   }
 };
+
 // Assuming this is inside eventController.js
 export const getAppEventImages = async (req, res) => {
   const { eventId, page = 1 } = req.query;

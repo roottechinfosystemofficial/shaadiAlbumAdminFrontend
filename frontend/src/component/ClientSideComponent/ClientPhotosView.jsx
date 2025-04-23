@@ -13,31 +13,63 @@ import {
 const ClientPhotosView = ({ singleEvent }) => {
   const { eventId } = useParams();
   const navigate = useNavigate();
-  const [page, setPage] = useState(1);
   const [fetchedImages, setFetchedImages] = useState([]);
+  const [nextToken, setNextToken] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const observer = useRef();
+
+  const lastImageRef = useRef();
 
   const goBack = () => {
     navigate(-1);
   };
-  const fetchImages = async () => {
-    try {
-      console.log(eventId);
 
+  const fetchImages = async () => {
+    if (isLoading || !hasMore) return;
+    setIsLoading(true);
+
+    try {
       const { data } = await axios.get(
         "http://localhost:5000/api/v1/list-images",
         {
-          params: { eventId: eventId, page, limit: 300 },
+          params: {
+            eventId,
+            continuationToken: nextToken,
+          },
         }
       );
 
-      setFetchedImages(data.images);
+      setFetchedImages((prev) => [...prev, ...data.images]);
+      setNextToken(data.nextToken);
+      setHasMore(!!data.nextToken);
     } catch (err) {
       console.error("Error fetching images:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
+
   useEffect(() => {
+    setFetchedImages([]);
+    setNextToken(null);
+    setHasMore(true);
     fetchImages();
-  }, [eventId, page]);
+  }, [eventId]);
+
+  const lastImageElementRef = (node) => {
+    if (isLoading) return;
+
+    if (observer.current) observer.current.disconnect();
+
+    observer.current = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore) {
+        fetchImages();
+      }
+    });
+
+    if (node) observer.current.observe(node);
+  };
 
   return (
     <div className="container mx-auto p-4 pb-24">
@@ -75,24 +107,27 @@ const ClientPhotosView = ({ singleEvent }) => {
           ))}
         </div>
       </div>
-      {fetchedImages?.length > 0 ? (
-        <>
-          <div className="flex flex-wrap gap-5 mx-auto">
-            {fetchedImages?.map((image, index) => (
-              <img
-                key={index}
-                src={image}
-                width={355}
-                className="object-cover  rounded shadow"
-                alt={`Event Image ${index + 1}`}
-              />
-            ))}
-          </div>
-        </>
-      ) : (
-        <>
-          <p>No Images Found</p>
-        </>
+
+      <div className="flex flex-wrap gap-5 mx-auto">
+        {fetchedImages.map((image, index) => {
+          const isLast = index === fetchedImages.length - 1;
+          return (
+            <img
+              ref={isLast ? lastImageElementRef : null}
+              key={index}
+              src={image}
+              width={355}
+              className="object-cover rounded shadow"
+              alt={`Event Image ${index + 1}`}
+            />
+          );
+        })}
+      </div>
+
+      {isLoading && (
+        <div className="text-center mt-4 text-sm text-gray-500">
+          Loading more images...
+        </div>
       )}
     </div>
   );

@@ -9,9 +9,11 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
   const [duplicateHandling, setDuplicateHandling] = useState("skip");
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const { singleEvent } = useSelector((state) => state.event);
+  const [uploadedCount, setUploadedCount] = useState(0);
+  const [uploadStartTime, setUploadStartTime] = useState(null);
+  const { singleEvent } = useSelector((state) => state.event); // Assuming `singleEvent` is available from the Redux store
 
-  if (!isOpen) return null;
+  if (!isOpen) return null; // Don't render the modal if it's not open
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
@@ -20,7 +22,10 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
 
   const handleClose = () => {
     setSelectedFiles([]);
-    onClose();
+    setUploadProgress(0);
+    setUploadedCount(0);
+    setUploading(false);
+    onClose(); // Close the modal
   };
 
   const handleRemoveFile = (index) => {
@@ -30,55 +35,84 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
   };
 
   const handleDuplicateOption = (mode) => {
-    setDuplicateHandling(mode);
+    setDuplicateHandling(mode); // Set the duplicate handling option (either "skip" or "overwrite")
+  };
+
+  const getTimeLeft = () => {
+    if (!uploadStartTime || uploadedCount === 0) return "Calculating...";
+
+    const elapsed = (Date.now() - uploadStartTime) / 1000; // seconds
+    const avgTimePerFile = elapsed / uploadedCount;
+    const remaining = (selectedFiles.length - uploadedCount) * avgTimePerFile;
+
+    const mins = Math.floor(remaining / 60);
+    const secs = Math.floor(remaining % 60);
+
+    return `${mins}m ${secs}s`;
   };
 
   const handleUpload = async () => {
     setUploading(true);
     setUploadProgress(0);
-    let progressPerFile = 100 / selectedFiles.length;
+    setUploadedCount(0);
+    setUploadStartTime(Date.now());
 
-    for (let i = 0; i < selectedFiles.length; i++) {
-      const file = selectedFiles[i];
-      try {
+    try {
+      const compressedList = [];
+
+      // Compress the files before uploading
+      for (let file of selectedFiles) {
         const compressed = await imageCompression(file, {
           maxSizeMB: 1,
           maxWidthOrHeight: 1920,
           useWebWorker: true,
         });
 
-        const { data } = await axios.get(
-          "http://localhost:5000/api/v1/api/s3/get-presigned-url",
-          {
-            params: {
-              fileName: compressed.name,
-              fileType: compressed.type,
-              eventId: singleEvent?._id,
-            },
-          }
-        );
+        compressedList.push({
+          file: compressed,
+          fileName: compressed.name,
+          fileType: compressed.type,
+        });
+      }
 
-        await axios.put(data.url, compressed, {
-          headers: {
-            "Content-Type": compressed.type,
-          },
+      // Step 1: Get presigned URLs from the backend
+      const { data } = await axios.post(
+        "http://localhost:5000/api/v1/api/s3/get-presigned-url",
+        {
+          eventId: singleEvent?._id, // Assuming `singleEvent` has the event ID
+          files: compressedList.map(({ fileName, fileType }) => ({
+            fileName,
+            fileType,
+          })),
+        }
+      );
+
+      // Step 2: Upload files to S3
+      for (let i = 0; i < data.urls.length; i++) {
+        await axios.put(data.urls[i].url, compressedList[i].file, {
+          headers: { "Content-Type": compressedList[i].file.type },
         });
 
-        setUploadProgress((prev) => prev + progressPerFile);
-      } catch (err) {
-        console.error("Upload failed for:", file.name, err);
+        // Update progress and count
+        setUploadedCount((count) => count + 1);
+        setUploadProgress(((i + 1) / selectedFiles.length) * 100);
       }
-    }
 
-    setUploading(false);
-    setSelectedFiles([]);
-    onClose();
-    onUploadSuccess(); // Refresh photo panel
+      // After uploading is complete, call the success callback
+      setUploading(false);
+      setSelectedFiles([]);
+      onUploadSuccess(); // Trigger the callback to refresh images in the parent component
+      handleClose(); // Close the modal
+    } catch (err) {
+      console.error("Upload error:", err);
+      setUploading(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
       <div className="bg-white rounded-xl px-6 py-10 w-[95%] max-w-2xl shadow-2xl relative animate-fadeIn flex flex-col gap-4">
+        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Upload Photos</h2>
           <button
@@ -89,39 +123,29 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
           </button>
         </div>
 
+        {/* Duplicate Handling */}
         <div className="flex items-center gap-4 mb-4">
-          <button
-            onClick={() => handleDuplicateOption("skip")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full border transition ${
-              duplicateHandling === "skip"
-                ? "bg-primary text-white border-primary"
-                : "bg-gray-100 border-gray-300 text-gray-700"
-            }`}
-          >
-            {duplicateHandling === "skip" ? (
-              <CheckCircle size={18} />
-            ) : (
-              <Circle size={18} />
-            )}
-            Skip Duplicates
-          </button>
-          <button
-            onClick={() => handleDuplicateOption("overwrite")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full border transition ${
-              duplicateHandling === "overwrite"
-                ? "bg-primary text-white border-primary"
-                : "bg-gray-100 border-gray-300 text-gray-700"
-            }`}
-          >
-            {duplicateHandling === "overwrite" ? (
-              <CheckCircle size={18} />
-            ) : (
-              <Circle size={18} />
-            )}
-            Overwrite Duplicates
-          </button>
+          {["skip", "overwrite"].map((mode) => (
+            <button
+              key={mode}
+              onClick={() => handleDuplicateOption(mode)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full border transition ${
+                duplicateHandling === mode
+                  ? "bg-primary text-white border-primary"
+                  : "bg-gray-100 border-gray-300 text-gray-700"
+              }`}
+            >
+              {duplicateHandling === mode ? (
+                <CheckCircle size={18} />
+              ) : (
+                <Circle size={18} />
+              )}
+              {mode === "skip" ? "Skip Duplicates" : "Overwrite Duplicates"}
+            </button>
+          ))}
         </div>
 
+        {/* File Upload UI */}
         <div className="flex flex-col sm:flex-row gap-4 mb-4">
           <label className="flex-1 border-2 border-dashed border-slate p-4 text-center text-sm rounded-lg cursor-pointer hover:border-primary transition flex flex-col items-center gap-2">
             <ImagePlus size={24} />
@@ -150,6 +174,7 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
           </label>
         </div>
 
+        {/* File List */}
         {selectedFiles.length > 0 && (
           <div className="mb-4 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
             {selectedFiles.map((file, index) => (
@@ -171,20 +196,25 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
           </div>
         )}
 
+        {/* Upload Progress */}
         {uploading && (
           <div className="mb-4">
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
-                className="bg-primary h-2 rounded-full"
+                className="bg-primary h-2 rounded-full transition-all duration-300 ease-in-out"
                 style={{ width: `${uploadProgress}%` }}
               ></div>
             </div>
-            <p className="text-sm text-gray-500 text-center mt-2">
-              {uploadProgress.toFixed(0)}% Uploading...
+            <p className="text-sm text-gray-700 mt-2 text-center">
+              {uploadedCount} of {selectedFiles.length} images uploaded
+            </p>
+            <p className="text-xs text-center text-gray-500">
+              Time left: {getTimeLeft()}
             </p>
           </div>
         )}
 
+        {/* Footer Buttons */}
         <div className="flex justify-between items-center">
           <p className="text-sm text-gray-500">
             {selectedFiles.length} file{selectedFiles.length !== 1 && "s"}{" "}
