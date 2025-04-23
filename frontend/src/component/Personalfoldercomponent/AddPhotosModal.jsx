@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import axios from "axios";
-import imageCompression from "browser-image-compression";
 import { X, CheckCircle, Circle, FolderOpen, ImagePlus } from "lucide-react";
 import { useSelector } from "react-redux";
 
@@ -38,29 +37,14 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
     setDuplicateHandling(mode);
   };
 
-  // Function to handle the compressing of each file one at a time
-  const compressFile = async (file) => {
-    try {
-      const compressed = await imageCompression(file, {
-        maxSizeMB: 1,
-        maxWidthOrHeight: 1920,
-        useWebWorker: true,
-      });
-
-      return compressed;
-    } catch (error) {
-      console.error("Compression error:", error);
-      return null;
-    }
-  };
-
-  const uploadBatchToS3 = async (compressedFiles) => {
-    // Get presigned URLs for the batch of compressed files
+  // Function to upload a batch of files to S3
+  const uploadBatchToS3 = async (files) => {
+    // Get presigned URLs for the batch of files
     const { data } = await axios.post(
       "http://localhost:5000/api/v1/api/s3/get-presigned-url",
       {
         eventId: singleEvent?._id,
-        files: compressedFiles.map(({ fileName, fileType }) => ({
+        files: files.map(({ fileName, fileType }) => ({
           fileName,
           fileType,
         })),
@@ -68,8 +52,8 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
     );
 
     // Upload the batch of files in parallel
-    const uploadPromises = compressedFiles.map((compressedFile, index) =>
-      uploadFile(data.urls[index].url, compressedFile.file)
+    const uploadPromises = files.map((file, index) =>
+      uploadFile(data.urls[index].url, file)
     );
 
     await Promise.all(uploadPromises);
@@ -102,34 +86,28 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
     setUploadProgress(0);
     setUploadedCount(0);
 
-    // Batch the files in groups of 10 for uploading
+    // Batch the files in groups of 50 for uploading
     const batchSize = 50; // Adjust batch size based on your preference
-    const compressedBatch = [];
+    const uploadBatch = [];
 
     try {
       for (let i = 0; i < selectedFiles.length; i++) {
         const file = selectedFiles[i];
 
-        // Compress the current file
-        const compressedFile = await compressFile(file);
-        if (compressedFile) {
-          compressedBatch.push({
-            file: compressedFile,
-            fileName: compressedFile.name,
-            fileType: compressedFile.type,
-          });
-        }
+        // Add the current file to the upload batch
+        uploadBatch.push({
+          file: file,
+          fileName: file.name,
+          fileType: file.type,
+        });
 
         // Once the batch is filled, upload it
-        if (
-          compressedBatch.length >= batchSize ||
-          i === selectedFiles.length - 1
-        ) {
+        if (uploadBatch.length >= batchSize || i === selectedFiles.length - 1) {
           // Upload the current batch to S3
-          await uploadBatchToS3(compressedBatch);
+          await uploadBatchToS3(uploadBatch);
 
           // Clear the current batch and reset progress for the next batch
-          compressedBatch.length = 0;
+          uploadBatch.length = 0;
         }
       }
 

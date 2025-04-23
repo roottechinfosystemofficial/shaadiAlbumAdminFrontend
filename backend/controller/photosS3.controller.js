@@ -44,15 +44,13 @@ export const getPresignedUrl = async (req, res) => {
     // Process each batch
     for (const batch of batches) {
       const batchUrls = await Promise.all(
-        batch.map(async ({ fileName, fileType }, index) => {
+        batch.map(async ({ fileName, fileType, fileSize }, index) => {
           // Check file size before generating the pre-signed URL
-          if (fileType) {
-            const sizeInMB = parseInt(fileType.split("/")[1]); // Example: "image/jpeg" -> 10
-            if (sizeInMB > MAX_FILE_SIZE_MB) {
-              throw new Error(
-                `File ${fileName} exceeds the size limit of ${MAX_FILE_SIZE_MB} MB.`
-              );
-            }
+          if (fileSize > MAX_FILE_SIZE_MB * 1024 * 1024) {
+            // size in bytes
+            throw new Error(
+              `File ${fileName} exceeds the size limit of ${MAX_FILE_SIZE_MB} MB.`
+            );
           }
 
           const uniqueKey = `eventimages/${eventId}/images/${timestamp}-${index}-${fileName}`;
