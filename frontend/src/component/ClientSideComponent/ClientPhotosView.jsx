@@ -78,8 +78,14 @@ const ClientPhotosView = ({ singleEvent }) => {
       {fetchedImages?.length > 0 ? (
         <>
           <div className="flex flex-wrap gap-5 mx-auto">
-            {fetchedImages?.map((image) => (
-              <img src={image} width={300} />
+            {fetchedImages?.map((image, index) => (
+              <img
+                key={index}
+                src={image}
+                width={355}
+                className="object-cover  rounded shadow"
+                alt={`Event Image ${index + 1}`}
+              />
             ))}
           </div>
         </>
