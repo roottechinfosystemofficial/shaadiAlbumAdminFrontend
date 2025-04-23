@@ -4,18 +4,14 @@ import imageCompression from "browser-image-compression";
 import { X, CheckCircle, Circle, FolderOpen, ImagePlus } from "lucide-react";
 import { useSelector } from "react-redux";
 
-const BATCH_SIZE = 100;
-const CONCURRENCY_LIMIT = 5;
-
 const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [duplicateHandling, setDuplicateHandling] = useState("skip");
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedCount, setUploadedCount] = useState(0);
-  const [uploadStartTime, setUploadStartTime] = useState(null);
-  const [compressionProgress, setCompressionProgress] = useState(0);
   const { singleEvent } = useSelector((state) => state.event);
+  const [uploadStartTime, setUploadStartTime] = useState(null);
 
   if (!isOpen) return null;
 
@@ -42,85 +38,99 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
     setDuplicateHandling(mode);
   };
 
-  const getTimeLeft = () => {
-    if (!uploadStartTime || uploadedCount === 0) return "Calculating...";
-    const elapsed = (Date.now() - uploadStartTime) / 1000;
-    const avgTime = elapsed / uploadedCount;
-    const remaining = (selectedFiles.length - uploadedCount) * avgTime;
-    const mins = Math.floor(remaining / 60);
-    const secs = Math.floor(remaining % 60);
-    return `${mins}m ${secs}s`;
-  };
-
-  const compressBatch = async (batch, index) => {
-    const result = [];
-    for (let file of batch) {
+  // Function to handle the compressing of each file one at a time
+  const compressFile = async (file) => {
+    try {
       const compressed = await imageCompression(file, {
         maxSizeMB: 1,
         maxWidthOrHeight: 1920,
         useWebWorker: true,
       });
-      result.push({
-        file: compressed,
-        fileName: compressed.name,
-        fileType: compressed.type,
-      });
-      // Update compression progress based on batch completion
-      setCompressionProgress(((index + 1) / selectedFiles.length) * 100);
+
+      return compressed;
+    } catch (error) {
+      console.error("Compression error:", error);
+      return null;
     }
-    return result;
+  };
+
+  const uploadBatchToS3 = async (compressedFiles) => {
+    // Get presigned URLs for the batch of compressed files
+    const { data } = await axios.post(
+      "http://localhost:5000/api/v1/api/s3/get-presigned-url",
+      {
+        eventId: singleEvent?._id,
+        files: compressedFiles.map(({ fileName, fileType }) => ({
+          fileName,
+          fileType,
+        })),
+      }
+    );
+
+    // Upload the batch of files in parallel
+    const uploadPromises = compressedFiles.map((compressedFile, index) =>
+      uploadFile(data.urls[index].url, compressedFile.file)
+    );
+
+    await Promise.all(uploadPromises);
+  };
+
+  const uploadFile = async (url, file) => {
+    try {
+      await axios.put(url, file, {
+        headers: { "Content-Type": file.type },
+        onUploadProgress: (progressEvent) => {
+          const progress = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          setUploadProgress(progress);
+        },
+      });
+
+      setUploadedCount((count) => {
+        const newCount = count + 1;
+        setUploadProgress((newCount / selectedFiles.length) * 100);
+        return newCount;
+      });
+    } catch (error) {
+      console.error("Error uploading file:", error);
+    }
   };
 
   const handleUpload = async () => {
     setUploading(true);
     setUploadProgress(0);
     setUploadedCount(0);
-    setUploadStartTime(Date.now());
+
+    // Batch the files in groups of 10 for uploading
+    const batchSize = 50; // Adjust batch size based on your preference
+    const compressedBatch = [];
 
     try {
-      for (let i = 0; i < selectedFiles.length; i += BATCH_SIZE) {
-        const fileBatch = selectedFiles.slice(i, i + BATCH_SIZE);
-        const compressedList = await compressBatch(fileBatch, i);
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
 
-        // Notify that compression is complete and proceed to uploading
-        setCompressionProgress(100);
-
-        const { data } = await axios.post(
-          "http://localhost:5000/api/v1/api/s3/get-presigned-url",
-          {
-            eventId: singleEvent?._id,
-            files: compressedList.map(({ fileName, fileType }) => ({
-              fileName,
-              fileType,
-            })),
-          }
-        );
-
-        const uploadFile = async (url, file) => {
-          await axios.put(url, file, {
-            headers: { "Content-Type": file.type },
+        // Compress the current file
+        const compressedFile = await compressFile(file);
+        if (compressedFile) {
+          compressedBatch.push({
+            file: compressedFile,
+            fileName: compressedFile.name,
+            fileType: compressedFile.type,
           });
-          setUploadedCount((count) => {
-            const newCount = count + 1;
-            setUploadProgress((newCount / selectedFiles.length) * 100);
-            return newCount;
-          });
-        };
+        }
 
-        let index = 0;
-        const startNext = async () => {
-          if (index >= compressedList.length) return;
-          const currentIndex = index++;
-          await uploadFile(
-            data.urls[currentIndex].url,
-            compressedList[currentIndex].file
-          );
-          await startNext();
-        };
+        // Once the batch is filled, upload it
+        if (
+          compressedBatch.length >= batchSize ||
+          i === selectedFiles.length - 1
+        ) {
+          // Upload the current batch to S3
+          await uploadBatchToS3(compressedBatch);
 
-        await Promise.all(
-          new Array(CONCURRENCY_LIMIT).fill(null).map(() => startNext())
-        );
+          // Clear the current batch and reset progress for the next batch
+          compressedBatch.length = 0;
+        }
       }
 
       setUploading(false);
@@ -168,7 +178,7 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 mb-4">
-          <label className="flex-1 border-2 border-dashed border-slate p-4 text-center text-sm rounded-lg cursor-pointer hover:border-primary transition flex flex-col items-center gap-2">
+          <label className="flex-1 border-2 border-dashed border-slate p-4 text-center text-sm rounded-lg cursor-pointer hover:border-primary">
             <ImagePlus size={24} />
             <p>Select individual photos</p>
             <input
@@ -179,7 +189,7 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
               className="hidden"
             />
           </label>
-          <label className="flex-1 border-2 border-dashed border-slate p-4 text-center text-sm rounded-lg cursor-pointer hover:border-primary transition flex flex-col items-center gap-2">
+          <label className="flex-1 border-2 border-dashed border-slate p-4 text-center text-sm rounded-lg cursor-pointer hover:border-primary">
             <FolderOpen size={24} />
             <p>Select folder</p>
             <input
@@ -224,39 +234,25 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
               ></div>
             </div>
             <p className="text-sm text-gray-700 mt-2 text-center">
-              {uploadedCount} of {selectedFiles.length} images uploaded
+              Uploading images...
             </p>
-            <p className="text-xs text-center text-gray-500">
-              Time left: {getTimeLeft()}
-            </p>
-            <div className="mt-2 text-center">
-              <p className="text-sm text-gray-600">
-                Compression Progress: {Math.round(compressionProgress)}%
-              </p>
-            </div>
           </div>
         )}
 
-        <div className="flex justify-between items-center">
-          <p className="text-sm text-gray-500">
-            {selectedFiles.length} file{selectedFiles.length !== 1 && "s"}{" "}
-            selected
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={handleClose}
-              className="px-4 py-2 rounded bg-slate text-gray-700 hover:bg-slate-dark transition"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleUpload}
-              disabled={selectedFiles.length === 0 || uploading}
-              className="px-4 py-2 rounded bg-primary text-white hover:bg-primary-dark transition disabled:opacity-50"
-            >
-              {uploading ? "Uploading..." : "Upload"}
-            </button>
-          </div>
+        <div className="flex justify-between items-center gap-4">
+          <button
+            onClick={handleClose}
+            className="w-full sm:w-auto border border-gray-300 text-gray-700 px-6 py-2 rounded-lg"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleUpload}
+            className="w-full sm:w-auto bg-primary text-white px-6 py-2 rounded-lg"
+            disabled={uploading || selectedFiles.length === 0}
+          >
+            Start Upload
+          </button>
         </div>
       </div>
     </div>
