@@ -39,7 +39,8 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
 
   // Function to upload a batch of files to S3
   const uploadBatchToS3 = async (files) => {
-    // Get presigned URLs for the batch of files
+    console.log(files);
+
     const { data } = await axios.post(
       "http://localhost:5000/api/v1/api/s3/get-presigned-url",
       {
