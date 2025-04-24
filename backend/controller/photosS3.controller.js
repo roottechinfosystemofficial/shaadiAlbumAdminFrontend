@@ -21,6 +21,17 @@ const s3Client = new S3Client({
 const BATCH_SIZE = 50;
 const MAX_FILE_SIZE_MB = 10;
 
+// Utility: Convert stream to buffer
+const streamToBuffer = async (stream) => {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    stream.on("data", (chunk) => chunks.push(chunk));
+    stream.on("end", () => resolve(Buffer.concat(chunks)));
+    stream.on("error", reject);
+  });
+};
+
+// 🔹 Generate Pre-signed URL for Upload
 export const getPresignedUrl = async (req, res) => {
   const { files, eventId } = req.body;
 
@@ -68,14 +79,14 @@ export const getPresignedUrl = async (req, res) => {
 
   try {
     const signedUrls = await generateBatchUrls(files, eventId);
-    console.log(signedUrls.length);
     res.status(200).json({ urls: signedUrls });
   } catch (err) {
-    console.error("Error generating batch signed URLs:", err);
+    console.error("Error generating signed URLs:", err);
     res.status(500).json({ error: "Could not generate signed URLs" });
   }
 };
 
+// 🔹 Get Paginated Event Images
 export const getEventImages = async (req, res) => {
   const { eventId, continuationToken } = req.query;
   const pageSize = 10;
@@ -103,7 +114,6 @@ export const getEventImages = async (req, res) => {
         return getSignedUrl(s3Client, getCommand);
       })
     );
-    console.log(imageUrls.length);
 
     res.status(200).json({
       images: imageUrls,
@@ -115,16 +125,7 @@ export const getEventImages = async (req, res) => {
   }
 };
 
-// helper to convert stream to buffer
-const streamToBuffer = async (stream) => {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    stream.on("data", (chunk) => chunks.push(chunk));
-    stream.on("end", () => resolve(Buffer.concat(chunks)));
-    stream.on("error", reject);
-  });
-};
-
+// 🔹 Get App Images with Sharp Resizing
 export const getAppEventImages = async (req, res) => {
   const { eventId, page = 1 } = req.query;
   const pageSize = 25;
@@ -176,13 +177,10 @@ export const getAppEventImages = async (req, res) => {
           .jpeg({ quality: 50 })
           .toBuffer();
 
-        // Optional: Upload resized image to S3 if needed
+        // You can upload the resized image to S3 if desired
+        // Or just return the original image signed URL for now
 
-        const resizedImageUrl = await getSignedUrl(s3Client, getCommand, {
-          expiresIn: 3600,
-        });
-
-        return resizedImageUrl;
+        return getSignedUrl(s3Client, getCommand, { expiresIn: 3600 });
       })
     );
 
@@ -193,5 +191,46 @@ export const getAppEventImages = async (req, res) => {
   } catch (err) {
     console.error("Error fetching images:", err);
     res.status(500).json({ error: "Could not retrieve images" });
+  }
+};
+
+// 🔹 Get Total Image Count for an Event
+export const getEventImageCount = async (req, res) => {
+  const { eventId } = req.query;
+
+  if (!eventId) {
+    return res.status(400).json({ error: "Missing eventId" });
+  }
+
+  const prefix = `eventimages/${eventId}/images/`;
+
+  let totalCount = 0;
+  let continuationToken;
+
+  try {
+    do {
+      const listCommand = new ListObjectsV2Command({
+        Bucket: process.env.BUCKET_NAME,
+        Prefix: prefix,
+        MaxKeys: 1000,
+        ContinuationToken: continuationToken,
+      });
+
+      const response = await s3Client.send(listCommand);
+
+      const imageFiles = (response.Contents || []).filter((item) =>
+        item.Key.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+      );
+
+      totalCount += imageFiles.length;
+      continuationToken = response.IsTruncated
+        ? response.NextContinuationToken
+        : null;
+    } while (continuationToken);
+
+    res.status(200).json({ imageCount: totalCount });
+  } catch (err) {
+    console.error("Error counting images in S3:", err);
+    res.status(500).json({ error: "Could not count images" });
   }
 };

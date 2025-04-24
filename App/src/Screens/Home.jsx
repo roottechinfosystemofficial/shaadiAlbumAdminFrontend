@@ -31,7 +31,7 @@ const Home = () => {
     if (text.length === 6) {
       try {
         const response = await fetch(
-          "http://192.168.1.66:5000/api/v1/app-event/findEventByEventcode",
+          "http://192.168.186.31:5000/api/v1/app-event/findEventByEventcode",
           {
             method: "POST",
             headers: {

@@ -12,6 +12,7 @@ import {
   FlatList,
   TouchableWithoutFeedback,
   StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -79,11 +80,11 @@ const EventImages = () => {
   const getImageStyle = (type) => {
     switch (type) {
       case "vertical":
-        return { width: columnWidth, height: columnWidth * 1.5 };
+        return { width: columnWidth, height: columnWidth * 1.5 }; // Vertical images
       case "horizontal":
-        return { width: columnWidth, height: columnWidth * 0.7 };
+        return { width: columnWidth, height: columnWidth * 0.6 }; // Horizontal images
       default:
-        return { width: columnWidth, height: columnWidth };
+        return { width: columnWidth, height: columnWidth }; // Square images
     }
   };
 
@@ -133,72 +134,49 @@ const EventImages = () => {
     navigation.navigate("FaceIDVerification");
   };
 
-  //   useEffect(() => {
-  //     if (modalVisible && selectedImage) {
-  //       const index = images.findIndex((img) => img.id === selectedImage.id);
-  //       setTimeout(() => {
-  //         flatListRef.current?.scrollToIndex({ index, animated: false });
-  //       }, 100);
-  //     }
-  //   }, [modalVisible, selectedImage]);
-
   useEffect(() => {
-    fetchEventImages();
+    fetchEventImages(1);
   }, []);
 
-  const fetchEventImages = async (pageNum = 1) => {
-    if (loading) return; // Prevent multiple calls
+  const fetchEventImages = async (pageToFetch) => {
+    if (loading || !hasMore) return;
 
     setLoading(true);
 
     try {
       const response = await fetch(
-        `http://192.168.1.66:5000/api/v1/list-app-images?eventId=${id}&page=${pageNum}`
+        `http://192.168.186.31:5000/api/v1/list-app-images?eventId=${id}&page=${pageToFetch}`
       );
 
-      const responseText = await response.text(); // Get the response as text
-
-      // Check if the response is valid JSON
+      const responseText = await response.text();
       let data;
+
       try {
-        data = JSON.parse(responseText); // Try parsing the response text
-        console.log("Parsed data:", data);
+        data = JSON.parse(responseText);
       } catch (error) {
         console.error("JSON Parse error:", error);
         Alert.alert("Error", "Failed to parse image data.");
         return;
       }
 
-      // Check if the response contains valid image data
-      if (!data.images) {
-        Alert.alert("Error", "Error fetching images.");
-        return;
-      }
-
       const newImages = data.images || [];
+
       if (newImages.length === 0) {
-        setHasMore(false); // No more images to load
+        setHasMore(false);
       } else {
         const processedImages = await Promise.all(
-          newImages.map(async (url, index) => {
-            // Get image dimensions to determine type
+          newImages.map(async (url) => {
             const { width, height } = await getImageDimensions(url);
+            Image.prefetch(url);
 
-            // Prefetch image for faster display
-            Image.prefetch(url); // Prefetch image URL here
-
-            // Determine image type based on its aspect ratio
-            let type = "square"; // Default to square
-            if (width > height) {
-              type = "horizontal";
-            } else if (width < height) {
-              type = "vertical";
-            }
+            let type = "square";
+            if (width > height) type = "horizontal";
+            else if (width < height) type = "vertical";
 
             return {
               id: url,
-              uri: { uri: url }, // Ensure this is the correct format
-              type: type,
+              uri: { uri: url },
+              type,
             };
           })
         );
@@ -211,7 +189,7 @@ const EventImages = () => {
           return [...prev, ...newUniqueImages];
         });
 
-        setPage(pageNum); // Update the page
+        setPage(pageToFetch); // Update state
       }
     } catch (error) {
       console.error("Fetch error:", error);
@@ -280,6 +258,56 @@ const EventImages = () => {
         </TouchableOpacity>
       );
     });
+  const handleLoadMore = () => {
+    if (hasMore && !loading) {
+      const nextPage = page + 1;
+      fetchEventImages(nextPage);
+    }
+  };
+  const ListItem = React.memo(({ item, onPress, toggleFavorite }) => {
+    const isFavorite = favorites.includes(item.id);
+    const imgStyle = getImageStyle(item.type);
+
+    return (
+      <TouchableOpacity
+        onPress={() => onPress(item)}
+        activeOpacity={0.9}
+        style={{
+          flex: 1 / gridCount,
+          padding: imagePadding / 2,
+        }}
+      >
+        <View style={[styles.card, imgStyle]}>
+          <Image
+            source={item.uri}
+            style={[styles.image, imgStyle]}
+            resizeMode="cover"
+            onError={(error) => console.error("Image Load Error: ", error)}
+          />
+          <TouchableOpacity
+            style={styles.heartIcon}
+            onPress={() => toggleFavorite(item.id)}
+          >
+            <Ionicons
+              name={isFavorite ? "heart" : "heart-outline"}
+              size={20}
+              color={theme.colours.primary}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.downloadIcon}
+            onPress={() => downloadImage(item.uri)}
+          >
+            <Ionicons
+              name="download-outline"
+              size={20}
+              color={theme.colours.primary}
+            />
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    );
+  });
 
   return (
     <ScreenWrapper bg="#fff">
@@ -316,12 +344,16 @@ const EventImages = () => {
           numColumns={gridCount}
           renderItem={({ item }) => {
             const isFavorite = favorites.includes(item.id);
-            const imgStyle = getImageStyle(item.type);
+            const imgStyle = getImageStyle(item.type); // Get dynamic style based on image type
+
             return (
               <TouchableOpacity
                 onPress={() => openImageModal(item)}
                 activeOpacity={0.9}
-                style={{ flex: 1 / gridCount, padding: imagePadding / 2 }}
+                style={{
+                  flex: 1 / gridCount, // Ensure each column takes equal space
+                  padding: imagePadding / 2,
+                }}
               >
                 <View style={[styles.card, imgStyle]}>
                   <Image
@@ -356,11 +388,15 @@ const EventImages = () => {
               </TouchableOpacity>
             );
           }}
-          onEndReached={() => {
-            if (hasMore && !loading) fetchEventImages(page + 1);
-          }}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={loading && <Text>Loading...</Text>}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5} // Adjust this for when to load more
+          ListFooterComponent={
+            loading && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={theme.colours.primary} />
+              </View>
+            )
+          }
         />
 
         {modalVisible && (
@@ -475,6 +511,12 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     elevation: 5,
   },
+  loadingContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 20,
+  },
+
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.9)",

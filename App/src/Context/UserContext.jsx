@@ -45,7 +45,7 @@ export const UserProvider = ({ children }) => {
       }
 
       const response = await fetch(
-        "http://192.168.1.66:5000/api/v1/app-user/user",
+        "http://192.168.186.31:5000/api/v1/app-user/user",
         {
           method: "GET",
           headers: {
