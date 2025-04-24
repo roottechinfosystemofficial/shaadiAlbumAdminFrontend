@@ -4,11 +4,17 @@ import imageCompression from "browser-image-compression";
 import { X, CheckCircle, Circle, FolderOpen, ImagePlus } from "lucide-react";
 import { useSelector } from "react-redux";
 
+const BATCH_SIZE = 100;
+const CONCURRENCY_LIMIT = 5;
+
 const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [duplicateHandling, setDuplicateHandling] = useState("skip");
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadedCount, setUploadedCount] = useState(0);
+  const [uploadStartTime, setUploadStartTime] = useState(null);
+  const [compressionProgress, setCompressionProgress] = useState(0);
   const { singleEvent } = useSelector((state) => state.event);
 
   if (!isOpen) return null;
@@ -20,6 +26,9 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
 
   const handleClose = () => {
     setSelectedFiles([]);
+    setUploadProgress(0);
+    setUploadedCount(0);
+    setUploading(false);
     onClose();
   };
 
@@ -33,47 +42,95 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
     setDuplicateHandling(mode);
   };
 
+  const getTimeLeft = () => {
+    if (!uploadStartTime || uploadedCount === 0) return "Calculating...";
+    const elapsed = (Date.now() - uploadStartTime) / 1000;
+    const avgTime = elapsed / uploadedCount;
+    const remaining = (selectedFiles.length - uploadedCount) * avgTime;
+    const mins = Math.floor(remaining / 60);
+    const secs = Math.floor(remaining % 60);
+    return `${mins}m ${secs}s`;
+  };
+
+  const compressBatch = async (batch, index) => {
+    const result = [];
+    for (let file of batch) {
+      const compressed = await imageCompression(file, {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+      });
+      result.push({
+        file: compressed,
+        fileName: compressed.name,
+        fileType: compressed.type,
+      });
+      // Update compression progress based on batch completion
+      setCompressionProgress(((index + 1) / selectedFiles.length) * 100);
+    }
+    return result;
+  };
+
   const handleUpload = async () => {
     setUploading(true);
     setUploadProgress(0);
-    let progressPerFile = 100 / selectedFiles.length;
+    setUploadedCount(0);
+    setUploadStartTime(Date.now());
 
-    for (let i = 0; i < selectedFiles.length; i++) {
-      const file = selectedFiles[i];
-      try {
-        const compressed = await imageCompression(file, {
-          maxSizeMB: 1,
-          maxWidthOrHeight: 1920,
-          useWebWorker: true,
-        });
+    try {
+      for (let i = 0; i < selectedFiles.length; i += BATCH_SIZE) {
+        const fileBatch = selectedFiles.slice(i, i + BATCH_SIZE);
+        const compressedList = await compressBatch(fileBatch, i);
 
-        const { data } = await axios.get(
+        // Notify that compression is complete and proceed to uploading
+        setCompressionProgress(100);
+
+        const { data } = await axios.post(
           "http://localhost:5000/api/v1/api/s3/get-presigned-url",
           {
-            params: {
-              fileName: compressed.name,
-              fileType: compressed.type,
-              eventId: singleEvent?._id,
-            },
+            eventId: singleEvent?._id,
+            files: compressedList.map(({ fileName, fileType }) => ({
+              fileName,
+              fileType,
+            })),
           }
         );
 
-        await axios.put(data.url, compressed, {
-          headers: {
-            "Content-Type": compressed.type,
-          },
-        });
+        const uploadFile = async (url, file) => {
+          await axios.put(url, file, {
+            headers: { "Content-Type": file.type },
+          });
+          setUploadedCount((count) => {
+            const newCount = count + 1;
+            setUploadProgress((newCount / selectedFiles.length) * 100);
+            return newCount;
+          });
+        };
 
-        setUploadProgress((prev) => prev + progressPerFile);
-      } catch (err) {
-        console.error("Upload failed for:", file.name, err);
+        let index = 0;
+        const startNext = async () => {
+          if (index >= compressedList.length) return;
+          const currentIndex = index++;
+          await uploadFile(
+            data.urls[currentIndex].url,
+            compressedList[currentIndex].file
+          );
+          await startNext();
+        };
+
+        await Promise.all(
+          new Array(CONCURRENCY_LIMIT).fill(null).map(() => startNext())
+        );
       }
-    }
 
-    setUploading(false);
-    setSelectedFiles([]);
-    onClose();
-    onUploadSuccess(); // Refresh photo panel
+      setUploading(false);
+      setSelectedFiles([]);
+      onUploadSuccess();
+      handleClose();
+    } catch (err) {
+      console.error("Upload error:", err);
+      setUploading(false);
+    }
   };
 
   return (
@@ -90,36 +147,24 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
         </div>
 
         <div className="flex items-center gap-4 mb-4">
-          <button
-            onClick={() => handleDuplicateOption("skip")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full border transition ${
-              duplicateHandling === "skip"
-                ? "bg-primary text-white border-primary"
-                : "bg-gray-100 border-gray-300 text-gray-700"
-            }`}
-          >
-            {duplicateHandling === "skip" ? (
-              <CheckCircle size={18} />
-            ) : (
-              <Circle size={18} />
-            )}
-            Skip Duplicates
-          </button>
-          <button
-            onClick={() => handleDuplicateOption("overwrite")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full border transition ${
-              duplicateHandling === "overwrite"
-                ? "bg-primary text-white border-primary"
-                : "bg-gray-100 border-gray-300 text-gray-700"
-            }`}
-          >
-            {duplicateHandling === "overwrite" ? (
-              <CheckCircle size={18} />
-            ) : (
-              <Circle size={18} />
-            )}
-            Overwrite Duplicates
-          </button>
+          {["skip", "overwrite"].map((mode) => (
+            <button
+              key={mode}
+              onClick={() => handleDuplicateOption(mode)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full border transition ${
+                duplicateHandling === mode
+                  ? "bg-primary text-white border-primary"
+                  : "bg-gray-100 border-gray-300 text-gray-700"
+              }`}
+            >
+              {duplicateHandling === mode ? (
+                <CheckCircle size={18} />
+              ) : (
+                <Circle size={18} />
+              )}
+              {mode === "skip" ? "Skip Duplicates" : "Overwrite Duplicates"}
+            </button>
+          ))}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 mb-4">
@@ -134,7 +179,6 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
               className="hidden"
             />
           </label>
-
           <label className="flex-1 border-2 border-dashed border-slate p-4 text-center text-sm rounded-lg cursor-pointer hover:border-primary transition flex flex-col items-center gap-2">
             <FolderOpen size={24} />
             <p>Select folder</p>
@@ -175,13 +219,21 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
           <div className="mb-4">
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
-                className="bg-primary h-2 rounded-full"
+                className="bg-primary h-2 rounded-full transition-all duration-300 ease-in-out"
                 style={{ width: `${uploadProgress}%` }}
               ></div>
             </div>
-            <p className="text-sm text-gray-500 text-center mt-2">
-              {uploadProgress.toFixed(0)}% Uploading...
+            <p className="text-sm text-gray-700 mt-2 text-center">
+              {uploadedCount} of {selectedFiles.length} images uploaded
             </p>
+            <p className="text-xs text-center text-gray-500">
+              Time left: {getTimeLeft()}
+            </p>
+            <div className="mt-2 text-center">
+              <p className="text-sm text-gray-600">
+                Compression Progress: {Math.round(compressionProgress)}%
+              </p>
+            </div>
           </div>
         )}
 

@@ -9,8 +9,6 @@ export const verifyJWT = async (req, res, next) => {
 
     const token = bearerToken || req?.cookies?.accessToken;
 
-    console.log("Token Received:", token);
-
     if (!token) {
       return res
         .status(401)
