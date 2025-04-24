@@ -21,6 +21,17 @@ const s3Client = new S3Client({
 const BATCH_SIZE = 50;
 const MAX_FILE_SIZE_MB = 10;
 
+// Utility: Convert stream to buffer
+const streamToBuffer = async (stream) => {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    stream.on("data", (chunk) => chunks.push(chunk));
+    stream.on("end", () => resolve(Buffer.concat(chunks)));
+    stream.on("error", reject);
+  });
+};
+
+// 🔹 Generate Pre-signed URL for Upload
 export const getPresignedUrl = async (req, res) => {
   const { files, eventId } = req.body;
 
@@ -28,64 +39,40 @@ export const getPresignedUrl = async (req, res) => {
     return res.status(400).json({ error: "Missing files or eventId" });
   }
 
-  const timestamp = Date.now(); // capture timestamp once to keep order
-
-  // Function to generate the pre-signed URLs in batches
-  const generateBatchUrls = async (files, eventId) => {
-    const batches = [];
-    for (let i = 0; i < files.length; i += BATCH_SIZE) {
-      const batch = files.slice(i, i + BATCH_SIZE);
-      batches.push(batch);
-    }
-
-    // Initialize an empty array to store all signed URLs
-    let signedUrls = [];
-
-    // Process each batch
-    for (const batch of batches) {
-      const batchUrls = await Promise.all(
-        batch.map(async ({ fileName, fileType, fileSize }, index) => {
-          // Check file size before generating the pre-signed URL
-          if (fileSize > MAX_FILE_SIZE_MB * 1024 * 1024) {
-            // size in bytes
-            throw new Error(
-              `File ${fileName} exceeds the size limit of ${MAX_FILE_SIZE_MB} MB.`
-            );
-          }
-
-          const uniqueKey = `eventimages/${eventId}/images/${timestamp}-${index}-${fileName}`;
-          const command = new PutObjectCommand({
-            Bucket: process.env.BUCKET_NAME,
-            Key: uniqueKey,
-            ContentType: fileType,
-          });
-
-          // Get the pre-signed URL
-          const url = await getSignedUrl(s3Client, command);
-
-          // Add to signedUrls array
-          return { url, key: uniqueKey, fileName };
-        })
-      );
-      // Append the batch URLs to the signedUrls array
-      signedUrls = [...signedUrls, ...batchUrls];
-    }
-
-    return signedUrls;
-  };
+  const timestamp = Date.now();
 
   try {
-    const signedUrls = await generateBatchUrls(files, eventId);
-    console.log(signedUrls.length);
+    const signedUrls = await Promise.all(
+      files.map(({ fileName, fileType, fileSize }, index) => {
+        if (fileSize > MAX_FILE_SIZE_MB * 1024 * 1024) {
+          throw new Error(
+            `File ${fileName} exceeds the size limit of ${MAX_FILE_SIZE_MB} MB.`
+          );
+        }
 
-    // Respond with the generated URLs
+        const uniqueKey = `eventimages/${eventId}/images/${timestamp}-${index}-${fileName}`;
+        const command = new PutObjectCommand({
+          Bucket: process.env.BUCKET_NAME,
+          Key: uniqueKey,
+          ContentType: fileType,
+        });
+
+        return getSignedUrl(s3Client, command).then((url) => ({
+          url,
+          key: uniqueKey,
+          fileName,
+        }));
+      })
+    );
+
     res.status(200).json({ urls: signedUrls });
   } catch (err) {
-    console.error("Error generating batch signed URLs:", err);
+    console.error("Error generating signed URLs:", err);
     res.status(500).json({ error: "Could not generate signed URLs" });
   }
 };
 
+// 🔹 Get Paginated Event Images
 export const getEventImages = async (req, res) => {
   const { eventId, continuationToken } = req.query;
   const pageSize = 10;
@@ -113,7 +100,6 @@ export const getEventImages = async (req, res) => {
         return getSignedUrl(s3Client, getCommand);
       })
     );
-    console.log(imageUrls.length);
 
     res.status(200).json({
       images: imageUrls,
@@ -125,54 +111,7 @@ export const getEventImages = async (req, res) => {
   }
 };
 
-
-const streamToBuffer = async (stream) => {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    stream.on("data", (chunk) => chunks.push(chunk));
-    stream.on("end", () => resolve(Buffer.concat(chunks)));
-    stream.on("error", reject);
-  });
-
-// 🔹 Generate Pre-signed URL for Upload
-export const getPresignedUrl = async (req, res) => {
-  const { files, eventId } = req.body;
-
-  if (!files || !Array.isArray(files) || !eventId) {
-    return res.status(400).json({ error: "Missing files or eventId" });
-  }
-
-  try {
-    const timestamp = Date.now(); // capture timestamp once to keep order
-    const signedUrls = await Promise.all(
-      files.map(({ fileName, fileType }, index) => {
-        const uniqueKey = `eventimages/${eventId}/images/${timestamp}-${index}-${fileName}`;
-        const command = new PutObjectCommand({
-          Bucket: process.env.BUCKET_NAME,
-          Key: uniqueKey,
-          ContentType: fileType,
-        });
-
-        return getSignedUrl(s3Client, command).then((url) => ({
-          url,
-          key: uniqueKey,
-          fileName,
-        }));
-      })
-    );
-    console.log(signedUrls.length);
-
-    res.status(200).json({ urls: signedUrls });
-  } catch (err) {
-    console.error("Error generating batch signed URLs:", err);
-    res.status(500).json({ error: "Could not generate signed URLs" });
-  }
->>>>>>> 979562633031d75ab6f4ae712a717d657bee1615
-};
-=======
->>>>>>> 81d186dbf611380625abf69d55accb96eedcdf6a
-// Assuming this is inside eventController.js
->>>>>>> e52a236c860cb8451e0be1fac922bc3512e688e3
+// 🔹 Get App Images with Sharp Resizing
 export const getAppEventImages = async (req, res) => {
   const { eventId, page = 1 } = req.query;
   const pageSize = 25;
@@ -187,7 +126,6 @@ export const getAppEventImages = async (req, res) => {
   let continuationToken;
 
   try {
-    // Fetch all items with the prefix from S3
     do {
       const listCommand = new ListObjectsV2Command({
         Bucket: process.env.BUCKET_NAME,
@@ -203,16 +141,13 @@ export const getAppEventImages = async (req, res) => {
         : null;
     } while (continuationToken);
 
-    // Sort items by LastModified date (newest first)
     const sortedItems = allItems.sort(
       (a, b) => new Date(b.LastModified) - new Date(a.LastModified)
     );
 
-    // Get paginated items
     const startIndex = (page - 1) * pageSize;
     const paginatedItems = sortedItems.slice(startIndex, startIndex + pageSize);
 
-    // Generate signed URLs and resize images
     const imageUrls = await Promise.all(
       paginatedItems.map(async (item) => {
         const getCommand = new GetObjectCommand({
@@ -220,26 +155,18 @@ export const getAppEventImages = async (req, res) => {
           Key: item.Key,
         });
 
-        // Fetch image from S3
         const image = await s3Client.send(getCommand);
-
-        // Convert stream to buffer
         const buffer = await streamToBuffer(image.Body);
 
-        // Resize the image using Sharp
         const resizedImage = await sharp(buffer)
           .resize(800)
           .jpeg({ quality: 50 })
           .toBuffer();
 
-        // Optionally upload resized image to S3 here...
+        // You can upload the resized image to S3 if desired
+        // Or just return the original image signed URL for now
 
-        // Generate signed URL for original or resized image
-        const resizedImageUrl = await getSignedUrl(s3Client, getCommand, {
-          expiresIn: 3600,
-        });
-
-        return resizedImageUrl;
+        return getSignedUrl(s3Client, getCommand, { expiresIn: 3600 });
       })
     );
 
@@ -253,6 +180,7 @@ export const getAppEventImages = async (req, res) => {
   }
 };
 
+// 🔹 Get Total Image Count for an Event
 export const getEventImageCount = async (req, res) => {
   const { eventId } = req.query;
 
@@ -292,4 +220,3 @@ export const getEventImageCount = async (req, res) => {
     res.status(500).json({ error: "Could not count images" });
   }
 };
-
