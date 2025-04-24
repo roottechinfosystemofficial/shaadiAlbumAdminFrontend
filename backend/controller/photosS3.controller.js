@@ -125,9 +125,57 @@ export const getEventImages = async (req, res) => {
   }
 };
 
+
+const streamToBuffer = async (stream) => {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    stream.on("data", (chunk) => chunks.push(chunk));
+    stream.on("end", () => resolve(Buffer.concat(chunks)));
+    stream.on("error", reject);
+  });
+
+// 🔹 Generate Pre-signed URL for Upload
+export const getPresignedUrl = async (req, res) => {
+  const { files, eventId } = req.body;
+
+  if (!files || !Array.isArray(files) || !eventId) {
+    return res.status(400).json({ error: "Missing files or eventId" });
+  }
+
+  try {
+    const timestamp = Date.now(); // capture timestamp once to keep order
+    const signedUrls = await Promise.all(
+      files.map(({ fileName, fileType }, index) => {
+        const uniqueKey = `eventimages/${eventId}/images/${timestamp}-${index}-${fileName}`;
+        const command = new PutObjectCommand({
+          Bucket: process.env.BUCKET_NAME,
+          Key: uniqueKey,
+          ContentType: fileType,
+        });
+
+        return getSignedUrl(s3Client, command).then((url) => ({
+          url,
+          key: uniqueKey,
+          fileName,
+        }));
+      })
+    );
+    console.log(signedUrls.length);
+
+    res.status(200).json({ urls: signedUrls });
+  } catch (err) {
+    console.error("Error generating batch signed URLs:", err);
+    res.status(500).json({ error: "Could not generate signed URLs" });
+  }
+>>>>>>> 979562633031d75ab6f4ae712a717d657bee1615
+};
+=======
+>>>>>>> 81d186dbf611380625abf69d55accb96eedcdf6a
+// Assuming this is inside eventController.js
+>>>>>>> e52a236c860cb8451e0be1fac922bc3512e688e3
 export const getAppEventImages = async (req, res) => {
   const { eventId, page = 1 } = req.query;
-  const pageSize = 25; // Limit to 25 images per page
+  const pageSize = 25;
 
   if (!eventId) {
     return res.status(400).json({ error: "Missing eventId" });
@@ -139,11 +187,12 @@ export const getAppEventImages = async (req, res) => {
   let continuationToken;
 
   try {
+    // Fetch all items with the prefix from S3
     do {
       const listCommand = new ListObjectsV2Command({
         Bucket: process.env.BUCKET_NAME,
         Prefix: prefix,
-        MaxKeys: 1000, // Fetch up to 1000 items at once; we paginate manually
+        MaxKeys: 1000,
         ContinuationToken: continuationToken,
       });
 
@@ -159,11 +208,11 @@ export const getAppEventImages = async (req, res) => {
       (a, b) => new Date(b.LastModified) - new Date(a.LastModified)
     );
 
-    // Calculate the range of items to be returned for the requested page
+    // Get paginated items
     const startIndex = (page - 1) * pageSize;
     const paginatedItems = sortedItems.slice(startIndex, startIndex + pageSize);
 
-    // Generate signed URLs for the images and resize them
+    // Generate signed URLs and resize images
     const imageUrls = await Promise.all(
       paginatedItems.map(async (item) => {
         const getCommand = new GetObjectCommand({
@@ -174,23 +223,18 @@ export const getAppEventImages = async (req, res) => {
         // Fetch image from S3
         const image = await s3Client.send(getCommand);
 
-        // Resize and compress the image using Sharp
-        const resizedImage = await sharp(image.Body)
-          .resize(800) // Resize to width 800px (you can adjust this based on your needs)
-          .jpeg({ quality: 50 }) // Reduce quality to 50 (you can adjust as needed)
+        // Convert stream to buffer
+        const buffer = await streamToBuffer(image.Body);
+
+        // Resize the image using Sharp
+        const resizedImage = await sharp(buffer)
+          .resize(800)
+          .jpeg({ quality: 50 })
           .toBuffer();
 
-        // Upload the resized image to S3 or return it directly
-        const resizedKey = `resized/${item.Key}`; // Save the resized image with a new name (optional)
+        // Optionally upload resized image to S3 here...
 
-        // (Optional) You could upload the resized image back to S3 if you want to keep it
-        // await s3Client.send(new PutObjectCommand({
-        //   Bucket: process.env.BUCKET_NAME,
-        //   Key: resizedKey,
-        //   Body: resizedImage,
-        // }));
-
-        // Generate signed URL for the resized image
+        // Generate signed URL for original or resized image
         const resizedImageUrl = await getSignedUrl(s3Client, getCommand, {
           expiresIn: 3600,
         });
@@ -199,10 +243,9 @@ export const getAppEventImages = async (req, res) => {
       })
     );
 
-    // Return the paginated image URLs to the client
     res.status(200).json({
       images: imageUrls,
-      hasNextPage: paginatedItems.length === pageSize, // Indicates if there are more images to load
+      hasNextPage: paginatedItems.length === pageSize,
     });
   } catch (err) {
     console.error("Error fetching images:", err);
