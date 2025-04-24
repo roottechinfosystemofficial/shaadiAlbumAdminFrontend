@@ -15,6 +15,7 @@ const EventlistPage = () => {
   const [editingEvent, setEditingEvent] = useState(null);
   const [events, setEvents] = useState([]);
   const [useEventId, setUseEventId] = useState();
+  const [openEditModel, setOpenEditModel] = useState(false);
 
   const dispatch = useDispatch();
   const { accessToken } = useSelector((state) => state.user);
@@ -86,6 +87,7 @@ const EventlistPage = () => {
   const handleDelete = (id) => {
     console.log("Delete event with id:", id);
   };
+  console.log(editingEvent);
 
   return (
     <div className="max-w-6xl mx-auto mt-10 px-4">
@@ -131,6 +133,7 @@ const EventlistPage = () => {
               event={event}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              setOpenEditModel={setOpenEditModel}
             />
           ))}
         </div>
@@ -149,12 +152,14 @@ const EventlistPage = () => {
       )}
 
       {/* Edit Event Modal */}
-      {editingEvent && (
+      {openEditModel && (
         <EditEventModal
           editingEvent={editingEvent}
           setEditingEvent={setEditingEvent}
           editForm={editForm}
           setEditForm={setEditForm}
+          setOpenEditModel={setOpenEditModel} // can reuse this
+          setEvents={setEvents} // 👈 pass this down
         />
       )}
     </div>

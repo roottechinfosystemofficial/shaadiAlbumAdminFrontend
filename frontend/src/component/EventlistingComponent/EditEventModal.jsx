@@ -1,17 +1,28 @@
 import React, { useState, useEffect, useRef } from "react";
+import { EVENT_API_END_POINT } from "../../constant";
+import apiRequest from "../../utils/apiRequest";
+import { useDispatch, useSelector } from "react-redux";
 
-const EditEventModal = ({ editForm, setEditForm, setEditingEvent }) => {
+const EditEventModal = ({
+  editForm,
+  editingEvent,
+  setEditForm,
+  setEditingEvent,
+  setOpenEditModel,
+
+  setEvents, // 👈 receive this
+}) => {
   const [hasChanges, setHasChanges] = useState(false);
-  const initialEditFormRef = useRef(null); // store original data here
+  const initialEditFormRef = useRef(null);
+  const { accessToken } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
 
-  // Save the original form only once when modal opens
   useEffect(() => {
     if (editForm && !initialEditFormRef.current) {
       initialEditFormRef.current = { ...editForm };
     }
   }, [editForm]);
 
-  // Track changes between original and current form
   useEffect(() => {
     const initial = initialEditFormRef.current;
     const isChanged = Object.keys(editForm || {}).some(
@@ -24,10 +35,31 @@ const EditEventModal = ({ editForm, setEditForm, setEditingEvent }) => {
     setEditForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleEditSubmit = (e) => {
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
-    console.log("Edited Event Details:", editForm);
-    // TODO: Add API call to update event
+    try {
+      const endpoint = `${EVENT_API_END_POINT}/editEventById/${editingEvent?._id}`;
+      const res = await apiRequest(
+        "PUT",
+        endpoint,
+        editForm,
+        accessToken,
+        dispatch
+      );
+
+      if (res?.status === 200) {
+        // Optimistically update the UI
+        setEvents((prev) =>
+          prev.map((event) =>
+            event._id === editingEvent._id ? { ...event, ...editForm } : event
+          )
+        );
+
+        setOpenEditModel(false);
+      }
+    } catch (error) {
+      console.error("Edit failed:", error);
+    }
   };
 
   return (
@@ -38,8 +70,9 @@ const EditEventModal = ({ editForm, setEditForm, setEditingEvent }) => {
           <button
             className="text-gray-500 hover:text-gray-700 text-lg"
             onClick={() => {
-              setEditingEvent(null);
               initialEditFormRef.current = null;
+              setOpenEditModel(false);
+              setEditingEvent(null);
             }}
           >
             ×
@@ -139,8 +172,9 @@ const EditEventModal = ({ editForm, setEditForm, setEditingEvent }) => {
               type="button"
               className="bg-muted px-4 py-2 rounded-md hover:bg-muted-dark"
               onClick={() => {
-                setEditingEvent(null);
                 initialEditFormRef.current = null;
+                setOpenEditModel(false);
+                setEditingEvent(null);
               }}
             >
               Cancel
