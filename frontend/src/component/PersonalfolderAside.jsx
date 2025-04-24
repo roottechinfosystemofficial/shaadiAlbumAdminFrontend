@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { EVENT_API_END_POINT } from "../constant";
 import apiRequest from "../utils/apiRequest";
 import { setSingleEvent } from "../Redux/Slices/EventSlice";
+import { useGetEventImagesCount } from "../Hooks/useGetEventImagesCount";
 
 const PersonalfolderAside = () => {
   const [showOptions, setShowOptions] = useState(false);
@@ -16,7 +17,6 @@ const PersonalfolderAside = () => {
   const { singleEvent } = useSelector((state) => state.event);
   const { accessToken } = useSelector((state) => state.user);
   const dispatch = useDispatch();
-
   const eventDate = singleEvent?.eventDate
     ? new Date(singleEvent.eventDate).toLocaleString("en-US", {
         month: "short",
@@ -49,6 +49,9 @@ const PersonalfolderAside = () => {
       console.error("Error updating publish status:", error);
     }
   };
+
+  console.log(singleEvent?._id);
+  useGetEventImagesCount(singleEvent?._id);
 
   return (
     <aside className="p-4 text-gray-900 space-y-6 sidebar-content">

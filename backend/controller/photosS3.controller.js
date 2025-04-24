@@ -124,7 +124,7 @@ export const getEventImages = async (req, res) => {
     res.status(500).json({ error: "Could not retrieve images" });
   }
 };
-// Assuming this is inside eventController.js
+
 export const getAppEventImages = async (req, res) => {
   const { eventId, page = 1 } = req.query;
   const pageSize = 25; // Limit to 25 images per page
@@ -209,3 +209,44 @@ export const getAppEventImages = async (req, res) => {
     res.status(500).json({ error: "Could not retrieve images" });
   }
 };
+
+export const getEventImageCount = async (req, res) => {
+  const { eventId } = req.query;
+
+  if (!eventId) {
+    return res.status(400).json({ error: "Missing eventId" });
+  }
+
+  const prefix = `eventimages/${eventId}/images/`;
+
+  let totalCount = 0;
+  let continuationToken;
+
+  try {
+    do {
+      const listCommand = new ListObjectsV2Command({
+        Bucket: process.env.BUCKET_NAME,
+        Prefix: prefix,
+        MaxKeys: 1000,
+        ContinuationToken: continuationToken,
+      });
+
+      const response = await s3Client.send(listCommand);
+
+      const imageFiles = (response.Contents || []).filter((item) =>
+        item.Key.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+      );
+
+      totalCount += imageFiles.length;
+      continuationToken = response.IsTruncated
+        ? response.NextContinuationToken
+        : null;
+    } while (continuationToken);
+
+    res.status(200).json({ imageCount: totalCount });
+  } catch (err) {
+    console.error("Error counting images in S3:", err);
+    res.status(500).json({ error: "Could not count images" });
+  }
+};
+
