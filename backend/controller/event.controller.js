@@ -118,8 +118,14 @@ export const getEventById = async (req, res) => {
 
 export const editEventById = async (req, res) => {
   try {
-    const { eventName, eventDate, eventCode, eventPassword, eventDeleteDate } =
-      req.body;
+    const {
+      eventName,
+      eventDate,
+      eventCode,
+      eventPassword,
+      eventDeleteDate,
+      isPublished,
+    } = req.body;
     const eventId = req.params.eventId;
 
     const findEvent = await Event.findById(eventId);
@@ -131,6 +137,7 @@ export const editEventById = async (req, res) => {
     }
 
     // Update only if the field is provided
+    if (isPublished !== undefined) findEvent.isPublished = isPublished;
     if (eventName !== undefined) findEvent.eventName = eventName;
     if (eventDate !== undefined) findEvent.eventDate = new Date(eventDate);
     if (eventCode !== undefined) findEvent.eventCode = eventCode;

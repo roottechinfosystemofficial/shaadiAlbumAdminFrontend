@@ -3,7 +3,10 @@ import boximg from "../assets/box1.png";
 import { EditIcon, Trash2, MoreVertical, Settings2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { EVENT_API_END_POINT } from "../constant";
+import apiRequest from "../utils/apiRequest";
+import { setSingleEvent } from "../Redux/Slices/EventSlice";
 
 const PersonalfolderAside = () => {
   const [showOptions, setShowOptions] = useState(false);
@@ -11,6 +14,8 @@ const PersonalfolderAside = () => {
   const { eventId } = useParams();
   useGetSingleEvent(eventId);
   const { singleEvent } = useSelector((state) => state.event);
+  const { accessToken } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
 
   const eventDate = singleEvent?.eventDate
     ? new Date(singleEvent.eventDate).toLocaleString("en-US", {
@@ -21,9 +26,32 @@ const PersonalfolderAside = () => {
     : "No Date Provided";
 
   const isPublished = singleEvent?.isPublished || false;
+
+  const togglePublishStatus = async () => {
+    const newStatus = !isPublished;
+
+    const payload = {
+      isPublished: newStatus,
+    };
+
+    try {
+      const endpoint = `${EVENT_API_END_POINT}/editEventById/${singleEvent?._id}`;
+      const res = await apiRequest(
+        "PUT",
+        endpoint,
+        payload,
+        accessToken,
+        dispatch
+      );
+      console.log("Updated Event Publish Status:", res);
+      dispatch(setSingleEvent(res.data.data));
+    } catch (error) {
+      console.error("Error updating publish status:", error);
+    }
+  };
+
   return (
     <aside className="p-4 text-gray-900 space-y-6 sidebar-content">
-      {/* Action Buttons */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <button
           onClick={() => navigate("/eventsetting")}
@@ -38,26 +66,33 @@ const PersonalfolderAside = () => {
         </button>
       </div>
 
-      {/* Event Info */}
       <div className="space-y-1">
         <h2 className="text-2xl font-bold">{singleEvent?.eventName}</h2>
         <div className="flex justify-between text-sm text-gray-500">
           <p>{eventDate}</p>
-          <p
-            className={`font-semibold ${
-              isPublished ? "text-green-600" : "text-red-600"
-            }`}
-          >
-            {isPublished ? "Published" : "Unpublished"}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium">Published:</p>
+            <button
+              onClick={togglePublishStatus}
+              className={`w-12 h-6 flex items-center rounded-full p-1 duration-300 ${
+                isPublished ? "bg-green-500" : "bg-gray-300"
+              }`}
+            >
+              <div
+                className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ${
+                  isPublished ? "translate-x-6" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
         </div>
-        <div className="flex justify-between text-sm text-gray-500">
+
+        <div className="flex justify-between text-sm text-gray-500 mt-2">
           <p>Total Images:</p>
           <p>0</p>
         </div>
       </div>
 
-      {/* Folder Image */}
       <div className="relative border border-slate rounded-xl overflow-hidden shadow-sm">
         <img
           src={boximg}
@@ -74,7 +109,6 @@ const PersonalfolderAside = () => {
         </div>
       </div>
 
-      {/* Description */}
       <div className="space-y-2">
         <textarea
           placeholder="Add Description (max 250 characters)"
@@ -86,7 +120,6 @@ const PersonalfolderAside = () => {
         </button>
       </div>
 
-      {/* Event Details */}
       <div className="space-y-4 p-4 bg-white border border-slate rounded-xl shadow-sm pb-28 sm:pb-4">
         <div>
           <p className="text-xs text-gray-500">Event Code:</p>
@@ -98,7 +131,6 @@ const PersonalfolderAside = () => {
           </div>
         </div>
 
-        {/* Buttons */}
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={() => navigate(`/${eventId}/clientview`)}
@@ -111,7 +143,6 @@ const PersonalfolderAside = () => {
           </button>
         </div>
 
-        {/* Sub Events */}
         <div className="border-t border-slate pt-3">
           <div className="flex justify-between items-center text-sm font-medium mb-2">
             <p>Sub-Events</p>
@@ -154,7 +185,6 @@ const PersonalfolderAside = () => {
           </div>
         </div>
 
-        {/* Bottom CTA */}
         <div className="grid grid-cols-1">
           <button
             onClick={() => navigate("/standyshow")}
