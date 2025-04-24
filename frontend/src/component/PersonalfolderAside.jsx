@@ -2,19 +2,15 @@ import React, { useState } from "react";
 import boximg from "../assets/box1.png";
 import { EditIcon, Trash2, MoreVertical, Settings2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
 import { useDispatch, useSelector } from "react-redux";
-import { EVENT_API_END_POINT } from "../constant";
-import apiRequest from "../utils/apiRequest";
 import { setSingleEvent } from "../Redux/Slices/EventSlice";
 import { useGetEventImagesCount } from "../Hooks/useGetEventImagesCount";
+import { editEvent } from "../utils/editEvents.util.js";
 
-const PersonalfolderAside = () => {
+const PersonalfolderAside = ({ singleEvent }) => {
   const [showOptions, setShowOptions] = useState(false);
   const navigate = useNavigate();
   const { eventId } = useParams();
-  useGetSingleEvent(eventId);
-  const { singleEvent } = useSelector((state) => state.event);
   const { accessToken } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const eventDate = singleEvent?.eventDate
@@ -26,32 +22,29 @@ const PersonalfolderAside = () => {
     : "No Date Provided";
 
   const isPublished = singleEvent?.isPublished || false;
+  const imageCount = useGetEventImagesCount(singleEvent?._id);
 
   const togglePublishStatus = async () => {
     const newStatus = !isPublished;
 
     const payload = {
       isPublished: newStatus,
+      ...(imageCount && { imageCount }), // Include imageCount only if it exists
     };
 
     try {
-      const endpoint = `${EVENT_API_END_POINT}/editEventById/${singleEvent?._id}`;
-      const res = await apiRequest(
-        "PUT",
-        endpoint,
+      const res = await editEvent(
+        singleEvent?._id,
         payload,
-        accessToken,
-        dispatch
+        dispatch,
+        accessToken
       );
       console.log("Updated Event Publish Status:", res);
-      dispatch(setSingleEvent(res.data.data));
+      dispatch(setSingleEvent(res.data.data)); // Update state with latest event data
     } catch (error) {
       console.error("Error updating publish status:", error);
     }
   };
-
-  console.log(singleEvent?._id);
-  useGetEventImagesCount(singleEvent?._id);
 
   return (
     <aside className="p-4 text-gray-900 space-y-6 sidebar-content">
@@ -92,7 +85,7 @@ const PersonalfolderAside = () => {
 
         <div className="flex justify-between text-sm text-gray-500 mt-2">
           <p>Total Images:</p>
-          <p>0</p>
+          <p>{singleEvent?.eventTotalImages}</p>
         </div>
       </div>
 

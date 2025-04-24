@@ -9,6 +9,7 @@ const eventSchema = new mongoose.Schema(
     eventDeleteDate: { type: Date },
     eventPassword: { type: String },
     eventImage: { type: String },
+    eventTotalImages: { type: Number },
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true }

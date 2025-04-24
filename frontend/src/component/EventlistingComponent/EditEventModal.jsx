@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { EVENT_API_END_POINT } from "../../constant";
-import apiRequest from "../../utils/apiRequest";
+
 import { useDispatch, useSelector } from "react-redux";
+import { editEvent } from "../../utils/editEvents.util.js";
 
 const EditEventModal = ({
   editForm,
@@ -38,17 +38,14 @@ const EditEventModal = ({
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      const endpoint = `${EVENT_API_END_POINT}/editEventById/${editingEvent?._id}`;
-      const res = await apiRequest(
-        "PUT",
-        endpoint,
+      const res = await editEvent(
+        editingEvent._id,
         editForm,
-        accessToken,
-        dispatch
+        dispatch,
+        accessToken
       );
 
       if (res?.status === 200) {
-        // Optimistically update the UI
         setEvents((prev) =>
           prev.map((event) =>
             event._id === editingEvent._id ? { ...event, ...editForm } : event

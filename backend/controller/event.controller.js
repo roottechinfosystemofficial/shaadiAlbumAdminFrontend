@@ -125,6 +125,7 @@ export const editEventById = async (req, res) => {
       eventPassword,
       eventDeleteDate,
       isPublished,
+      imageCount,
     } = req.body;
     const eventId = req.params.eventId;
 
@@ -137,6 +138,7 @@ export const editEventById = async (req, res) => {
     }
 
     // Update only if the field is provided
+    if (imageCount !== undefined) findEvent.eventTotalImages = imageCount;
     if (isPublished !== undefined) findEvent.isPublished = isPublished;
     if (eventName !== undefined) findEvent.eventName = eventName;
     if (eventDate !== undefined) findEvent.eventDate = new Date(eventDate);
