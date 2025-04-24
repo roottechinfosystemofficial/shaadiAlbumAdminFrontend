@@ -6,7 +6,7 @@ const FavouritePanel = () => (
   <p className="text-center text-slate-dark mt-10">No Favourite Found!</p>
 );
 
-const PersonalFolderContent = () => {
+const PersonalFolderContent = ({ singleEvent }) => {
   const [activeTab, setActiveTab] = useState("photos");
 
   const renderContent = () => {
@@ -21,14 +21,20 @@ const PersonalFolderContent = () => {
         return null;
     }
   };
-
+  const eventDate = singleEvent?.eventDate
+    ? new Date(singleEvent.eventDate).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "No Date Provided";
   return (
     <div className="flex-1 w-full px-4 sm:px-6 py-6 min-h-screen overflow-hidden">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 border-b-2 border-slate pb-3">
         <div className="text-xl font-semibold flex flex-wrap items-center gap-4">
           <p>Highlights</p>
-          <p className="text-slate-dark text-sm">2025-04-03</p>
+          <p className="text-slate-dark text-sm">{eventDate}</p>
         </div>
 
         {/* Tabs */}

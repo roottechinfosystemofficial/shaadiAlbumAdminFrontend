@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setSingleEvent } from "../Redux/Slices/EventSlice";
 import { useGetEventImagesCount } from "../Hooks/useGetEventImagesCount";
 import { editEvent } from "../utils/editEvents.util.js";
+import toast from "../utils/toast.js";
 
 const PersonalfolderAside = ({ singleEvent }) => {
   const [showOptions, setShowOptions] = useState(false);
@@ -13,6 +14,8 @@ const PersonalfolderAside = ({ singleEvent }) => {
   const { eventId } = useParams();
   const { accessToken } = useSelector((state) => state.user);
   const dispatch = useDispatch();
+  const imageCount = useGetEventImagesCount(singleEvent?._id);
+
   const eventDate = singleEvent?.eventDate
     ? new Date(singleEvent.eventDate).toLocaleString("en-US", {
         month: "short",
@@ -22,14 +25,13 @@ const PersonalfolderAside = ({ singleEvent }) => {
     : "No Date Provided";
 
   const isPublished = singleEvent?.isPublished || false;
-  const imageCount = useGetEventImagesCount(singleEvent?._id);
 
   const togglePublishStatus = async () => {
     const newStatus = !isPublished;
 
     const payload = {
       isPublished: newStatus,
-      ...(imageCount && { imageCount }), // Include imageCount only if it exists
+      ...(imageCount && { imageCount }),
     };
 
     try {
@@ -39,9 +41,12 @@ const PersonalfolderAside = ({ singleEvent }) => {
         dispatch,
         accessToken
       );
-      console.log("Updated Event Publish Status:", res);
-      dispatch(setSingleEvent(res.data.data)); // Update state with latest event data
+      dispatch(setSingleEvent(res.data.data));
+      toast.success(
+        `Event ${newStatus ? "published" : "unpublished"} successfully!`
+      );
     } catch (error) {
+      toast.error("Failed to update publish status.");
       console.error("Error updating publish status:", error);
     }
   };
@@ -66,21 +71,45 @@ const PersonalfolderAside = ({ singleEvent }) => {
         <h2 className="text-2xl font-bold">{singleEvent?.eventName}</h2>
         <div className="flex justify-between text-sm text-gray-500">
           <p>{eventDate}</p>
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-medium">Published:</p>
-            <button
-              onClick={togglePublishStatus}
-              className={`w-12 h-6 flex items-center rounded-full p-1 duration-300 ${
-                isPublished ? "bg-green-500" : "bg-gray-300"
+        </div>
+
+        {/* ✅ Updated Publish Toggle */}
+        <div className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-3 py-2 shadow-sm hover:bg-slate-50 transition-all duration-300">
+          <div className="flex items-center gap-3">
+            {/* Status Indicator with Icon */}
+            <span
+              className={`w-2.5 h-2.5 rounded-full ${
+                isPublished ? "bg-green-500" : "bg-red-500"
               }`}
-            >
-              <div
-                className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ${
-                  isPublished ? "translate-x-6" : "translate-x-0"
-                }`}
-              />
-            </button>
+              title={
+                isPublished
+                  ? "Event is Published and Visible"
+                  : "Event is Unpublished and Hidden"
+              }
+            ></span>
+            <div className="flex flex-col">
+              <p className="text-sm font-medium text-gray-800">
+                {isPublished ? "Event Published" : "Event Unpublished"}
+              </p>
+              {/* Public Availability Status */}
+              <p className="text-xs text-gray-500">
+                {isPublished ? "Publicly Available" : "Not Available to Public"}
+              </p>
+            </div>
           </div>
+
+          {/* Action Button */}
+          <button
+            onClick={togglePublishStatus}
+            className={`text-xs font-medium rounded-lg px-3 py-1.5 transition-all ${
+              isPublished
+                ? "bg-red-100 text-red-600 hover:bg-red-200"
+                : "bg-green-100 text-green-600 hover:bg-green-200"
+            }`}
+            title={isPublished ? "Click to Unpublish" : "Click to Publish"}
+          >
+            {isPublished ? "Unpublish" : "Publish"}
+          </button>
         </div>
 
         <div className="flex justify-between text-sm text-gray-500 mt-2">
