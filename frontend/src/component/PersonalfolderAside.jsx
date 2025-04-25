@@ -4,9 +4,9 @@ import { EditIcon, Trash2, MoreVertical, Settings2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setSingleEvent } from "../Redux/Slices/EventSlice";
-import { useGetEventImagesCount } from "../Hooks/useGetEventImagesCount";
 import { editEvent } from "../utils/editEvents.util.js";
 import toast from "../utils/toast.js";
+import SubEventSection from "./SubEventSection.jsx";
 
 const PersonalfolderAside = ({ singleEvent }) => {
   const [showOptions, setShowOptions] = useState(false);
@@ -14,7 +14,6 @@ const PersonalfolderAside = ({ singleEvent }) => {
   const { eventId } = useParams();
   const { accessToken } = useSelector((state) => state.user);
   const dispatch = useDispatch();
-  console.log(singleEvent?.eventTotalImages);
 
   const eventDate = singleEvent?.eventDate
     ? new Date(singleEvent.eventDate).toLocaleString("en-US", {
@@ -50,6 +49,7 @@ const PersonalfolderAside = ({ singleEvent }) => {
 
   return (
     <aside className="p-4 text-gray-900 space-y-6 sidebar-content">
+      {/* Top Action Buttons */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <button
           onClick={() => navigate("/eventsetting")}
@@ -64,16 +64,16 @@ const PersonalfolderAside = ({ singleEvent }) => {
         </button>
       </div>
 
+      {/* Event Info */}
       <div className="space-y-1">
         <h2 className="text-2xl font-bold">{singleEvent?.eventName}</h2>
         <div className="flex justify-between text-sm text-gray-500">
           <p>{eventDate}</p>
         </div>
 
-        {/* ✅ Updated Publish Toggle */}
+        {/* Publish Toggle */}
         <div className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-3 py-2 shadow-sm hover:bg-slate-50 transition-all duration-300">
           <div className="flex items-center gap-3">
-            {/* Status Indicator with Icon */}
             <span
               className={`w-2.5 h-2.5 rounded-full ${
                 isPublished ? "bg-green-500" : "bg-red-500"
@@ -88,14 +88,12 @@ const PersonalfolderAside = ({ singleEvent }) => {
               <p className="text-sm font-medium text-gray-800">
                 {isPublished ? "Event Published" : "Event Unpublished"}
               </p>
-              {/* Public Availability Status */}
               <p className="text-xs text-gray-500">
                 {isPublished ? "Publicly Available" : "Not Available to Public"}
               </p>
             </div>
           </div>
 
-          {/* Action Button */}
           <button
             onClick={togglePublishStatus}
             className={`text-xs font-medium rounded-lg px-3 py-1.5 transition-all ${
@@ -115,6 +113,7 @@ const PersonalfolderAside = ({ singleEvent }) => {
         </div>
       </div>
 
+      {/* Folder Image with Hover Actions */}
       <div className="relative border border-slate rounded-xl overflow-hidden shadow-sm">
         <img
           src={boximg}
@@ -131,6 +130,7 @@ const PersonalfolderAside = ({ singleEvent }) => {
         </div>
       </div>
 
+      {/* Description Field */}
       <div className="space-y-2">
         <textarea
           placeholder="Add Description (max 250 characters)"
@@ -142,6 +142,10 @@ const PersonalfolderAside = ({ singleEvent }) => {
         </button>
       </div>
 
+      {/* ✅ Sub-Event Component */}
+      <SubEventSection />
+
+      {/* Event Code and Buttons */}
       <div className="space-y-4 p-4 bg-white border border-slate rounded-xl shadow-sm pb-28 sm:pb-4">
         <div>
           <p className="text-xs text-gray-500">Event Code:</p>
@@ -163,48 +167,6 @@ const PersonalfolderAside = ({ singleEvent }) => {
           <button className="flex-1 bg-slate text-gray-800 hover:text-white hover:bg-primary-dark text-sm py-2.5 rounded-xl font-medium shadow-sm transition">
             Insights
           </button>
-        </div>
-
-        <div className="border-t border-slate pt-3">
-          <div className="flex justify-between items-center text-sm font-medium mb-2">
-            <p>Sub-Events</p>
-            <button className="text-primary text-xs hover:underline">
-              + Add New
-            </button>
-          </div>
-
-          <div className="flex justify-between items-center bg-slate border border-slate rounded-lg px-3 py-2 shadow-sm mb-5">
-            <div className="flex items-center gap-2">
-              <span className="text-yellow-500">✨</span>
-              <p className="font-medium">Highlights</p>
-              <span className="text-xs bg-white px-2 py-0.5 rounded-full text-gray-700 border border-slate">
-                4
-              </span>
-            </div>
-
-            <div className="relative">
-              <button onClick={() => setShowOptions(!showOptions)}>
-                <MoreVertical size={18} className="text-gray-500" />
-              </button>
-
-              {showOptions && (
-                <div className="absolute top-0 left-full w-44 bg-white text-gray-900 rounded-md shadow-lg z-10 text-sm border border-slate overflow-hidden">
-                  <button className="w-full text-left px-4 py-2 hover:bg-slate">
-                    Make Private
-                  </button>
-                  <button className="w-full text-left px-4 py-2 hover:bg-slate">
-                    Rename
-                  </button>
-                  <button className="w-full text-left px-4 py-2 hover:bg-slate">
-                    Delete All Images
-                  </button>
-                  <button className="w-full text-left px-4 py-2 text-rose-600 hover:bg-rose-50">
-                    Delete
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
         </div>
 
         <div className="grid grid-cols-1">

@@ -1,5 +1,5 @@
 import { ApiResponse } from "../utils/ApiResponse.js";
-  import Event from "../model/Event.model.js";
+import Event from "../model/Event.model.js";
 
 const generateRandomString = (length) => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz123456789";
@@ -154,6 +154,47 @@ export const editEventById = async (req, res) => {
       .json(new ApiResponse(200, findEvent, "Event updated successfully"));
   } catch (error) {
     console.error("🔴 Error in editEventById:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "Internal Server Error"));
+  }
+};
+
+
+
+export const createSubEvent = async (req, res) => {
+  try {
+    const { subEventName } = req.body;
+    const { eventId } = req.params;
+
+    if (!subEventName) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "Sub-event name is required"));
+    }
+
+    const event = await Event.findById(eventId);
+
+    if (!event) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Event not found"));
+    }
+
+    // Add new subevent
+    const newSubEvent = { subEventName, subEventTotalImages: 0 };
+    event.subevents.push(newSubEvent);
+    await event.save();
+
+    const createdSubEvent = event.subevents[event.subevents.length - 1]; // Get the last added one
+
+    return res
+      .status(201)
+      .json(
+        new ApiResponse(201, createdSubEvent, "Sub-event created successfully")
+      );
+  } catch (error) {
+    console.error("🔴 Error in createSubEvent:", error);
     return res
       .status(500)
       .json(new ApiResponse(500, null, "Internal Server Error"));
