@@ -1,5 +1,5 @@
 import { ApiResponse } from "../utils/ApiResponse.js";
-import Event from "../model/Event.model.js";
+  import Event from "../model/Event.model.js";
 
 const generateRandomString = (length) => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz123456789";

@@ -17,9 +17,8 @@ const ClientPhotosView = ({ singleEvent }) => {
   const [nextToken, setNextToken] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [showImages, setShowImages] = useState(false); // New state to control when images show up
   const observer = useRef();
-
-  const lastImageRef = useRef();
 
   const goBack = () => {
     navigate(-1);
@@ -27,7 +26,8 @@ const ClientPhotosView = ({ singleEvent }) => {
 
   const fetchImages = async () => {
     if (isLoading || !hasMore) return;
-    setIsLoading(true);
+
+    setIsLoading(true); // Show the loading state
 
     try {
       const { data } = await axios.get(
@@ -40,13 +40,19 @@ const ClientPhotosView = ({ singleEvent }) => {
         }
       );
 
+      // Set images immediately
       setFetchedImages((prev) => [...prev, ...data.images]);
       setNextToken(data.nextToken);
       setHasMore(!!data.nextToken);
+
+      // Simulate 3 seconds of skeleton loading after fetching images
+      setTimeout(() => {
+        setIsLoading(false); // Hide loading state
+        setShowImages(true); // Show the images after the delay
+      }, 3000); // 3 seconds extra delay
     } catch (err) {
       console.error("Error fetching images:", err);
-    } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Stop loading if there was an error
     }
   };
 
@@ -72,7 +78,7 @@ const ClientPhotosView = ({ singleEvent }) => {
   };
 
   return (
-    <div className="container mx-auto p-4 pb-24">
+    <div className="container mx-auto p-4 pb-24 relative">
       <button
         onClick={goBack}
         className="flex items-center gap-2 px-3 py-2 text-sm bg-white border rounded shadow hover:bg-gray-200 transition mb-4"
@@ -90,14 +96,7 @@ const ClientPhotosView = ({ singleEvent }) => {
           </p>
         </div>
         <div className="flex flex-wrap gap-3 text-black">
-          {[
-            ScanFace,
-            Heart,
-            Upload,
-            ShoppingCart,
-            Share2,
-            ArrowDownToLineIcon,
-          ].map((Icon, i) => (
+          {[ScanFace, Heart, Upload, ShoppingCart, Share2, ArrowDownToLineIcon].map((Icon, i) => (
             <button
               key={i}
               className="flex items-center gap-2 px-3 py-2 text-sm bg-white border rounded shadow hover:bg-gray-200 transition"
@@ -108,27 +107,35 @@ const ClientPhotosView = ({ singleEvent }) => {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-5 mx-auto">
-        {fetchedImages.map((image, index) => {
-          const isLast = index === fetchedImages.length - 1;
-          return (
-            <img
-              ref={isLast ? lastImageElementRef : null}
-              key={index}
-              src={image}
-              width={355}
-              className="object-cover rounded shadow"
-              alt={`Event Image ${index + 1}`}
-            />
-          );
-        })}
-      </div>
-
+      {/* If loading, show the blurred overlay */}
       {isLoading && (
-        <div className="text-center mt-4 text-sm text-gray-500">
-          Loading more images...
+        <div className="absolute inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-10">
+          <div className="text-white text-xl">Loading images... Please wait.</div>
         </div>
       )}
+
+      {/* Masonry Layout with CSS Columns */}
+      <div
+        className={`columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 mt-6 ${isLoading ? "blur-3xl" : ""}`}
+      >
+        {/* Show skeleton loader for an extra 3 seconds */}
+        {!showImages
+          ? Array.from({ length: 10 }).map((_, index) => (
+              <div key={index} className="mb-4 w-full h-64 bg-gray-300 animate-pulse rounded shadow" />
+            ))
+          : fetchedImages.map((image, index) => {
+              const isLast = index === fetchedImages.length - 1;
+              return (
+                <img
+                  ref={isLast ? lastImageElementRef : null}
+                  key={index}
+                  src={image}
+                  className="mb-4 object-cover w-full rounded shadow"
+                  alt={`Event Image ${index + 1}`}
+                />
+              );
+            })}
+      </div>
     </div>
   );
 };

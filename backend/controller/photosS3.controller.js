@@ -89,7 +89,7 @@ export const getPresignedUrl = async (req, res) => {
 // 🔹 Get Paginated Event Images
 export const getEventImages = async (req, res) => {
   const { eventId, continuationToken } = req.query;
-  const pageSize = 10;
+  const pageSize = 20;
 
   if (!eventId) {
     return res.status(400).json({ error: "Missing eventId" });
@@ -114,6 +114,7 @@ export const getEventImages = async (req, res) => {
         return getSignedUrl(s3Client, getCommand);
       })
     );
+    console.log(imageUrls.length);
 
     res.status(200).json({
       images: imageUrls,
