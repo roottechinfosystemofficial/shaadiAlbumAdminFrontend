@@ -11,48 +11,42 @@ const PhotosPanel = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedImages, setSelectedImages] = useState(new Set());
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [tokens, setTokens] = useState({ 1: null }); // page => continuationToken
+  const [tokens, setTokens] = useState({ 1: null });
   const [hasNext, setHasNext] = useState(false);
   const { eventId } = useParams();
-  const [pageSize, setPageSize] = useState(100);
-  const [subEventId, setSubEventId] = useState("");
   const { selectedSubEvent } = useSelector((state) => state.event);
+  const [reloadKey, setReloadKey] = useState(0); // to force refetch
 
-  useEffect(() => {
-    if (!eventId) return;
-    setImages([]);
-    setPage(1);
-    setSelectedImages(new Set());
-    setTokens({ 1: null });
-    setSubEventId(selectedSubEvent?._id);
-    console.log(subEventId);
-  }, [eventId, selectedSubEvent]);
+  const pageSize = 100;
 
   useEffect(() => {
     if (!eventId || !selectedSubEvent?._id) return;
 
-    setImages([]);
     setPage(1);
-    setSelectedImages(new Set());
     setTokens({ 1: null });
+    setSelectedImages(new Set());
+    setReloadKey((prev) => prev + 1); // trigger reload
   }, [eventId, selectedSubEvent]);
 
   useEffect(() => {
-    const continuationToken = tokens[page];
-    if (!eventId || !selectedSubEvent?._id) return;
+    const fetchImages = async () => {
+      const continuationToken = tokens[page];
+      if (!eventId || !selectedSubEvent?._id) return;
 
-    setIsLoading(true);
+      setIsLoading(true);
+      try {
+        const res = await axios.get(
+          "http://localhost:5000/api/v1/list-images",
+          {
+            params: {
+              eventId,
+              continuationToken,
+              pageSize,
+              subEventId: selectedSubEvent._id,
+            },
+          }
+        );
 
-    axios
-      .get("http://localhost:5000/api/v1/list-images", {
-        params: {
-          eventId,
-          continuationToken,
-          pageSize,
-          subEventId: selectedSubEvent._id,
-        },
-      })
-      .then((res) => {
         const data = res.data.images || [];
         const nextToken = res.data.nextToken;
 
@@ -65,10 +59,15 @@ const PhotosPanel = () => {
             [page + 1]: nextToken,
           }));
         }
-      })
-      .catch((err) => console.error("Image load error:", err))
-      .finally(() => setIsLoading(false));
-  }, [page, eventId, selectedSubEvent]);
+      } catch (err) {
+        console.error("Image load error:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchImages();
+  }, [page, eventId, selectedSubEvent?._id, reloadKey]);
 
   const toggleSelect = (url) => {
     setSelectedImages((prev) => {
@@ -90,8 +89,11 @@ const PhotosPanel = () => {
     images.length > 0 && selectedImages.size === images.length;
 
   const handleUploadSuccess = () => {
+    // Trigger a refresh of images after upload
     setPage(1);
     setTokens({ 1: null });
+    setSelectedImages(new Set());
+    setReloadKey((prev) => prev + 1);
   };
 
   return (
@@ -140,16 +142,17 @@ const PhotosPanel = () => {
               Select All ({selectedImages.size}/{images.length})
             </span>
           </label>
+
           <div className="flex gap-6 items-center justify-center mt-4">
             <button
               onClick={() => setPage((prev) => Math.max(1, prev - 1))}
               disabled={page === 1 || isLoading}
               className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition shadow-sm
-      ${
-        page === 1 || isLoading
-          ? "bg-slate text-gray-400 cursor-not-allowed"
-          : "bg-primary hover:bg-primary-dark text-white"
-      }`}
+                ${
+                  page === 1 || isLoading
+                    ? "bg-slate text-gray-400 cursor-not-allowed"
+                    : "bg-primary hover:bg-primary-dark text-white"
+                }`}
             >
               <ChevronLeft className="w-4 h-4" />
               Previous
@@ -163,11 +166,11 @@ const PhotosPanel = () => {
               onClick={() => setPage((prev) => prev + 1)}
               disabled={!hasNext || isLoading}
               className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition shadow-sm
-      ${
-        !hasNext || isLoading
-          ? "bg-slate text-gray-400 cursor-not-allowed"
-          : "bg-primary hover:bg-primary-dark text-white"
-      }`}
+                ${
+                  !hasNext || isLoading
+                    ? "bg-slate text-gray-400 cursor-not-allowed"
+                    : "bg-primary hover:bg-primary-dark text-white"
+                }`}
             >
               Next
               <ChevronRight className="w-4 h-4" />
