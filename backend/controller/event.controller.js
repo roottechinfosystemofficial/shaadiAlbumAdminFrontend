@@ -44,6 +44,12 @@ export const createEvent = async (req, res) => {
       user: req.userId,
       eventImage:
         "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80",
+      subevents: [
+        {
+          subEventName: "Highlights",
+          subEventTotalImages: 0, // You can default this to 0
+        },
+      ],
     });
 
     const savedEvent = await newEvent.save();
@@ -160,12 +166,11 @@ export const editEventById = async (req, res) => {
   }
 };
 
-
-
 export const createSubEvent = async (req, res) => {
   try {
     const { subEventName } = req.body;
     const { eventId } = req.params;
+    console.log(req.body);
 
     if (!subEventName) {
       return res

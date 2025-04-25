@@ -1,21 +1,37 @@
 import React, { useState } from "react";
 import { MoreVertical, Trash2, EditIcon } from "lucide-react";
+import { EVENT_API_END_POINT } from "../constant";
+import apiRequest from "../utils/apiRequest";
+import { useDispatch, useSelector } from "react-redux";
+import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
 
-const SubEventSection = () => {
-  const [showOptions, setShowOptions] = useState(false);
+const SubEventSection = ({ singleEvent }) => {
+  const [showOptionsIndex, setShowOptionsIndex] = useState(null);
   const [showInput, setShowInput] = useState(false);
   const [subEventName, setSubEventName] = useState("");
+  const { accessToken } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
+  const { refetchEvent } = useGetSingleEvent(singleEvent._id);
 
   const handleCreateSubEvent = async () => {
     if (!subEventName.trim()) return;
-    console.log("Creating Sub-Event:", subEventName);
     try {
-      console.log();
+      const endpoint = `${EVENT_API_END_POINT}/createSubEvent/${singleEvent?._id}`;
+      const res = await apiRequest(
+        "POST",
+        endpoint,
+        { subEventName },
+        accessToken,
+        dispatch
+      );
+      console.log(res);
+
+      await refetchEvent(); // ✅ call the function
+      setSubEventName("");
+      setShowInput(false);
     } catch (error) {
       console.log(error);
     }
-    setSubEventName("");
-    setShowInput(false);
   };
 
   return (
@@ -30,7 +46,7 @@ const SubEventSection = () => {
         </button>
       </div>
 
-      {/* Add new sub-event input */}
+      {/* Add New Sub-Event Input */}
       {showInput && (
         <div className="flex items-center gap-2 mb-4">
           <input
@@ -49,39 +65,48 @@ const SubEventSection = () => {
         </div>
       )}
 
-      {/* Example Sub-event item */}
-      <div className="flex justify-between items-center bg-slate border border-slate rounded-lg px-3 py-2 shadow-sm mb-5">
-        <div className="flex items-center gap-2">
-          <span className="text-yellow-500">✨</span>
-          <p className="font-medium">Highlights</p>
-          <span className="text-xs bg-white px-2 py-0.5 rounded-full text-gray-700 border border-slate">
-            4
-          </span>
-        </div>
-
-        <div className="relative">
-          <button onClick={() => setShowOptions(!showOptions)}>
-            <MoreVertical size={18} className="text-gray-500" />
-          </button>
-
-          {showOptions && (
-            <div className="absolute top-0 left-full w-44 bg-white text-gray-900 rounded-md shadow-lg z-10 text-sm border border-slate overflow-hidden">
-              <button className="w-full text-left px-4 py-2 hover:bg-slate">
-                Make Private
-              </button>
-              <button className="w-full text-left px-4 py-2 hover:bg-slate">
-                Rename
-              </button>
-              <button className="w-full text-left px-4 py-2 hover:bg-slate">
-                Delete All Images
-              </button>
-              <button className="w-full text-left px-4 py-2 text-rose-600 hover:bg-rose-50">
-                Delete
-              </button>
+      {/* Render Sub-events from backend */}
+      {singleEvent?.subevents?.length > 0 ? (
+        singleEvent?.subevents.map((sub, index) => (
+          <div
+            key={index}
+            className="flex justify-between items-center bg-slate border border-slate rounded-lg px-3 py-2 shadow-sm mb-3"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-yellow-500">✨</span>
+              <p className="font-medium">{sub.subEventName}</p>
+              <span className="text-xs bg-white px-2 py-0.5 rounded-full text-gray-700 border border-slate">
+                {sub.subEventTotalImages || 0}
+              </span>
             </div>
-          )}
-        </div>
-      </div>
+
+            <div className="relative">
+              <button onClick={() => setShowOptionsIndex(index)}>
+                <MoreVertical size={18} className="text-gray-500" />
+              </button>
+
+              {showOptionsIndex === index && (
+                <div className="absolute top-0 left-full w-44 bg-white text-gray-900 rounded-md shadow-lg z-10 text-sm border border-slate overflow-hidden">
+                  <button className="w-full text-left px-4 py-2 hover:bg-slate">
+                    Make Private
+                  </button>
+                  <button className="w-full text-left px-4 py-2 hover:bg-slate">
+                    Rename
+                  </button>
+                  <button className="w-full text-left px-4 py-2 hover:bg-slate">
+                    Delete All Images
+                  </button>
+                  <button className="w-full text-left px-4 py-2 text-rose-600 hover:bg-rose-50">
+                    Delete
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        ))
+      ) : (
+        <p className="text-sm text-gray-500 mt-2">No sub-events yet.</p>
+      )}
     </div>
   );
 };

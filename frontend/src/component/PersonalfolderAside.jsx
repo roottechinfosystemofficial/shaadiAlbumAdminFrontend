@@ -143,7 +143,7 @@ const PersonalfolderAside = ({ singleEvent }) => {
       </div>
 
       {/* ✅ Sub-Event Component */}
-      <SubEventSection />
+      <SubEventSection singleEvent={singleEvent} />
 
       {/* Event Code and Buttons */}
       <div className="space-y-4 p-4 bg-white border border-slate rounded-xl shadow-sm pb-28 sm:pb-4">
