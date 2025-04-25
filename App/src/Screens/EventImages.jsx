@@ -130,9 +130,6 @@ const EventImages = () => {
     setSelectedImage(null);
     setModalVisible(false);
   };
-  const handleSelfieCapture = () => {
-    navigation.navigate("FaceIDVerification");
-  };
 
   useEffect(() => {
     fetchEventImages(1);
@@ -145,7 +142,7 @@ const EventImages = () => {
 
     try {
       const response = await fetch(
-        `http://192.168.186.31:5000/api/v1/list-app-images?eventId=${id}&page=${pageToFetch}`
+        `http://192.168.1.66:5000/api/v1/list-app-images?eventId=${id}&page=${pageToFetch}`
       );
 
       const responseText = await response.text();
@@ -176,7 +173,7 @@ const EventImages = () => {
             return {
               id: url,
               uri: { uri: url },
-              type,
+              type: "vertical",
             };
           })
         );
@@ -215,99 +212,12 @@ const EventImages = () => {
     columns[index % gridCount].push(img);
   });
 
-  const renderColumn = (column) =>
-    column.map((item, idx) => {
-      const isFavorite = favorites.includes(item.id);
-      const imgStyle = getImageStyle(item.type);
-      const uniqueKey = `${item.id}-${idx}`;
-      return (
-        <TouchableOpacity
-          key={uniqueKey}
-          onPress={() => openImageModal(item)}
-          activeOpacity={0.9}
-        >
-          <View style={[styles.card, imgStyle]}>
-            {/* Log image source for debugging */}
-            <Image
-              source={item.uri} // Ensure the URI is valid
-              style={[styles.image, imgStyle]}
-              resizeMode="cover"
-              onError={(error) => console.error("Image Load Error: ", error)} // Handle image load errors
-            />
-            <TouchableOpacity
-              style={styles.heartIcon}
-              onPress={() => toggleFavorite(item.id)}
-            >
-              <Ionicons
-                name={isFavorite ? "heart" : "heart-outline"}
-                size={20}
-                color={theme.colours.primary}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.downloadIcon}
-              onPress={() => downloadImage(item.uri)}
-            >
-              <Ionicons
-                name="download-outline"
-                size={20}
-                color={theme.colours.primary}
-              />
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      );
-    });
   const handleLoadMore = () => {
     if (hasMore && !loading) {
       const nextPage = page + 1;
       fetchEventImages(nextPage);
     }
   };
-  const ListItem = React.memo(({ item, onPress, toggleFavorite }) => {
-    const isFavorite = favorites.includes(item.id);
-    const imgStyle = getImageStyle(item.type);
-
-    return (
-      <TouchableOpacity
-        onPress={() => onPress(item)}
-        activeOpacity={0.9}
-        style={{
-          flex: 1 / gridCount,
-          padding: imagePadding / 2,
-        }}
-      >
-        <View style={[styles.card, imgStyle]}>
-          <Image
-            source={item.uri}
-            style={[styles.image, imgStyle]}
-            resizeMode="cover"
-            onError={(error) => console.error("Image Load Error: ", error)}
-          />
-          <TouchableOpacity
-            style={styles.heartIcon}
-            onPress={() => toggleFavorite(item.id)}
-          >
-            <Ionicons
-              name={isFavorite ? "heart" : "heart-outline"}
-              size={20}
-              color={theme.colours.primary}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.downloadIcon}
-            onPress={() => downloadImage(item.uri)}
-          >
-            <Ionicons
-              name="download-outline"
-              size={20}
-              color={theme.colours.primary}
-            />
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
-    );
-  });
 
   return (
     <ScreenWrapper bg="#fff">
