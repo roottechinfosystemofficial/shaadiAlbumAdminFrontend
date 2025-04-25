@@ -128,14 +128,14 @@ export const getEventImages = async (req, res) => {
 
 // 🔹 Get App Images with Sharp Resizing
 export const getAppEventImages = async (req, res) => {
-  const { eventId, page = 1 } = req.query;
+  const { eventId, page = 1, subEventId } = req.query;
   const pageSize = 25;
 
   if (!eventId) {
     return res.status(400).json({ error: "Missing eventId" });
   }
 
-  const prefix = `eventimages/${eventId}/images/`;
+  const prefix = `eventimages/${eventId}/${subEventId}/`;
 
   let allItems = [];
   let continuationToken;
@@ -203,7 +203,7 @@ export const getEventImageCount = async (req, res) => {
     return res.status(400).json({ error: "Missing eventId" });
   }
 
-  const prefix = `eventimages/${eventId}/images/`;
+  const prefix = `eventimages/${eventId}/`;
 
   let totalCount = 0;
   let continuationToken;
