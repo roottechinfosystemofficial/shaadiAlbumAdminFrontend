@@ -80,7 +80,8 @@ export const user = async (req, res) => {
 
     const user = await AppUser.findById(userId)
       .select("-password")
-      .populate("searchEvent"); 
+      .populate("searchEvent")
+      .populate("imageSelectionEvent");
 
     if (!user) {
       throw new ApiError(404, "User not found");
@@ -140,6 +141,55 @@ export const findEventByEventcode = async (req, res) => {
     });
   } catch (error) {
     console.error("Error finding event by code:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+export const findEventByEventPin = async (req, res) => {
+  try {
+    const { eventPin } = req.body;
+    const userId = req.userId; // Make sure this is set by your auth middleware
+
+    if (!eventPin) {
+      return res.status(400).json({
+        success: false,
+        message: "Event Pin is required",
+      });
+    }
+
+    const findedEvent = await Event.findOne({ eventPassword: eventPin });
+
+    if (!findedEvent) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
+    }
+
+    if (userId) {
+      const user = await AppUser.findById(userId);
+
+      if (user) {
+        const alreadyJoined = user.imageSelectionEvent.some(
+          (e) => e.toString() === findedEvent._id.toString()
+        );
+
+        if (!alreadyJoined) {
+          user.imageSelectionEvent.push(findedEvent._id);
+          await user.save();
+        }
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      eventId: findedEvent._id,
+      event: findedEvent,
+    });
+  } catch (error) {
+    console.error("Error finding event by PIN:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",

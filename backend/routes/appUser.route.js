@@ -1,6 +1,7 @@
 import express from "express";
 import {
   findEventByEventcode,
+  findEventByEventPin,
   login,
   signUp,
   user,
@@ -15,5 +16,10 @@ appUserRouter.post(
   "/app-event/findEventByEventcode",
   verifyAppJWT,
   findEventByEventcode
+);
+appUserRouter.post(
+  "/app-event/findEventByEventPin",
+  verifyAppJWT,
+  findEventByEventPin
 );
 export default appUserRouter;

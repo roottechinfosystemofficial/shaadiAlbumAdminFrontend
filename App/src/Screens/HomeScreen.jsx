@@ -15,6 +15,8 @@ import Home from "./Home";
 import Account from "./Account";
 import Favorites from "./Favorites";
 import AlbumScreen from "./AlbumScreen";
+import SelectIcon from "../../assets/Icons/SelectIcon";
+import ImageSelection from "./ImageSelection";
 
 const Tab = createBottomTabNavigator();
 const { width } = Dimensions.get("window");
@@ -39,7 +41,7 @@ const CustomTabBar = ({ state, navigation }) => {
           const IconComponent = {
             Home: HomeIcon,
             Albums: AlbumIcon,
-            Favorites: HeartIcon,
+            ImageSelection: SelectIcon,
             Account: UserIcon,
           }[route.name];
 
@@ -78,8 +80,8 @@ const HomeScreen = () => {
         options={{ headerShown: false }}
       />
       <Tab.Screen
-        name="Favorites"
-        component={Favorites}
+        name="ImageSelection"
+        component={ImageSelection}
         options={{ headerShown: false }}
       />
       <Tab.Screen

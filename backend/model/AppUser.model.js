@@ -19,6 +19,10 @@ const appUserSchema = new mongoose.Schema(
     refreshTokenExpiry: { type: Date, default: null },
 
     searchEvent: [{ type: mongoose.Schema.Types.ObjectId, ref: "Event" }],
+
+    imageSelectionEvent: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "Event" },
+    ],
   },
   { timestamps: true }
 );

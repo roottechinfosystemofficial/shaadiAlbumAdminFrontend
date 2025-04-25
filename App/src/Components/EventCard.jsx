@@ -10,13 +10,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
 const EventCard = ({ event }) => {
-  const navigation = useNavigation();
-  const id = event?._id;
   return (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => navigation.navigate("EventImages", { id })}
-    >
+    <View style={styles.card}>
       <ImageBackground
         source={{ uri: event.eventImage }}
         style={styles.image}
@@ -25,7 +20,9 @@ const EventCard = ({ event }) => {
         <View style={styles.overlay}>
           <View style={styles.textContainer}>
             <Text style={styles.eventName}>{event.eventName}</Text>
-            <Text style={styles.mediaCount}>30 Photos{"\n"}4 videos</Text>
+            <Text style={styles.mediaCount}>
+              {event.eventTotalImages} Photos
+            </Text>
           </View>
           <Ionicons
             name="refresh-circle"
@@ -35,7 +32,7 @@ const EventCard = ({ event }) => {
           />
         </View>
       </ImageBackground>
-    </TouchableOpacity>
+    </View>
   );
 };
 

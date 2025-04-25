@@ -18,28 +18,27 @@ import { theme } from "../constants/themes";
 import useAuth from "../Context/UserContext";
 import EventCard from "../Components/EventCard";
 import ScreenWrapper from "../Components/ScreenWrapper";
-import HeartIcon from "../../assets/Icons/HeartIcon";
 
-const Home = () => {
+const ImageSelection = () => {
+  // const id = event?._id;
   const navigation = useNavigation();
-  const [eventCode, setEventCode] = useState("");
-  const [eventData, setEventData] = useState([]);
+  const [eventPin, setEventPin] = useState("");
   const [eventList, setEventList] = useState([]);
-  const { token, user, getUserData } = useAuth();
+  const { token, user } = useAuth();
   const handleEventCodeChange = async (text) => {
-    setEventCode(text);
+    setEventPin(text);
 
-    if (text.length === 6) {
+    if (text.length === 8) {
       try {
         const response = await fetch(
-          "http://192.168.1.66:5000/api/v1/app-event/findEventByEventcode",
+          "http://192.168.1.66:5000/api/v1/app-event/findEventByEventPin",
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               Authorization: token,
             },
-            body: JSON.stringify({ eventCode: text }),
+            body: JSON.stringify({ eventPin: text }),
           }
         );
 
@@ -58,7 +57,7 @@ const Home = () => {
             Alert.alert("Event already added.");
           }
 
-          setEventCode(""); // Clear input after successful fetch
+          setEventPin(""); // Clear input after successful fetch
         } else {
           Alert.alert("Invalid Code", data.message || "Event not found.");
         }
@@ -70,36 +69,17 @@ const Home = () => {
   };
 
   useEffect(() => {
-    getUserData(token);
-    if (user?.searchEvent?.length) {
-      setEventList(user.searchEvent);
+    if (user?.imageSelectionEvent?.length) {
+      setEventList(user.imageSelectionEvent);
     }
-  }, []);
+  }, [user]);
   return (
     <ScreenWrapper bg="white">
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <View style={{ flexDirection: "row", gap: 5 }}>
-            <Text style={styles.greeting}>Hi!</Text>
-            <Text style={styles.name}>{user?.name}</Text>
-          </View>
-          <View style={{ flexDirection: "row", gap: 10 }}>
-            <TouchableOpacity
-              style={styles.bell}
-              onPress={() => {
-                navigation.navigate("Favorites");
-              }}
-            >
-              <HeartIcon size={24} strokeWidth={1.5} color="#65350F" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.bell}>
-              <Ionicons
-                name="notifications-outline"
-                size={24}
-                color="#65350F"
-              />
-            </TouchableOpacity>
+            <Text style={styles.greeting}>Image Selection</Text>
           </View>
         </View>
 
@@ -112,25 +92,13 @@ const Home = () => {
             style={styles.icon}
           />
           <TextInput
-            placeholder="Event Id"
+            placeholder="Event PIN"
             placeholderTextColor="#65350F"
             style={styles.input}
-            value={eventCode}
+            value={eventPin}
             onChangeText={handleEventCodeChange}
-            maxLength={6}
+            maxLength={8}
           />
-          <TouchableOpacity
-            onPress={() => {
-              navigation.navigate("QRScanner");
-            }}
-          >
-            <MaterialCommunityIcons
-              name="qrcode-scan"
-              size={22}
-              color="#65350F"
-              style={styles.qrIcon}
-            />
-          </TouchableOpacity>
         </View>
         <ScrollView style={{ marginTop: 20 }}>
           {eventList.map((event, index) => (
@@ -138,8 +106,9 @@ const Home = () => {
               key={event?._id || index.toString()}
               onPress={() => {
                 const id = event?._id;
-                console.log("Navigating to EventImages with ID:", id);
-                navigation.navigate("EventImages", { id });
+                return navigation.navigate("SeletEventImages", {
+                  id,
+                });
               }}
             >
               <EventCard event={event} />
@@ -151,7 +120,7 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default ImageSelection;
 
 const styles = StyleSheet.create({
   container: {
@@ -171,7 +140,7 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#000",
+    color: theme.colours.primary,
   },
   name: {
     fontSize: 24,
