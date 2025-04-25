@@ -40,7 +40,7 @@ const SeletEventImages = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [hasPermission, setHasPermission] = useState(null);
-  const [selectedImages, setSelectedImages] = useState([1]);
+  const [selectedImages, setSelectedImages] = useState([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
