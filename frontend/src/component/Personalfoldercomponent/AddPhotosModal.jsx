@@ -5,7 +5,12 @@ import { X, CheckCircle, Circle, FolderOpen, ImagePlus } from "lucide-react";
 import { useSelector } from "react-redux";
 import { useGetEventImagesCount } from "../../Hooks/useGetEventImagesCount";
 
-const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
+const AddPhotosModal = ({
+  isOpen,
+  onClose,
+  onUploadSuccess,
+  selectedSubEvent,
+}) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [duplicateHandling, setDuplicateHandling] = useState("skip");
   const [uploading, setUploading] = useState(false);
@@ -61,6 +66,7 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
       "http://localhost:5000/api/v1/api/s3/get-presigned-url",
       {
         eventId: singleEvent?._id,
+        subEventId: selectedSubEvent?._id,
         files: compressedFiles.map(({ fileName, fileType }) => ({
           fileName,
           fileType,

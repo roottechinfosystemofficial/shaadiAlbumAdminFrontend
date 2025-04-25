@@ -2,7 +2,10 @@ import { useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import apiRequest from "../utils/apiRequest";
 import { EVENT_API_END_POINT } from "../constant";
-import { setSingleEvent } from "../Redux/Slices/EventSlice";
+import {
+  setSelectedSubEvent,
+  setSingleEvent,
+} from "../Redux/Slices/EventSlice";
 
 export const useGetSingleEvent = (eventId) => {
   const dispatch = useDispatch();
@@ -12,13 +15,18 @@ export const useGetSingleEvent = (eventId) => {
     try {
       const endpoint = `${EVENT_API_END_POINT}/getEventById/${eventId}`;
       const res = await apiRequest("GET", endpoint, {}, accessToken, dispatch);
-      console.log(res);
 
       if (res.status === 200) {
-        dispatch(setSingleEvent(res.data.data));
+        const event = res.data.data;
+        dispatch(setSingleEvent(event));
+
+        // ✅ Select the first subevent by default (if available)
+        if (event?.subevents?.length > 0) {
+          dispatch(setSelectedSubEvent(event.subevents[0]));
+        }
       }
     } catch (err) {
-      console.error("Fetching single event failed:", err);
+      console.error("🔴 Error fetching single event:", err);
     }
   }, [eventId, accessToken, dispatch]);
 

@@ -15,6 +15,8 @@ const PhotosPanel = () => {
   const [hasNext, setHasNext] = useState(false);
   const { eventId } = useParams();
   const [pageSize, setPageSize] = useState(100);
+  const [subEventId, setSubEventId] = useState("");
+  const { selectedSubEvent } = useSelector((state) => state.event);
 
   useEffect(() => {
     if (!eventId) return;
@@ -22,16 +24,33 @@ const PhotosPanel = () => {
     setPage(1);
     setSelectedImages(new Set());
     setTokens({ 1: null });
-  }, [eventId]);
+    setSubEventId(selectedSubEvent?._id);
+    console.log(subEventId);
+  }, [eventId, selectedSubEvent]);
 
   useEffect(() => {
-    if (!eventId) return;
+    if (!eventId || !selectedSubEvent?._id) return;
+
+    setImages([]);
+    setPage(1);
+    setSelectedImages(new Set());
+    setTokens({ 1: null });
+  }, [eventId, selectedSubEvent]);
+
+  useEffect(() => {
     const continuationToken = tokens[page];
+    if (!eventId || !selectedSubEvent?._id) return;
 
     setIsLoading(true);
+
     axios
       .get("http://localhost:5000/api/v1/list-images", {
-        params: { eventId, continuationToken, pageSize },
+        params: {
+          eventId,
+          continuationToken,
+          pageSize,
+          subEventId: selectedSubEvent._id, // ✅ use directly
+        },
       })
       .then((res) => {
         const data = res.data.images || [];
@@ -49,7 +68,7 @@ const PhotosPanel = () => {
       })
       .catch((err) => console.error("Image load error:", err))
       .finally(() => setIsLoading(false));
-  }, [page, eventId]);
+  }, [page, eventId, selectedSubEvent]);
 
   const toggleSelect = (url) => {
     setSelectedImages((prev) => {
@@ -152,6 +171,7 @@ const PhotosPanel = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onUploadSuccess={handleUploadSuccess}
+        selectedSubEvent={selectedSubEvent}
       />
     </div>
   );

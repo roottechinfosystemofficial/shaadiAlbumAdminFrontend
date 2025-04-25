@@ -4,6 +4,7 @@ export const eventSlice = createSlice({
   name: "event",
   initialState: {
     singleEvent: null,
+    selectedSubEvent: null,
   },
   reducers: {
     setSingleEvent: (state, action) => {
@@ -15,8 +16,13 @@ export const eventSlice = createSlice({
         state.singleEvent.eventTotalImages = action.payload;
       }
     },
+
+    setSelectedSubEvent: (state, action) => {
+      state.selectedSubEvent = action.payload;
+    },
   },
 });
 
-export const { setSingleEvent, updateEventImageCount } = eventSlice.actions;
+export const { setSingleEvent, updateEventImageCount, setSelectedSubEvent } =
+  eventSlice.actions;
 export default eventSlice.reducer;

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import FlipbookPanel from "./Personalfoldercomponent/FlipbookPanel";
 import PhotosPanel from "./Personalfoldercomponent/PhotosPanel";
+import { useSelector } from "react-redux";
 
 const FavouritePanel = () => (
   <p className="text-center text-slate-dark mt-10">No Favourite Found!</p>
@@ -8,11 +9,11 @@ const FavouritePanel = () => (
 
 const PersonalFolderContent = ({ singleEvent }) => {
   const [activeTab, setActiveTab] = useState("photos");
-
+  const { selectedSubEvent } = useSelector((state) => state.event);
   const renderContent = () => {
     switch (activeTab) {
       case "photos":
-        return <PhotosPanel  />;
+        return <PhotosPanel />;
       case "flipbook":
         return <FlipbookPanel />;
       case "favourite":
@@ -21,19 +22,20 @@ const PersonalFolderContent = ({ singleEvent }) => {
         return null;
     }
   };
-  const eventDate = singleEvent?.eventDate
-    ? new Date(singleEvent.eventDate).toLocaleString("en-US", {
+  const eventDate = selectedSubEvent?.createdAt
+    ? new Date(selectedSubEvent?.createdAt).toLocaleString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
       })
     : "No Date Provided";
+
   return (
     <div className="flex-1 w-full px-4 sm:px-6 py-6 min-h-screen overflow-hidden">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 border-b-2 border-slate pb-3">
         <div className="text-xl font-semibold flex flex-wrap items-center gap-4">
-          <p>Highlights</p>
+          <p>{selectedSubEvent?.subEventName}</p>
           <p className="text-slate-dark text-sm">{eventDate}</p>
         </div>
 

@@ -4,14 +4,15 @@ import { EVENT_API_END_POINT } from "../constant";
 import apiRequest from "../utils/apiRequest";
 import { useDispatch, useSelector } from "react-redux";
 import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
+import { setSelectedSubEvent } from "../Redux/Slices/EventSlice";
 
 const SubEventSection = ({ singleEvent }) => {
-  const [showOptionsIndex, setShowOptionsIndex] = useState(null);
+  const [showOptionsIndex, setShowOptionsIndex] = useState(false);
   const [showInput, setShowInput] = useState(false);
   const [subEventName, setSubEventName] = useState("");
   const { accessToken } = useSelector((state) => state.user);
   const dispatch = useDispatch();
-  const { refetchEvent } = useGetSingleEvent(singleEvent._id);
+  const { refetchEvent } = useGetSingleEvent(singleEvent?._id);
 
   const handleCreateSubEvent = async () => {
     if (!subEventName.trim()) return;
@@ -26,12 +27,16 @@ const SubEventSection = ({ singleEvent }) => {
       );
       console.log(res);
 
-      await refetchEvent(); // ✅ call the function
+      await refetchEvent();
       setSubEventName("");
       setShowInput(false);
     } catch (error) {
       console.log(error);
     }
+  };
+
+  const handleSubEvent = (sub) => {
+    dispatch(setSelectedSubEvent(sub));
   };
 
   return (
@@ -69,8 +74,9 @@ const SubEventSection = ({ singleEvent }) => {
       {singleEvent?.subevents?.length > 0 ? (
         singleEvent?.subevents.map((sub, index) => (
           <div
+            onClick={() => handleSubEvent(sub)}
             key={index}
-            className="flex justify-between items-center bg-slate border border-slate rounded-lg px-3 py-2 shadow-sm mb-3"
+            className="flex cursor-pointer justify-between items-center bg-slate border border-slate rounded-lg px-3 py-2 shadow-sm mb-3"
           >
             <div className="flex items-center gap-2">
               <span className="text-yellow-500">✨</span>
@@ -81,11 +87,11 @@ const SubEventSection = ({ singleEvent }) => {
             </div>
 
             <div className="relative">
-              <button onClick={() => setShowOptionsIndex(index)}>
+              <button onClick={() => setShowOptionsIndex(!showOptionsIndex)}>
                 <MoreVertical size={18} className="text-gray-500" />
               </button>
 
-              {showOptionsIndex === index && (
+              {showOptionsIndex && (
                 <div className="absolute top-0 left-full w-44 bg-white text-gray-900 rounded-md shadow-lg z-10 text-sm border border-slate overflow-hidden">
                   <button className="w-full text-left px-4 py-2 hover:bg-slate">
                     Make Private

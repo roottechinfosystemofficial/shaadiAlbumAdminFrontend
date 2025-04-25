@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import boximg from "../assets/box1.png";
 import { EditIcon, Trash2, MoreVertical, Settings2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -9,7 +8,6 @@ import toast from "../utils/toast.js";
 import SubEventSection from "./SubEventSection.jsx";
 
 const PersonalfolderAside = ({ singleEvent }) => {
-  const [showOptions, setShowOptions] = useState(false);
   const navigate = useNavigate();
   const { eventId } = useParams();
   const { accessToken } = useSelector((state) => state.user);

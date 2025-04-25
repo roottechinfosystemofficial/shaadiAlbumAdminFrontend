@@ -33,7 +33,7 @@ const streamToBuffer = async (stream) => {
 
 // 🔹 Generate Pre-signed URL for Upload
 export const getPresignedUrl = async (req, res) => {
-  const { files, eventId } = req.body;
+  const { files, eventId, subEventId } = req.body;
 
   if (!files || !Array.isArray(files) || !eventId) {
     return res.status(400).json({ error: "Missing files or eventId" });
@@ -59,7 +59,7 @@ export const getPresignedUrl = async (req, res) => {
             );
           }
 
-          const uniqueKey = `eventimages/${eventId}/images/${timestamp}-${index}-${fileName}`;
+          const uniqueKey = `eventimages/${eventId}/${subEventId}/${timestamp}-${index}-${fileName}`;
           const command = new PutObjectCommand({
             Bucket: process.env.BUCKET_NAME,
             Key: uniqueKey,
@@ -88,7 +88,7 @@ export const getPresignedUrl = async (req, res) => {
 
 // 🔹 Get Paginated Event Images
 export const getEventImages = async (req, res) => {
-  const { eventId, continuationToken } = req.query;
+  const { eventId, continuationToken, subEventId } = req.query;
   const pageSize = 20;
 
   if (!eventId) {
@@ -98,7 +98,7 @@ export const getEventImages = async (req, res) => {
   try {
     const listCommand = new ListObjectsV2Command({
       Bucket: process.env.BUCKET_NAME,
-      Prefix: `eventimages/${eventId}/images/`,
+      Prefix: `eventimages/${eventId}/${subEventId}/`,
       MaxKeys: pageSize,
       ContinuationToken: continuationToken || undefined,
     });
