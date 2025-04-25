@@ -3,13 +3,13 @@ import { View, StyleSheet } from "react-native";
 import { Image } from "expo-image";
 import { hp, wp } from "../helpers/Common";
 
-const Loading = () => {
+const ScrollLoading = () => {
   return (
     <View style={styles.container}>
       <Image
         source={require("../../assets/Logo/logo4.gif")}
         style={styles.gif}
-        contentFit="cover" // Covers the entire space
+        contentFit="cover"
       />
     </View>
   );
@@ -22,14 +22,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: wp(100),
     backgroundColor: "#FBFBFB",
-    height: hp(100),
+    // height: hp(100),
   },
   gif: {
-    width: wp(50),
-    height: wp(40),
+    width: wp(30),
+    height: wp(27),
     backgroundColor: "transparent",
     overflow: "hidden",
   },
 });
 
-export default Loading;
+export default ScrollLoading;

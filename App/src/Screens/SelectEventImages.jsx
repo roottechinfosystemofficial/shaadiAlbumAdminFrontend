@@ -4,7 +4,6 @@ import {
   Text,
   Alert,
   View,
-  ScrollView,
   Image,
   Dimensions,
   TouchableOpacity,
@@ -12,14 +11,11 @@ import {
   FlatList,
   TouchableWithoutFeedback,
   StatusBar,
-  ActivityIndicator,
 } from "react-native";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import ScreenWrapper from "../Components/ScreenWrapper";
 
 import Modal from "react-native-modal";
-import * as MediaLibrary from "expo-media-library";
-import { Asset } from "expo-asset";
 import { wp } from "../helpers/Common";
 import { Camera } from "expo-camera";
 
@@ -32,7 +28,7 @@ import BackButton from "../Components/BackButton";
 const screenWidth = Dimensions.get("window").width;
 const imagePadding = 8;
 
-const EventImages = () => {
+const SeletEventImages = () => {
   const route = useRoute();
   const { id } = route.params;
   const [images, setImages] = useState([]);
@@ -44,15 +40,12 @@ const EventImages = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [hasPermission, setHasPermission] = useState(null);
-  const [cameraRef, setCameraRef] = useState(null);
-
-  const [cameraVisible, setCameraVisible] = useState(false);
+  const [selectedImages, setSelectedImages] = useState([1]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const modalFlatListRef = useRef(null);
 
-  const flatListRef = useRef(null);
   useEffect(() => {
     (async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
@@ -73,7 +66,7 @@ const EventImages = () => {
           } catch (e) {
             console.log("scrollToIndex error:", e);
           }
-        }, 100); // allow layout to settle
+        }, 100);
       }
     }
   }, [modalVisible, selectedImage, images]);
@@ -89,37 +82,10 @@ const EventImages = () => {
     }
   };
 
-  const toggleGrid = () => {
-    setGridCount((prev) => (prev === 3 ? 2 : 3));
-  };
-
   const toggleFavorite = (id) => {
     setFavorites((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
-  };
-
-  const downloadImage = async (image) => {
-    try {
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Permission denied",
-          "Cannot save image without permission."
-        );
-        return;
-      }
-
-      const asset = Asset.fromModule(image);
-      await asset.downloadAsync();
-      const savedAsset = await MediaLibrary.createAssetAsync(asset.localUri);
-      await MediaLibrary.createAlbumAsync("Download", savedAsset, false);
-
-      Alert.alert("Downloaded", "Image saved to your gallery.");
-    } catch (err) {
-      console.log("Download failed:", err);
-      Alert.alert("Error", "Could not download image.");
-    }
   };
 
   const openImageModal = (img) => {
@@ -130,9 +96,6 @@ const EventImages = () => {
   const closeModal = () => {
     setSelectedImage(null);
     setModalVisible(false);
-  };
-  const handleSelfieCapture = () => {
-    navigation.navigate("FaceIDVerification");
   };
 
   useEffect(() => {
@@ -170,10 +133,6 @@ const EventImages = () => {
             const { width, height } = await getImageDimensions(url);
             Image.prefetch(url);
 
-            // let type = "square";
-            // if (width > height) type = "horizontal";
-            // else if (width < height) type = "vertical";
-
             return {
               id: url,
               uri: { uri: url },
@@ -190,7 +149,7 @@ const EventImages = () => {
           return [...prev, ...newUniqueImages];
         });
 
-        setPage(pageToFetch); // Update state
+        setPage(pageToFetch);
       }
     } catch (error) {
       console.error("Fetch error:", error);
@@ -229,14 +188,24 @@ const EventImages = () => {
       <View style={styles.container}>
         <View style={styles.header}>
           <BackButton navigation={navigation} />
-          <Text style={styles.title}>Event Images</Text>
+          <Text style={styles.title}>Select</Text>
 
-          <TouchableOpacity style={styles.gridButton} onPress={toggleGrid}>
-            <Ionicons
-              name={gridCount === 3 ? "grid-outline" : "grid"}
-              size={22}
-              color={theme.colours.primary}
-            />
+          <TouchableOpacity
+            style={
+              selectedImages.length == 0
+                ? styles.gridButton
+                : styles.gridButtonActive
+            }
+          >
+            <Text
+              style={
+                selectedImages.length == 0
+                  ? styles.Subbutton
+                  : styles.ActiveSubbutton
+              }
+            >
+              Submit
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -254,7 +223,7 @@ const EventImages = () => {
                 onPress={() => openImageModal(item)}
                 activeOpacity={0.9}
                 style={{
-                  flex: 1 / gridCount, // Ensure each column takes equal space
+                  flex: 1 / gridCount,
                   padding: imagePadding / 2,
                 }}
               >
@@ -277,22 +246,12 @@ const EventImages = () => {
                       color={theme.colours.primary}
                     />
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.downloadIcon}
-                    onPress={() => downloadImage(item.uri)}
-                  >
-                    <Ionicons
-                      name="download-outline"
-                      size={20}
-                      color={theme.colours.primary}
-                    />
-                  </TouchableOpacity>
                 </View>
               </TouchableOpacity>
             );
           }}
           onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.5} // Adjust this for when to load more
+          onEndReachedThreshold={0.5}
           ListFooterComponent={loading && <ScrollLoading />}
         />
 
@@ -347,13 +306,15 @@ const EventImages = () => {
   );
 };
 
-export default EventImages;
+export default SeletEventImages;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FBFBFB",
   },
+  Subbutton: { fontSize: 16, color: theme.colours.primary, fontWeight: "bold" },
+  ActiveSubbutton: { fontSize: 16, color: "white", fontWeight: "bold" },
   title: {
     fontSize: 24,
     color: theme.colours.primary,
@@ -369,7 +330,7 @@ const styles = StyleSheet.create({
   header: {
     // flex: 1,
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
 
     alignItems: "flex-start",
     paddingHorizontal: wp(4),
@@ -377,11 +338,26 @@ const styles = StyleSheet.create({
   },
   gridButton: {
     height: 40,
-    width: 40,
+    // width: 40,
+    position: "absolute",
+    right: wp(4),
+    paddingHorizontal: 12,
     alignItems: "center",
     justifyContent: "center",
     padding: 6,
     backgroundColor: "#eee",
+    borderRadius: 8,
+  },
+  gridButtonActive: {
+    height: 40,
+    // width: 40,
+    position: "absolute",
+    right: wp(4),
+    paddingHorizontal: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 6,
+    backgroundColor: theme.colours.primary,
     borderRadius: 8,
   },
   card: {

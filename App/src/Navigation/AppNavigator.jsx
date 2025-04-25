@@ -22,6 +22,8 @@ import SelfieWithFaceDetector from "../Components/SelfieWithFaceDetector";
 import FaceIDVerification from "../Components/FaceIDVerification/FaceIDVerification";
 import FlipBookScreen from "../Screens/FlipBookScreen";
 import EventImages from "../Screens/EventImages";
+import ImageSelection from "../Screens/ImageSelection";
+import SeletEventImages from "../Screens/SelectEventImages";
 
 const Stack = createStackNavigator();
 
@@ -50,6 +52,8 @@ const AppNavigator = () => {
       <Stack.Screen name="QRScanner" component={QRScanner} />
       <Stack.Screen name="FaceIDVerification" component={FaceIDVerification} />
       <Stack.Screen name="EventImages" component={EventImages} />
+      <Stack.Screen name="ImageSelection" component={ImageSelection} />
+      <Stack.Screen name="SeletEventImages" component={SeletEventImages} />
       <Stack.Screen
         name="SelfieWithFaceDetector"
         component={SelfieWithFaceDetector}
