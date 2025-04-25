@@ -28,12 +28,10 @@ const PersonalfolderAside = ({ singleEvent }) => {
 
   const togglePublishStatus = async () => {
     const newStatus = !isPublished;
-
     const payload = {
       isPublished: newStatus,
       ...(imageCount && { imageCount }),
     };
-
     try {
       const res = await editEvent(
         singleEvent?._id,

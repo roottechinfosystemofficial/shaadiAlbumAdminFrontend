@@ -11,10 +11,8 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedCount, setUploadedCount] = useState(0);
   const { singleEvent } = useSelector((state) => state.event);
-  const [uploadStartTime, setUploadStartTime] = useState(null);
 
   if (!isOpen) return null;
-
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     setSelectedFiles((prev) => [...prev, ...files]);

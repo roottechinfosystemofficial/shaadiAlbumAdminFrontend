@@ -8,41 +8,28 @@ export const useGetEventImagesCount = (eventId) => {
   const { accessToken } = useSelector((state) => state.user);
   const [imageCount, setImageCount] = useState(null);
 
-  useEffect(() => {
-    const getEventImagesCount = async () => {
-      try {
-        const endpoint = `http://localhost:5000/api/v1/getEventImageCount?eventId=${eventId}`;
-        const res = await apiRequest(
-          "GET",
-          endpoint,
-          {},
-          accessToken,
-          dispatch
-        );
+  const getEventImagesCount = async () => {
+    try {
+      const endpoint = `http://localhost:5000/api/v1/getEventImageCount?eventId=${eventId}`;
+      const res = await apiRequest("GET", endpoint, {}, accessToken, dispatch);
 
-        if (res?.status === 200) {
-          console.log(res);
+      if (res?.status === 200) {
+        const count = res.data.imageCount;
+        setImageCount(count);
 
-          const count = res.data.imageCount;
-          setImageCount(count);
-
-          // 🔄 Immediately update the event in backend
-          await editEvent(
-            eventId,
-            { imageCount: count },
-            dispatch,
-            accessToken
-          );
-        }
-      } catch (err) {
-        console.error("Cannot get or update Image Count:", err);
+        // Optional: update backend too
+        await editEvent(eventId, { imageCount: count }, dispatch, accessToken);
       }
-    };
+    } catch (err) {
+      console.error("Cannot get or update Image Count:", err);
+    }
+  };
 
+  useEffect(() => {
     if (eventId) {
       getEventImagesCount();
     }
-  }, [eventId, accessToken, dispatch]);
+  }, [eventId]);
 
-  return imageCount;
+  return { imageCount, refetchImageCount: getEventImagesCount };
 };
