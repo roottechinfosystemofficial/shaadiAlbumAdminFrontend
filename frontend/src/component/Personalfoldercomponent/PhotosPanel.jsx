@@ -3,6 +3,7 @@ import axios from "axios";
 import AddPhotosModal from "./AddPhotosModal";
 import { useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useSelector } from "react-redux";
 
 const PhotosPanel = () => {
   const [images, setImages] = useState([]);

@@ -9,8 +9,14 @@ export const eventSlice = createSlice({
     setSingleEvent: (state, action) => {
       state.singleEvent = action.payload;
     },
+
+    updateEventImageCount: (state, action) => {
+      if (state.singleEvent) {
+        state.singleEvent.eventTotalImages = action.payload;
+      }
+    },
   },
 });
 
-export const { setSingleEvent } = eventSlice.actions;
+export const { setSingleEvent, updateEventImageCount } = eventSlice.actions;
 export default eventSlice.reducer;

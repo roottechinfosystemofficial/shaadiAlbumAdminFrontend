@@ -1,12 +1,12 @@
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import apiRequest from "../utils/apiRequest";
 import { editEvent } from "../utils/editEvents.util";
+import { updateEventImageCount } from "../Redux/Slices/EventSlice";
 
 export const useGetEventImagesCount = (eventId) => {
   const dispatch = useDispatch();
   const { accessToken } = useSelector((state) => state.user);
-  const [imageCount, setImageCount] = useState(null);
 
   const getEventImagesCount = async () => {
     try {
@@ -15,7 +15,9 @@ export const useGetEventImagesCount = (eventId) => {
 
       if (res?.status === 200) {
         const count = res.data.imageCount;
-        setImageCount(count);
+
+        // ✅ Update Redux
+        dispatch(updateEventImageCount(count));
 
         // Optional: update backend too
         await editEvent(eventId, { imageCount: count }, dispatch, accessToken);
@@ -31,5 +33,6 @@ export const useGetEventImagesCount = (eventId) => {
     }
   }, [eventId]);
 
-  return { imageCount, refetchImageCount: getEventImagesCount };
+  // ✅ Return the manual refresh function
+  return { refetchImageCount: getEventImagesCount };
 };

@@ -12,7 +12,7 @@ const PersonalFolderContent = ({ singleEvent }) => {
   const renderContent = () => {
     switch (activeTab) {
       case "photos":
-        return <PhotosPanel />;
+        return <PhotosPanel  />;
       case "flipbook":
         return <FlipbookPanel />;
       case "favourite":

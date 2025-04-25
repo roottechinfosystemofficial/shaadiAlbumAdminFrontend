@@ -14,7 +14,7 @@ const PersonalfolderAside = ({ singleEvent }) => {
   const { eventId } = useParams();
   const { accessToken } = useSelector((state) => state.user);
   const dispatch = useDispatch();
-  const imageCount = useGetEventImagesCount(singleEvent?._id);
+  console.log(singleEvent?.eventTotalImages);
 
   const eventDate = singleEvent?.eventDate
     ? new Date(singleEvent.eventDate).toLocaleString("en-US", {
@@ -30,7 +30,6 @@ const PersonalfolderAside = ({ singleEvent }) => {
     const newStatus = !isPublished;
     const payload = {
       isPublished: newStatus,
-      ...(imageCount && { imageCount }),
     };
     try {
       const res = await editEvent(

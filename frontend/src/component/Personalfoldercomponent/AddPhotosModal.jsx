@@ -3,6 +3,7 @@ import axios from "axios";
 import imageCompression from "browser-image-compression";
 import { X, CheckCircle, Circle, FolderOpen, ImagePlus } from "lucide-react";
 import { useSelector } from "react-redux";
+import { useGetEventImagesCount } from "../../Hooks/useGetEventImagesCount";
 
 const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -11,6 +12,8 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedCount, setUploadedCount] = useState(0);
   const { singleEvent } = useSelector((state) => state.event);
+
+  const { refetchImageCount } = useGetEventImagesCount(singleEvent?._id);
 
   if (!isOpen) return null;
   const handleFileChange = (e) => {
@@ -133,8 +136,12 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
 
       setUploading(false);
       setSelectedFiles([]);
-      onUploadSuccess();
-      handleClose();
+      setUploading(false);
+      setSelectedFiles([]);
+
+      await refetchImageCount(); // ✅ triggers update to Redux
+      onUploadSuccess(); // optional
+      handleClose(); // close modal
     } catch (err) {
       console.error("Upload error:", err);
       setUploading(false);
