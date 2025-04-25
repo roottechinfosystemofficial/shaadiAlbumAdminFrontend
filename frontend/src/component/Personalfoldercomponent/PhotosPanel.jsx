@@ -49,7 +49,7 @@ const PhotosPanel = () => {
           eventId,
           continuationToken,
           pageSize,
-          subEventId: selectedSubEvent._id, // ✅ use directly
+          subEventId: selectedSubEvent._id,
         },
       })
       .then((res) => {
@@ -108,34 +108,66 @@ const PhotosPanel = () => {
 
       {images.length > 0 && (
         <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-2">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
             <input
               type="checkbox"
               checked={allSelected}
               onChange={selectAll}
-              className="h-4 w-4 text-primary border-gray-300 rounded"
+              className="sr-only"
             />
+            <div
+              className={`w-4 h-4 rounded border-2 flex items-center justify-center transition ${
+                allSelected
+                  ? "bg-primary border-primary"
+                  : "bg-check border-slate-dark"
+              }`}
+            >
+              {allSelected && (
+                <svg
+                  className="w-3 h-3 text-white"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8.25 8.25a1 1 0 01-1.414 0l-4.25-4.25a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              )}
+            </div>
             <span className="text-sm text-gray-700">
               Select All ({selectedImages.size}/{images.length})
             </span>
-          </div>
-
-          <div className="flex gap-4">
+          </label>
+          <div className="flex gap-6 items-center justify-center mt-4">
             <button
               onClick={() => setPage((prev) => Math.max(1, prev - 1))}
               disabled={page === 1 || isLoading}
-              className="flex items-center gap-2 px-4 py-2 border rounded-full text-sm font-medium transition disabled:opacity-50"
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition shadow-sm
+      ${
+        page === 1 || isLoading
+          ? "bg-slate text-gray-400 cursor-not-allowed"
+          : "bg-primary hover:bg-primary-dark text-white"
+      }`}
             >
               <ChevronLeft className="w-4 h-4" />
               Previous
             </button>
+
             <span className="text-sm font-medium text-gray-700">
               Page {page}
             </span>
+
             <button
               onClick={() => setPage((prev) => prev + 1)}
               disabled={!hasNext || isLoading}
-              className="flex items-center gap-2 px-4 py-2 border rounded-full text-sm font-medium transition disabled:opacity-50"
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition shadow-sm
+      ${
+        !hasNext || isLoading
+          ? "bg-slate text-gray-400 cursor-not-allowed"
+          : "bg-primary hover:bg-primary-dark text-white"
+      }`}
             >
               Next
               <ChevronRight className="w-4 h-4" />
@@ -190,13 +222,36 @@ const ImageCard = ({ src, alt, selected, onToggleSelect }) => {
         loading="lazy"
         className="w-full h-64 object-contain transition-transform duration-200 ease-in-out group-hover:scale-105"
       />
-      <div className="absolute top-2 left-2 bg-white bg-opacity-75 p-1 rounded shadow">
-        <input
-          type="checkbox"
-          checked={selected}
-          onChange={onToggleSelect}
-          className="h-4 w-4 text-primary border-gray-300 rounded"
-        />
+      <div className="absolute top-2 left-2">
+        <label className="inline-flex items-center cursor-pointer bg-transparent bg-opacity-75 p-1 rounded shadow">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggleSelect}
+            className="sr-only"
+          />
+          <div
+            className={`w-4 h-4 rounded border-2 flex items-center justify-center transition ${
+              selected
+                ? "bg-primary border-primary"
+                : "bg-check border-slate-dark"
+            }`}
+          >
+            {selected && (
+              <svg
+                className="w-3 h-3 text-white"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8.25 8.25a1 1 0 01-1.414 0l-4.25-4.25a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            )}
+          </div>
+        </label>
       </div>
     </div>
   );
