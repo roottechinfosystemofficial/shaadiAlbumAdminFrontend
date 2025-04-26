@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import boximg from "../assets/box1.png";
 import { EditIcon, Trash2, Settings2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -7,17 +7,20 @@ import { setSingleEvent } from "../Redux/Slices/EventSlice";
 import { editEvent } from "../utils/editEvents.util.js";
 import toast from "../utils/toast.js";
 import SubEventSection from "./SubEventSection.jsx";
+import { useGetSingleEvent } from "../Hooks/useGetSingleEvent.js";
 
-const PersonalfolderAside = ({ singleEvent }) => {
-  const navigate = useNavigate();
+const PersonalfolderAside = () => {
   const { eventId } = useParams();
+  useGetSingleEvent(eventId); // Assuming this hook updates the singleEvent state
+
+  const { singleEvent } = useSelector((state) => state.event);
+
+  const navigate = useNavigate();
   const { accessToken } = useSelector((state) => state.user);
   const dispatch = useDispatch();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [description, setDescription] = useState(
-    singleEvent?.eventDescription || ""
-  );
+  const [description, setDescription] = useState("");
 
   const eventDate = singleEvent?.eventDate
     ? new Date(singleEvent.eventDate).toLocaleString("en-US", {
@@ -28,6 +31,13 @@ const PersonalfolderAside = ({ singleEvent }) => {
     : "No Date Provided";
 
   const isPublished = singleEvent?.isPublished || false;
+
+  // Set the description once singleEvent data is available
+  useEffect(() => {
+    if (singleEvent?.eventDescription) {
+      setDescription(singleEvent.eventDescription);
+    }
+  }, [singleEvent]);
 
   const togglePublishStatus = async () => {
     const newStatus = !isPublished;

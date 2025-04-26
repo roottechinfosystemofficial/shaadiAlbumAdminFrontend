@@ -2,12 +2,18 @@ import React, { useState } from "react";
 import FlipbookPanel from "./Personalfoldercomponent/FlipbookPanel";
 import PhotosPanel from "./Personalfoldercomponent/PhotosPanel";
 import { useSelector } from "react-redux";
+import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
+import { useParams } from "react-router-dom";
 
 const FavouritePanel = () => (
   <p className="text-center text-slate-dark mt-10">No Favourite Found!</p>
 );
 
-const PersonalFolderContent = ({ singleEvent }) => {
+const PersonalFolderContent = () => {
+  const { eventId } = useParams();
+
+  useGetSingleEvent(eventId);
+  const { singleEvent } = useSelector((state) => state.event);
   const [activeTab, setActiveTab] = useState("photos");
   const { selectedSubEvent } = useSelector((state) => state.event);
   const renderContent = () => {
