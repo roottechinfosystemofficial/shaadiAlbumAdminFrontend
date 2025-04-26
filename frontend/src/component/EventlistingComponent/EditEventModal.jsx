@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-
 import { useDispatch, useSelector } from "react-redux";
+import toast from "../../utils/toast.js";
 import { editEvent } from "../../utils/editEvents.util.js";
 
 const EditEventModal = ({
@@ -9,10 +9,11 @@ const EditEventModal = ({
   setEditForm,
   setEditingEvent,
   setOpenEditModel,
-
-  setEvents, // 👈 receive this
+  setEvents,
 }) => {
   const [hasChanges, setHasChanges] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const initialEditFormRef = useRef(null);
   const { accessToken } = useSelector((state) => state.user);
   const dispatch = useDispatch();
@@ -33,10 +34,13 @@ const EditEventModal = ({
 
   const handleEditFormChange = (field, value) => {
     setEditForm((prev) => ({ ...prev, [field]: value }));
+    setFormErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+
     try {
       const res = await editEvent(
         editingEvent._id,
@@ -46,6 +50,8 @@ const EditEventModal = ({
       );
 
       if (res?.status === 200) {
+        toast.success("Event updated successfully!");
+
         setEvents((prev) =>
           prev.map((event) =>
             event._id === editingEvent._id ? { ...event, ...editForm } : event
@@ -56,6 +62,22 @@ const EditEventModal = ({
       }
     } catch (error) {
       console.error("Edit failed:", error);
+
+      if (error.response?.status === 400) {
+        const message = error.response.data?.message || "";
+
+        if (message.includes("code")) {
+          setFormErrors({ eventCode: message });
+        } else if (message.includes("password")) {
+          setFormErrors({ eventPassword: message });
+        } else {
+          toast.error(message || "Failed to update event.");
+        }
+      } else {
+        toast.error("Something went wrong.");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -69,7 +91,7 @@ const EditEventModal = ({
             onClick={() => {
               initialEditFormRef.current = null;
               setOpenEditModel(false);
-              setEditingEvent(null);
+              setFormErrors({});
             }}
           >
             ×
@@ -85,6 +107,7 @@ const EditEventModal = ({
             onChange={(e) => handleEditFormChange("eventName", e.target.value)}
             className="w-full border p-2 rounded-md mb-3"
           />
+
           <label className="block text-gray-700 font-medium mb-1">
             Event Date
           </label>
@@ -94,6 +117,7 @@ const EditEventModal = ({
             onChange={(e) => handleEditFormChange("eventDate", e.target.value)}
             className="w-full border p-2 rounded-md mb-3"
           />
+
           <label className="block text-gray-700 font-medium mb-1">
             Event Delete Date
           </label>
@@ -122,15 +146,23 @@ const EditEventModal = ({
               Change Event ID
             </label>
           </div>
+
           {editForm?.showEditCode && (
-            <input
-              type="text"
-              value={editForm?.eventCode || ""}
-              onChange={(e) =>
-                handleEditFormChange("eventCode", e.target.value)
-              }
-              className="w-full border p-2 rounded-md mb-3"
-            />
+            <>
+              <input
+                type="text"
+                value={editForm?.eventCode || ""}
+                onChange={(e) =>
+                  handleEditFormChange("eventCode", e.target.value)
+                }
+                className="w-full border p-2 rounded-md mb-1"
+              />
+              {formErrors.eventCode && (
+                <p className="text-red-600 text-sm mb-2">
+                  {formErrors.eventCode}
+                </p>
+              )}
+            </>
           )}
 
           <div className="flex items-center mb-2 gap-2">
@@ -153,25 +185,33 @@ const EditEventModal = ({
               Change Password
             </label>
           </div>
+
           {editForm?.showEditPassword && (
-            <input
-              type="text"
-              value={editForm?.eventPassword || ""}
-              onChange={(e) =>
-                handleEditFormChange("eventPassword", e.target.value)
-              }
-              className="w-full border p-2 rounded-md mb-4"
-            />
+            <>
+              <input
+                type="text"
+                value={editForm?.eventPassword || ""}
+                onChange={(e) =>
+                  handleEditFormChange("eventPassword", e.target.value)
+                }
+                className="w-full border p-2 rounded-md mb-1"
+              />
+              {formErrors.eventPassword && (
+                <p className="text-red-600 text-sm mb-2">
+                  {formErrors.eventPassword}
+                </p>
+              )}
+            </>
           )}
 
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-3 mt-4">
             <button
               type="button"
               className="bg-muted px-4 py-2 rounded-md hover:bg-muted-dark"
               onClick={() => {
                 initialEditFormRef.current = null;
                 setOpenEditModel(false);
-                setEditingEvent(null);
+                setFormErrors({});
               }}
             >
               Cancel
@@ -180,10 +220,15 @@ const EditEventModal = ({
             <button
               type="submit"
               className={`${
-                hasChanges ? "bg-primary" : "bg-primary cursor-not-allowed"
-              } text-white px-4 py-2 rounded-md hover:bg-primary-dark`}
-              disabled={!hasChanges}
+                hasChanges && !isSubmitting
+                  ? "bg-primary hover:bg-primary-dark"
+                  : "bg-gray-300 cursor-not-allowed"
+              } text-white px-4 py-2 rounded-md flex items-center gap-2`}
+              disabled={!hasChanges || isSubmitting}
             >
+              {isSubmitting && (
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              )}
               Save Changes
             </button>
           </div>

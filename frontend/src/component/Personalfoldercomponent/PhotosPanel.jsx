@@ -1,10 +1,10 @@
 import React, { useState, useEffect, memo } from "react";
-import axios from "axios";
 import AddPhotosModal from "./AddPhotosModal";
 import { useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { S3_API_END_POINT } from "../../constant";
+import apiRequest from "../../utils/apiRequest";
 
 const PhotosPanel = () => {
   const [images, setImages] = useState([]);
@@ -17,6 +17,8 @@ const PhotosPanel = () => {
   const { eventId } = useParams();
   const { selectedSubEvent } = useSelector((state) => state.event);
   const [reloadKey, setReloadKey] = useState(0); // to force refetch
+  const dispatch = useDispatch();
+  const { accessToken } = useSelector((state) => state.user);
 
   const pageSize = 100;
 
@@ -37,26 +39,34 @@ const PhotosPanel = () => {
       setIsLoading(true);
       try {
         const endpoint = `${S3_API_END_POINT}/list-images`;
-        const res = await axios.get(endpoint, {
-          params: {
+        const res = await apiRequest(
+          "POST",
+          endpoint,
+          {
             eventId,
             continuationToken,
             pageSize,
             subEventId: selectedSubEvent._id,
           },
-        });
+          accessToken,
+          dispatch
+        );
 
-        const data = res.data.images || [];
-        const nextToken = res.data.nextToken;
+        console.log(res);
 
-        setImages(data);
-        setHasNext(!!nextToken);
+        if (res.status === 200) {
+          const data = res.data.images || [];
+          const nextToken = res.data.nextToken;
 
-        if (nextToken) {
-          setTokens((prev) => ({
-            ...prev,
-            [page + 1]: nextToken,
-          }));
+          setImages(data);
+          setHasNext(!!nextToken);
+
+          if (nextToken) {
+            setTokens((prev) => ({
+              ...prev,
+              [page + 1]: nextToken,
+            }));
+          }
         }
       } catch (err) {
         console.error("Image load error:", err);

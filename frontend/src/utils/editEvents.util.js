@@ -6,6 +6,8 @@ export const editEvent = async (eventId, data, dispatch, accessToken) => {
 
   try {
     const res = await apiRequest("PUT", endpoint, data, accessToken, dispatch);
+    console.log(res);
+
     return res;
   } catch (error) {
     console.error("Update event failed:", error);

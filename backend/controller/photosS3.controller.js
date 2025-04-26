@@ -88,7 +88,7 @@ export const getPresignedUrl = async (req, res) => {
 
 // 🔹 Get Paginated Event Images
 export const getEventImages = async (req, res) => {
-  const { eventId, continuationToken, subEventId } = req.query;
+  const { eventId, continuationToken, subEventId } = req.body;
   const pageSize = 20;
 
   if (!eventId) {
