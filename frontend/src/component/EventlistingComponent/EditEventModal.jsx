@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-
 import { useDispatch, useSelector } from "react-redux";
 import { editEvent } from "../../utils/editEvents.util.js";
 
@@ -9,10 +8,10 @@ const EditEventModal = ({
   setEditForm,
   setEditingEvent,
   setOpenEditModel,
-
-  setEvents, // 👈 receive this
+  setEvents,
 }) => {
   const [hasChanges, setHasChanges] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
   const initialEditFormRef = useRef(null);
   const { accessToken } = useSelector((state) => state.user);
   const dispatch = useDispatch();
@@ -33,6 +32,7 @@ const EditEventModal = ({
 
   const handleEditFormChange = (field, value) => {
     setEditForm((prev) => ({ ...prev, [field]: value }));
+    setFormErrors((prev) => ({ ...prev, [field]: "" })); // clear error when user types
   };
 
   const handleEditSubmit = async (e) => {
@@ -56,6 +56,18 @@ const EditEventModal = ({
       }
     } catch (error) {
       console.error("Edit failed:", error);
+
+      if (error.response?.status === 400) {
+        const message = error.response.data?.message || "";
+
+        if (message.includes("code")) {
+          setFormErrors({ eventCode: message });
+        } else if (message.includes("password")) {
+          setFormErrors({ eventPassword: message });
+        } else {
+          alert(message);
+        }
+      }
     }
   };
 
@@ -69,7 +81,8 @@ const EditEventModal = ({
             onClick={() => {
               initialEditFormRef.current = null;
               setOpenEditModel(false);
-              setEditingEvent(null);
+
+              setFormErrors({});
             }}
           >
             ×
@@ -85,6 +98,7 @@ const EditEventModal = ({
             onChange={(e) => handleEditFormChange("eventName", e.target.value)}
             className="w-full border p-2 rounded-md mb-3"
           />
+
           <label className="block text-gray-700 font-medium mb-1">
             Event Date
           </label>
@@ -94,6 +108,7 @@ const EditEventModal = ({
             onChange={(e) => handleEditFormChange("eventDate", e.target.value)}
             className="w-full border p-2 rounded-md mb-3"
           />
+
           <label className="block text-gray-700 font-medium mb-1">
             Event Delete Date
           </label>
@@ -122,15 +137,23 @@ const EditEventModal = ({
               Change Event ID
             </label>
           </div>
+
           {editForm?.showEditCode && (
-            <input
-              type="text"
-              value={editForm?.eventCode || ""}
-              onChange={(e) =>
-                handleEditFormChange("eventCode", e.target.value)
-              }
-              className="w-full border p-2 rounded-md mb-3"
-            />
+            <>
+              <input
+                type="text"
+                value={editForm?.eventCode || ""}
+                onChange={(e) =>
+                  handleEditFormChange("eventCode", e.target.value)
+                }
+                className="w-full border p-2 rounded-md mb-1"
+              />
+              {formErrors.eventCode && (
+                <p className="text-red-600 text-sm mb-2">
+                  {formErrors.eventCode}
+                </p>
+              )}
+            </>
           )}
 
           <div className="flex items-center mb-2 gap-2">
@@ -153,25 +176,34 @@ const EditEventModal = ({
               Change Password
             </label>
           </div>
+
           {editForm?.showEditPassword && (
-            <input
-              type="text"
-              value={editForm?.eventPassword || ""}
-              onChange={(e) =>
-                handleEditFormChange("eventPassword", e.target.value)
-              }
-              className="w-full border p-2 rounded-md mb-4"
-            />
+            <>
+              <input
+                type="text"
+                value={editForm?.eventPassword || ""}
+                onChange={(e) =>
+                  handleEditFormChange("eventPassword", e.target.value)
+                }
+                className="w-full border p-2 rounded-md mb-1"
+              />
+              {formErrors.eventPassword && (
+                <p className="text-red-600 text-sm mb-2">
+                  {formErrors.eventPassword}
+                </p>
+              )}
+            </>
           )}
 
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-3 mt-4">
             <button
               type="button"
               className="bg-muted px-4 py-2 rounded-md hover:bg-muted-dark"
               onClick={() => {
                 initialEditFormRef.current = null;
                 setOpenEditModel(false);
-                setEditingEvent(null);
+
+                setFormErrors({});
               }}
             >
               Cancel

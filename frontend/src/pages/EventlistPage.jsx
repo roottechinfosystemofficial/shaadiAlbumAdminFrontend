@@ -138,7 +138,7 @@ const EventlistPage = () => {
           ))}
         </div>
       )}
-
+  
       {/* Add Event Modal */}
       {showModal && (
         <EventModal

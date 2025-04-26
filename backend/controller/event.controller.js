@@ -63,6 +63,73 @@ export const createEvent = async (req, res) => {
   }
 };
 
+export const editEventById = async (req, res) => {
+  try {
+    const {
+      eventName,
+      eventDate,
+      eventCode,
+      eventPassword,
+      eventDeleteDate,
+      isPublished,
+      imageCount,
+      eventDescription,
+    } = req.body;
+    const eventId = req.params.eventId;
+
+    const findEvent = await Event.findById(eventId);
+
+    if (!findEvent) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Event not found"));
+    }
+
+    // Update only if the field is provided
+    if (imageCount !== undefined) findEvent.eventTotalImages = imageCount;
+    if (isPublished !== undefined) findEvent.isPublished = isPublished;
+    if (eventName !== undefined) findEvent.eventName = eventName;
+    if (eventDate !== undefined) findEvent.eventDate = new Date(eventDate);
+    // Check for unique eventCode
+    if (eventCode !== undefined && eventCode !== findEvent.eventCode) {
+      const existingCode = await Event.findOne({ eventCode });
+      if (existingCode && existingCode._id.toString() !== eventId) {
+        return res
+          .status(400)
+          .json(new ApiResponse(400, null, "Event code already in use."));
+      }
+    }
+
+    // Check for unique eventPassword
+    if (
+      eventPassword !== undefined &&
+      eventPassword !== findEvent.eventPassword
+    ) {
+      const existingPassword = await Event.findOne({ eventPassword });
+      if (existingPassword && existingPassword._id.toString() !== eventId) {
+        return res
+          .status(400)
+          .json(new ApiResponse(400, null, "Event password already in use."));
+      }
+    }
+
+    if (eventDeleteDate !== undefined)
+      findEvent.eventDeleteDate = new Date(eventDeleteDate);
+    if (eventDescription !== undefined)
+      findEvent.eventDescription = eventDescription;
+    await findEvent.save();
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, findEvent, "Event updated successfully"));
+  } catch (error) {
+    console.error("🔴 Error in editEventById:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "Internal Server Error"));
+  }
+};
+
 export const getAllEventsOfUser = async (req, res) => {
   try {
     const userId = req.userId;
@@ -116,52 +183,6 @@ export const getEventById = async (req, res) => {
       .json(new ApiResponse(200, findEvent, "Event fetched successfully"));
   } catch (error) {
     console.error("🔴 Error in getEventById:", error);
-    return res
-      .status(500)
-      .json(new ApiResponse(500, null, "Internal Server Error"));
-  }
-};
-
-export const editEventById = async (req, res) => {
-  try {
-    const {
-      eventName,
-      eventDate,
-      eventCode,
-      eventPassword,
-      eventDeleteDate,
-      isPublished,
-      imageCount,
-      eventDescription,
-    } = req.body;
-    const eventId = req.params.eventId;
-
-    const findEvent = await Event.findById(eventId);
-
-    if (!findEvent) {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, null, "Event not found"));
-    }
-
-    // Update only if the field is provided
-    if (imageCount !== undefined) findEvent.eventTotalImages = imageCount;
-    if (isPublished !== undefined) findEvent.isPublished = isPublished;
-    if (eventName !== undefined) findEvent.eventName = eventName;
-    if (eventDate !== undefined) findEvent.eventDate = new Date(eventDate);
-    if (eventCode !== undefined) findEvent.eventCode = eventCode;
-    if (eventPassword !== undefined) findEvent.eventPassword = eventPassword;
-    if (eventDeleteDate !== undefined)
-      findEvent.eventDeleteDate = new Date(eventDeleteDate);
-    if (eventDescription !== undefined)
-      findEvent.eventDescription = eventDescription;
-    await findEvent.save();
-
-    return res
-      .status(200)
-      .json(new ApiResponse(200, findEvent, "Event updated successfully"));
-  } catch (error) {
-    console.error("🔴 Error in editEventById:", error);
     return res
       .status(500)
       .json(new ApiResponse(500, null, "Internal Server Error"));

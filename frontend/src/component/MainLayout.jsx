@@ -9,7 +9,6 @@ const MainLayout = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    console.log("mainlayout out");
     const getCookies = () => {
       const accessToken = Cookies.get("accessToken");
       const refreshToken = Cookies.get("refreshToken");
@@ -19,7 +18,7 @@ const MainLayout = () => {
     };
 
     getCookies();
-  }, []);
+  }, [dispatch]);
 
   useAuthCheck();
 
