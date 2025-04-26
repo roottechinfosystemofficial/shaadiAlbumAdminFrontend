@@ -58,11 +58,7 @@ export const login = async (req, res) => {
       new ApiResponse(
         200,
         {
-          user: {
-            name: user.name,
-            phone: user.phoneNo,
-            dp: user.profilePicture,
-          },
+          user: user,
           accessToken,
         },
         "AppUser logged in successfully"

@@ -10,6 +10,8 @@ import {
   Pressable,
   FlatList,
   TouchableWithoutFeedback,
+  BackHandler,
+  Keyboard,
   StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -39,12 +41,30 @@ const SeletEventImages = () => {
   const navigation = useNavigation();
   const [selectedImage, setSelectedImage] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const [hasPermission, setHasPermission] = useState(null);
   const [selectedImages, setSelectedImages] = useState([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const modalFlatListRef = useRef(null);
+  useEffect(() => {
+    const backAction = () => {
+      if (modalVisible) {
+        closeModal();
+        return true;
+      }
+      return false;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [modalVisible]);
 
   useEffect(() => {
     (async () => {
@@ -81,6 +101,15 @@ const SeletEventImages = () => {
         return { width: columnWidth, height: columnWidth }; // Square images
     }
   };
+  const toggleSelectedImage = (id) => {
+    setSelectedImages(
+      (prevSelected) =>
+        prevSelected.includes(id)
+          ? prevSelected.filter((itemId) => itemId !== id) // Remove if already selected
+          : [...prevSelected, id] // Add if not selected
+    );
+    console.log(selectedImages);
+  };
 
   const toggleFavorite = (id) => {
     setFavorites((prev) =>
@@ -94,6 +123,7 @@ const SeletEventImages = () => {
   };
 
   const closeModal = () => {
+    console.log("Closing modal...");
     setSelectedImage(null);
     setModalVisible(false);
   };
@@ -181,6 +211,21 @@ const SeletEventImages = () => {
       fetchEventImages(nextPage);
     }
   };
+  const handleNextImage = () => {
+    if (!selectedImage) return;
+    const currentIndex = images.findIndex((img) => img.id === selectedImage.id);
+    if (currentIndex < images.length - 1) {
+      setSelectedImage(images[currentIndex + 1]);
+    }
+  };
+
+  const handlePrevImage = () => {
+    if (!selectedImage) return;
+    const currentIndex = images.findIndex((img) => img.id === selectedImage.id);
+    if (currentIndex > 0) {
+      setSelectedImage(images[currentIndex - 1]);
+    }
+  };
 
   return (
     <ScreenWrapper bg="#FBFBFB">
@@ -188,7 +233,9 @@ const SeletEventImages = () => {
       <View style={styles.container}>
         <View style={styles.header}>
           <BackButton navigation={navigation} />
-          <Text style={styles.title}>Select</Text>
+          <Text style={styles.title}>
+            {selectedImages?.length === 0 ? "Select" : selectedImages?.length}
+          </Text>
 
           <TouchableOpacity
             style={
@@ -208,14 +255,13 @@ const SeletEventImages = () => {
             </Text>
           </TouchableOpacity>
         </View>
-
         <FlatList
           data={images}
           keyExtractor={(item) => item.id}
           key={gridCount}
           numColumns={gridCount}
           renderItem={({ item }) => {
-            const isFavorite = favorites.includes(item.id);
+            const isSelected = selectedImages.includes(item.id);
             const imgStyle = getImageStyle(item.type);
 
             return (
@@ -232,20 +278,16 @@ const SeletEventImages = () => {
                     source={item.uri}
                     style={[styles.image, imgStyle]}
                     resizeMode="cover"
-                    onError={(error) =>
-                      console.error("Image Load Error: ", error)
-                    }
                   />
-                  <TouchableOpacity
-                    style={styles.heartIcon}
-                    onPress={() => toggleFavorite(item.id)}
-                  >
-                    <Ionicons
-                      name={isFavorite ? "heart" : "heart-outline"}
-                      size={20}
-                      color={theme.colours.primary}
-                    />
-                  </TouchableOpacity>
+                  {selectedImages.includes(item.id) && (
+                    <View style={styles.checkOverlay}>
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={24}
+                        color="green"
+                      />
+                    </View>
+                  )}
                 </View>
               </TouchableOpacity>
             );
@@ -254,28 +296,18 @@ const SeletEventImages = () => {
           onEndReachedThreshold={0.5}
           ListFooterComponent={loading && <ScrollLoading />}
         />
-
-        {modalVisible && (
-          <Modal
-            isVisible={modalVisible}
-            onBackdropPress={closeModal}
-            style={{ margin: 0 }}
-            animationIn="fadeIn"
-            animationOut="fadeOut"
-          >
-            <View style={styles.modalOverlay}>
-              <Pressable onPress={closeModal} style={styles.btnStyle}>
-                <ArrowLeft strokeWidth={3} color="white" />
-              </Pressable>
-
+        <Modal
+          isVisible={modalVisible}
+          onBackdropPress={closeModal}
+          style={{ margin: 0 }}
+          animationIn="fadeIn"
+          animationOut="fadeOut"
+        >
+          <View style={styles.modalOverlay}>
+            <Pressable onPress={closeModal} style={styles.fullscreenImage}>
               <FlatList
                 ref={modalFlatListRef}
                 horizontal
-                getItemLayout={(data, index) => ({
-                  length: Dimensions.get("window").width,
-                  offset: Dimensions.get("window").width * index,
-                  index,
-                })}
                 pagingEnabled
                 windowSize={3}
                 initialNumToRender={1}
@@ -284,23 +316,75 @@ const SeletEventImages = () => {
                 showsHorizontalScrollIndicator={false}
                 data={images}
                 keyExtractor={(item) => item.id}
-                renderItem={({ item }) => {
-                  return (
+                renderItem={({ item }) => (
+                  <View style={styles.imageWrapper}>
+                    {/* Background touch area */}
                     <TouchableWithoutFeedback onPress={closeModal}>
-                      <View style={styles.imageWrapper}>
-                        <Image
-                          source={item.uri} // Load full image here
-                          style={styles.fullscreenImage}
-                          resizeMode="contain"
-                        />
-                      </View>
+                      <View style={styles.fullscreenBackground} />
                     </TouchableWithoutFeedback>
-                  );
+
+                    {/* Image */}
+                    <Image
+                      source={item.uri}
+                      style={styles.fullscreenImage}
+                      resizeMode="contain"
+                    />
+                    <View style={styles.navigationButtons}>
+                      <TouchableOpacity
+                        onPress={handlePrevImage}
+                        style={styles.navButton}
+                      >
+                        <Ionicons name="chevron-back" size={30} color="white" />
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        onPress={handleNextImage}
+                        style={styles.navButton}
+                      >
+                        <Ionicons
+                          name="chevron-forward"
+                          size={30}
+                          color="white"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                    {/* Select button */}
+                    <Pressable
+                      onPress={() => toggleSelectedImage(item.id)}
+                      style={styles.checkButton}
+                    >
+                      <Ionicons
+                        name={
+                          selectedImages.includes(item.id)
+                            ? "checkmark-circle"
+                            : "ellipse-outline"
+                        }
+                        size={30}
+                        color={
+                          selectedImages.includes(item.id) ? "green" : "white"
+                        }
+                      />
+                    </Pressable>
+                  </View>
+                )}
+                getItemLayout={(data, index) => ({
+                  length: screenWidth, // Adjust to your item height (or width for horizontal scroll)
+                  offset: screenWidth * index, // Calculate offset for each item
+                  index,
+                })}
+                onScrollToIndexFailed={(error) => {
+                  const offset =
+                    error.index > 0 ? error.index * screenWidth : 0;
+                  modalFlatListRef.current?.scrollToOffset({ offset });
                 }}
               />
-            </View>
-          </Modal>
-        )}
+            </Pressable>
+            {/* Back button */}
+            <Pressable onPress={closeModal} style={styles.btnStyle}>
+              <ArrowLeft strokeWidth={3} color="white" />
+            </Pressable>
+          </View>
+        </Modal>
       </View>
     </ScreenWrapper>
   );
@@ -315,6 +399,42 @@ const styles = StyleSheet.create({
   },
   Subbutton: { fontSize: 16, color: theme.colours.primary, fontWeight: "bold" },
   ActiveSubbutton: { fontSize: 16, color: "white", fontWeight: "bold" },
+  checkOverlay: {
+    position: "absolute",
+    top: 5,
+    right: 5,
+    backgroundColor: "rgba(255, 255, 255, 0.7)",
+    borderRadius: 20,
+  },
+
+  checkbox: {
+    position: "absolute",
+    top: 20,
+    right: 20,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderRadius: 20,
+    padding: 5,
+  },
+  modalContent: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "black",
+  },
+  navigationButtons: {
+    position: "absolute",
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    top: "50%",
+    paddingHorizontal: 20,
+  },
+  navButton: {
+    backgroundColor: "rgba(0,0,0,0.3)",
+    borderRadius: 30,
+    padding: 4,
+  },
+
   title: {
     fontSize: 24,
     color: theme.colours.primary,
@@ -323,6 +443,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(4),
     marginBottom: 16,
   },
+  fullscreenBackground: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.7)",
+  },
+
+  checkButton: {
+    position: "absolute",
+    top: 30,
+    right: 30,
+  },
+
   scroll: {
     paddingHorizontal: imagePadding,
     paddingBottom: 100,
@@ -336,6 +467,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(4),
     marginBottom: 16,
   },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    width: "100%",
+  },
+
   gridButton: {
     height: 40,
     // width: 40,
@@ -424,5 +566,9 @@ const styles = StyleSheet.create({
     height: Dimensions.get("window").height,
     justifyContent: "center",
     alignItems: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "black",
   },
 });

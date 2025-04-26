@@ -76,10 +76,8 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        console.log("Login success:", data);
-
         const { accessToken, user } = data.data;
-
+        console.log(user);
         // Store token and user in AsyncStorage
         await AsyncStorage.setItem("token", accessToken);
         setUser(user);

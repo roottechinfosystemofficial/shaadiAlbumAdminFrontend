@@ -26,6 +26,7 @@ const Home = () => {
   const [eventData, setEventData] = useState([]);
   const [eventList, setEventList] = useState([]);
   const { token, user, getUserData } = useAuth();
+
   const handleEventCodeChange = async (text) => {
     setEventCode(text);
 
@@ -70,7 +71,6 @@ const Home = () => {
   };
 
   useEffect(() => {
-    getUserData(token);
     if (user?.searchEvent?.length) {
       setEventList(user.searchEvent);
     }
