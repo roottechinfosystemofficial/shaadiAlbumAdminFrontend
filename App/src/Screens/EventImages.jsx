@@ -5,6 +5,7 @@ import {
   Alert,
   View,
   ScrollView,
+  Platform,
   Image,
   Dimensions,
   TouchableOpacity,
@@ -34,7 +35,7 @@ const imagePadding = 8;
 
 const EventImages = () => {
   const route = useRoute();
-  const { id } = route.params;
+  const { subId, id, subEventName } = route.params;
   const [images, setImages] = useState([]);
   const [favorites, setFavorites] = useState(images.map((img) => img.id));
   const [gridCount, setGridCount] = useState(2);
@@ -146,7 +147,7 @@ const EventImages = () => {
 
     try {
       const response = await fetch(
-        `http://192.168.1.66:5000/api/v1/list-app-images?eventId=${id}&page=${pageToFetch}`
+        `http://192.168.1.66:5000/api/v1/list-app-images?eventId=${id}&page=${pageToFetch}&subEventId=${subId}`
       );
 
       const responseText = await response.text();
@@ -225,11 +226,21 @@ const EventImages = () => {
 
   return (
     <ScreenWrapper bg="#FBFBFB">
-      <StatusBar backgroundColor="transparent" translucent />
+      <StatusBar
+        barStyle={modalVisible ? "light-content" : "dark-content"} // icon/text color
+        backgroundColor={
+          Platform.OS === "android"
+            ? modalVisible
+              ? "#000"
+              : "transparent"
+            : "transparent"
+        }
+        translucent
+      />
       <View style={styles.container}>
         <View style={styles.header}>
           <BackButton navigation={navigation} />
-          <Text style={styles.title}>Event Images</Text>
+          <Text style={styles.title}>{subEventName}</Text>
 
           <TouchableOpacity style={styles.gridButton} onPress={toggleGrid}>
             <Ionicons
@@ -418,9 +429,11 @@ const styles = StyleSheet.create({
 
   modalOverlay: {
     flex: 1,
+    margin: 2,
     backgroundColor: "rgba(0,0,0,0.9)",
     justifyContent: "center",
     alignItems: "center",
+    marginTop: Platform.OS === "ios" ? StatusBar.currentHeight || 44 : 0,
   },
   btnStyle: {
     alignSelf: "flex-start",

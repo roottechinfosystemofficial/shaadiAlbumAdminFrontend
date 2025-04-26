@@ -25,6 +25,8 @@ const ImageSelection = () => {
   const [eventPin, setEventPin] = useState("");
   const [eventList, setEventList] = useState([]);
   const { token, user } = useAuth();
+  console.log("User Data:", user?.imageSelectionEvent);
+
   const handleEventCodeChange = async (text) => {
     setEventPin(text);
 
@@ -101,19 +103,48 @@ const ImageSelection = () => {
           />
         </View>
         <ScrollView style={{ marginTop: 20 }}>
-          {eventList.map((event, index) => (
-            <TouchableOpacity
-              key={event?._id || index.toString()}
-              onPress={() => {
-                const id = event?._id;
-                return navigation.navigate("SeletEventImages", {
-                  id,
-                });
-              }}
-            >
-              <EventCard event={event} />
-            </TouchableOpacity>
-          ))}
+          {eventList.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <MaterialCommunityIcons
+                name="image-search"
+                size={80}
+                color="#ccc"
+              />
+              <Text style={styles.emptyTitle}>No Events Yet</Text>
+              <Text style={styles.emptyText}>
+                Please fill the secure Event PIN above to find your event and
+                start selecting images.
+              </Text>
+            </View>
+          ) : (
+            eventList.map((event, index) => (
+              <TouchableOpacity
+                key={event?._id || index.toString()}
+                onPress={() => {
+                  const id = event?._id;
+                  const subevents = event?.subevents || [];
+                  console.log(
+                    "Navigating to EventFolders with ID and subevents:",
+                    id,
+                    subevents
+                  );
+
+                  navigation.navigate("SelectionEventFolders", {
+                    id,
+                    subevents,
+                    eventImage: event?.eventImage,
+                    eventName: event?.eventName,
+                  });
+                }}
+              >
+                <EventCard
+                  event={event}
+                  eventImage={event?.eventImage}
+                  eventName={event?.eventName}
+                />
+              </TouchableOpacity>
+            ))
+          )}
         </ScrollView>
       </View>
     </ScreenWrapper>
@@ -152,6 +183,26 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 12,
   },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 50,
+    paddingHorizontal: 20,
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#999",
+    marginTop: 20,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#999",
+    textAlign: "center",
+    marginTop: 10,
+  },
+
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",

@@ -17,20 +17,18 @@ import {
 import { theme } from "../constants/themes";
 import ScreenWrapper from "../Components/ScreenWrapper";
 import useAuth from "../Context/UserContext";
+import Avatar from "../Components/Avatar";
 
 const Account = ({ navigation }) => {
-  const { removeTokenLogout } = useAuth();
+  const { removeTokenLogout, user } = useAuth();
   return (
     <ScreenWrapper bg="white">
       <ScrollView style={styles.container}>
         {/* Profile Section */}
         <View style={styles.profileSection}>
-          <Image
-            source={require("../../assets/fav/0X1A1764.jpg")}
-            style={styles.avatar}
-          />
-          <Text style={styles.name}>Priyank</Text>
-          <Text style={styles.email}>carlarosser23@gmail.com</Text>
+          <Avatar name={user?.name} size={100} />
+          <Text style={styles.name}>{user?.name}</Text>
+          <Text style={styles.email}>+91 {user?.phoneNo}</Text>
         </View>
 
         {/* Menu Options */}

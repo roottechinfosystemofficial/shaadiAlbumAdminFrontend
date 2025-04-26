@@ -9,19 +9,19 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
-const EventCard = ({ event }) => {
+const EventCard = ({ event, eventImage, eventName }) => {
   return (
     <View style={styles.card}>
       <ImageBackground
-        source={{ uri: event.eventImage }}
+        source={{ uri: eventImage }}
         style={styles.image}
         imageStyle={styles.imageBorder}
       >
         <View style={styles.overlay}>
           <View style={styles.textContainer}>
-            <Text style={styles.eventName}>{event.eventName}</Text>
+            <Text style={styles.eventName}>{eventName}</Text>
             <Text style={styles.mediaCount}>
-              {event.eventTotalImages} Photos
+              {event.subEventTotalImages} Photos
             </Text>
           </View>
           <Ionicons

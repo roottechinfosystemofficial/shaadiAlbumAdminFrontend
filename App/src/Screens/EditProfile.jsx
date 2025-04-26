@@ -9,7 +9,7 @@ import {
   View,
   Alert,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import ScreenWrapper from "../Components/ScreenWrapper";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -19,165 +19,42 @@ import { hp, wp } from "../helpers/Common";
 import Modal from "react-native-modal"; //
 import { ScrollView } from "react-native-gesture-handler";
 import * as ImagePicker from "expo-image-picker";
+import Avatar from "../Components/Avatar";
+import useAuth from "../Context/UserContext";
 
 const EditProfile = () => {
   const navigation = useNavigation();
+  const { user } = useAuth();
   const [error, setError] = useState("");
   const [userName, setUserName] = useState("");
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [profileImage, setProfileImage] = useState(null);
   const [isModalVisible, setModalVisible] = useState(false);
-
-  const toggleModal = () => {
-    setModalVisible(!isModalVisible);
-  };
-  const handlePickFromCamera = async () => {
-    toggleModal();
-    const { granted } = await ImagePicker.requestCameraPermissionsAsync();
-    if (!granted)
-      return Alert.alert("Permission denied", "Camera permission required.");
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
-    if (!result.canceled) setProfileImage(result.assets[0].uri);
-  };
-
-  const handlePickFromGallery = async () => {
-    toggleModal();
-    const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!granted)
-      return Alert.alert("Permission denied", "Gallery permission required.");
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
-    if (!result.canceled) setProfileImage(result.assets[0].uri);
-  };
-  const onPickImage = async () => {
-    const requestPermissions = async () => {
-      const cameraPerm = await ImagePicker.requestCameraPermissionsAsync();
-      const mediaPerm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-      if (!cameraPerm.granted || !mediaPerm.granted) {
-        Alert.alert(
-          "Permissions Required",
-          "We need both camera and gallery permissions to continue."
-        );
-        return false;
-      }
-      return true;
-    };
-
-    const launchCamera = async () => {
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.7,
-      });
-      if (!result.canceled) {
-        setProfileImage(result.assets[0].uri);
-      }
-    };
-
-    const launchGallery = async () => {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"],
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.7,
-      });
-      if (!result.canceled) {
-        setProfileImage(result.assets[0].uri);
-      }
-    };
-
-    const hasPermission = await requestPermissions();
-    if (!hasPermission) return;
-
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ["Cancel", "Take Photo", "Choose from Library"],
-          cancelButtonIndex: 0,
-        },
-        (buttonIndex) => {
-          if (buttonIndex === 1) {
-            launchCamera();
-          } else if (buttonIndex === 2) {
-            launchGallery();
-          }
-        }
-      );
-    } else {
-      Alert.alert("Select Image", "Choose an option", [
-        { text: "Camera", onPress: launchCamera },
-        { text: "Gallery", onPress: launchGallery },
-        { text: "Cancel", style: "cancel" },
-      ]);
-    }
-  };
 
   const handleReset = () => {
     // Submit logic here
   };
+  useEffect(() => {
+    if (user) {
+      setUserName(user.name);
+      setPhone(user.phoneNo);
+    }
+  }, []);
 
   return (
     <ScreenWrapper bg="white">
-      <View style={styles.container}>
+      <View style={styles.header}>
         <BackButton navigation={navigation} />
         <Text style={styles.title}>Edit Your Profile</Text>
+      </View>
+      <View style={styles.container}>
         <ScrollView>
           <View style={styles.profileSection}>
             <View>
-              <Modal
-                isVisible={isModalVisible}
-                onBackdropPress={toggleModal}
-                animationIn="slideInUp"
-                animationOut="slideOutDown"
-                style={{ justifyContent: "flex-end", margin: 0 }}
-              >
-                <View style={styles.modalContainer}>
-                  <TouchableOpacity
-                    style={styles.modalOption}
-                    onPress={handlePickFromCamera}
-                  >
-                    <Text style={styles.modalText}>📷 Take Photo</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.modalOption}
-                    onPress={handlePickFromGallery}
-                  >
-                    <Text style={styles.modalText}>🖼️ Choose from Gallery</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.modalOption, { borderTopWidth: 0.5 }]}
-                    onPress={toggleModal}
-                  >
-                    <Text style={[styles.modalText, { color: "red" }]}>
-                      Cancel
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </Modal>
-
-              <Image
-                source={
-                  profileImage
-                    ? { uri: profileImage }
-                    : require("../../assets/fav/0X1A1764.jpg")
-                }
-                style={styles.avatar}
-              />
-
-              <TouchableOpacity style={styles.pencilIcon} onPress={toggleModal}>
-                <FontAwesome name="pencil" size={16} color="#fff" />
-              </TouchableOpacity>
+              <Avatar name={user?.name} size={100} />
             </View>
-            <Text style={styles.name}>Carla Rosser</Text>
-            <Text style={styles.email}>carlarosser23@gmail.com</Text>
+            <Text style={styles.name}>{user?.name}</Text>
+            <Text style={styles.email}>{user?.phoneNo}</Text>
           </View>
 
           <View style={styles.inputContainer}>
@@ -189,6 +66,7 @@ const EditProfile = () => {
             />
             <TextInput
               style={styles.input}
+              value={userName}
               placeholder="Enter your Name"
               placeholderTextColor={theme.colours.primary}
               onChangeText={setUserName}
@@ -197,17 +75,18 @@ const EditProfile = () => {
 
           <View style={styles.inputContainer}>
             <MaterialIcons
-              name="email"
+              name="phone"
               size={25}
               color={theme.colours.primary}
               style={styles.inIcon}
             />
             <TextInput
               style={styles.input}
+              value={phone}
               placeholder="Enter your Email"
               placeholderTextColor={theme.colours.primary}
-              textContentType="emailAddress"
-              onChangeText={setEmail}
+              textContentType="phoneNumber"
+              onChangeText={setPhone}
             />
           </View>
 
@@ -228,6 +107,14 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: wp(4),
     flex: 1,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    gap: 10,
+    alignItems: "center",
+    // marginTop: hp(4),
+    marginHorizontal: wp(4),
   },
   modalContainer: {
     backgroundColor: "white",
@@ -252,7 +139,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: theme.colours.primary,
     fontFamily: "Poppins",
-    marginTop: hp(4),
+    // marginTop: hp(4),
     textAlign: "center",
   },
   profileSection: {

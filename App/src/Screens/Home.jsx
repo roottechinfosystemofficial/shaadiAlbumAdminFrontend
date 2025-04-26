@@ -19,6 +19,7 @@ import useAuth from "../Context/UserContext";
 import EventCard from "../Components/EventCard";
 import ScreenWrapper from "../Components/ScreenWrapper";
 import HeartIcon from "../../assets/Icons/HeartIcon";
+import { hp } from "../helpers/Common";
 
 const Home = () => {
   const navigation = useNavigation();
@@ -138,11 +139,26 @@ const Home = () => {
               key={event?._id || index.toString()}
               onPress={() => {
                 const id = event?._id;
-                console.log("Navigating to EventImages with ID:", id);
-                navigation.navigate("EventImages", { id });
+                const subevents = event?.subevents || [];
+                console.log(
+                  "Navigating to EventFolders with ID and subevents:",
+                  id,
+                  subevents
+                );
+
+                navigation.navigate("EventFolders", {
+                  id,
+                  subevents,
+                  eventImage: event?.eventImage,
+                  eventName: event?.eventName,
+                });
               }}
             >
-              <EventCard event={event} />
+              <EventCard
+                event={event}
+                eventImage={event?.eventImage}
+                eventName={event?.eventName}
+              />
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -189,7 +205,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F2ECE7",
     borderRadius: 12,
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingVertical: hp(1.8),
     marginTop: 20,
   },
   icon: {

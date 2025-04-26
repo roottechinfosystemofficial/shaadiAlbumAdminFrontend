@@ -32,7 +32,7 @@ const imagePadding = 8;
 
 const SeletEventImages = () => {
   const route = useRoute();
-  const { id } = route.params;
+  const { subId, id, subEventName } = route.params;
   const [images, setImages] = useState([]);
   const [favorites, setFavorites] = useState(images.map((img) => img.id));
   const [gridCount, setGridCount] = useState(2);
@@ -139,7 +139,7 @@ const SeletEventImages = () => {
 
     try {
       const response = await fetch(
-        `http://192.168.1.66:5000/api/v1/list-app-images?eventId=${id}&page=${pageToFetch}`
+        `http://192.168.1.66:5000/api/v1/list-app-images?eventId=${id}&page=${pageToFetch}&subEventId=${subId}`
       );
 
       const responseText = await response.text();
@@ -234,7 +234,9 @@ const SeletEventImages = () => {
         <View style={styles.header}>
           <BackButton navigation={navigation} />
           <Text style={styles.title}>
-            {selectedImages?.length === 0 ? "Select" : selectedImages?.length}
+            {selectedImages?.length === 0
+              ? "Select"
+              : `${selectedImages?.length} Selected`}
           </Text>
 
           <TouchableOpacity

@@ -24,6 +24,8 @@ import FlipBookScreen from "../Screens/FlipBookScreen";
 import EventImages from "../Screens/EventImages";
 import ImageSelection from "../Screens/ImageSelection";
 import SeletEventImages from "../Screens/SelectEventImages";
+import EventFolders from "../Screens/EventFolders";
+import SelectionEventFolders from "../Screens/SelectionEventFolders";
 
 const Stack = createStackNavigator();
 
@@ -54,6 +56,11 @@ const AppNavigator = () => {
       <Stack.Screen name="EventImages" component={EventImages} />
       <Stack.Screen name="ImageSelection" component={ImageSelection} />
       <Stack.Screen name="SeletEventImages" component={SeletEventImages} />
+      <Stack.Screen name="EventFolders" component={EventFolders} />
+      <Stack.Screen
+        name="SelectionEventFolders"
+        component={SelectionEventFolders}
+      />
       <Stack.Screen
         name="SelfieWithFaceDetector"
         component={SelfieWithFaceDetector}
