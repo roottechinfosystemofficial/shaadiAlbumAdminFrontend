@@ -2,9 +2,11 @@ import React, { useState } from "react";
 import axios from "axios";
 import imageCompression from "browser-image-compression";
 import { X, CheckCircle, Circle, FolderOpen, ImagePlus } from "lucide-react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useGetEventImagesCount } from "../../Hooks/useGetEventImagesCount";
 import { S3_API_END_POINT } from "../../constant";
+import toast from "../../utils/toast.js";
+import apiRequest from "../../utils/apiRequest.js";
 
 const AddPhotosModal = ({
   isOpen,
@@ -19,9 +21,12 @@ const AddPhotosModal = ({
   const [uploadedCount, setUploadedCount] = useState(0);
   const { singleEvent } = useSelector((state) => state.event);
 
+  const dispatch = useDispatch();
+  const { accessToken } = useSelector((state) => state.user);
   const { refetchImageCount } = useGetEventImagesCount(singleEvent?._id);
 
   if (!isOpen) return null;
+
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     setSelectedFiles((prev) => [...prev, ...files]);
@@ -45,7 +50,6 @@ const AddPhotosModal = ({
     setDuplicateHandling(mode);
   };
 
-  // Function to handle the compressing of each file one at a time
   const compressFile = async (file) => {
     try {
       const compressed = await imageCompression(file, {
@@ -53,31 +57,11 @@ const AddPhotosModal = ({
         maxWidthOrHeight: 1920,
         useWebWorker: true,
       });
-
       return compressed;
     } catch (error) {
       console.error("Compression error:", error);
       return null;
     }
-  };
-
-  const uploadBatchToS3 = async (compressedFiles) => {
-    const endpoint = `${S3_API_END_POINT}/get-presigned-url`;
-    const { data } = await axios.post(endpoint, {
-      eventId: singleEvent?._id,
-      subEventId: selectedSubEvent?._id,
-      files: compressedFiles.map(({ fileName, fileType }) => ({
-        fileName,
-        fileType,
-      })),
-    });
-
-    // Upload the batch of files in parallel
-    const uploadPromises = compressedFiles.map((compressedFile, index) =>
-      uploadFile(data.urls[index].url, compressedFile.file)
-    );
-
-    await Promise.all(uploadPromises);
   };
 
   const uploadFile = async (url, file) => {
@@ -102,20 +86,55 @@ const AddPhotosModal = ({
     }
   };
 
+  const uploadBatchToS3 = async (compressedFiles) => {
+    try {
+      const endpoint = `${S3_API_END_POINT}/get-presigned-url`;
+
+      const res = await apiRequest(
+        "POST",
+        endpoint,
+        {
+          eventId: singleEvent?._id,
+          subEventId: selectedSubEvent?._id,
+          files: compressedFiles.map(({ fileName, fileType }) => ({
+            fileName,
+            fileType,
+          })),
+        },
+        accessToken,
+        dispatch
+      );
+
+      if (res.status !== 200) throw new Error("Failed to get S3 URLs");
+
+      const data = res.data;
+
+      const uploadPromises = compressedFiles.map((compressedFile, index) =>
+        uploadFile(data.urls[index].url, compressedFile.file)
+      );
+
+      await Promise.all(uploadPromises);
+    } catch (err) {
+      console.error("Error uploading files to S3:", err);
+      throw err;
+    }
+  };
+
   const handleUpload = async () => {
+    if (!selectedFiles.length) return;
+
     setUploading(true);
     setUploadProgress(0);
     setUploadedCount(0);
+    toast.loading("Uploading images...");
 
-    // Batch the files in groups of 10 for uploading
-    const batchSize = 50; // Adjust batch size based on your preference
+    const batchSize = 50;
     const compressedBatch = [];
 
     try {
       for (let i = 0; i < selectedFiles.length; i++) {
         const file = selectedFiles[i];
 
-        // Compress the current file
         const compressedFile = await compressFile(file);
         if (compressedFile) {
           compressedBatch.push({
@@ -125,30 +144,25 @@ const AddPhotosModal = ({
           });
         }
 
-        // Once the batch is filled, upload it
         if (
           compressedBatch.length >= batchSize ||
           i === selectedFiles.length - 1
         ) {
-          // Upload the current batch to S3
           await uploadBatchToS3(compressedBatch);
-
-          // Clear the current batch and reset progress for the next batch
           compressedBatch.length = 0;
         }
       }
 
-      setUploading(false);
-      setSelectedFiles([]);
-      setUploading(false);
-      setSelectedFiles([]);
-
-      await refetchImageCount(); // ✅ triggers update to Redux
-      onUploadSuccess(); // optional
-      handleClose(); // close modal
+      await refetchImageCount();
+      toast.success("Images uploaded successfully ✅");
+      onUploadSuccess?.();
+      handleClose();
     } catch (err) {
       console.error("Upload error:", err);
+      toast.error("Upload failed. Please try again ❌");
       setUploading(false);
+    } finally {
+      toast.dismiss();
     }
   };
 
@@ -252,15 +266,16 @@ const AddPhotosModal = ({
           <button
             onClick={handleClose}
             className="w-full sm:w-auto border border-gray-300 text-gray-700 px-6 py-2 rounded-lg"
+            disabled={uploading}
           >
             Cancel
           </button>
           <button
             onClick={handleUpload}
-            className="w-full sm:w-auto bg-primary text-white px-6 py-2 rounded-lg"
+            className="w-full sm:w-auto bg-primary text-white px-6 py-2 rounded-lg disabled:opacity-50"
             disabled={uploading || selectedFiles.length === 0}
           >
-            Start Upload
+            {uploading ? "Uploading..." : "Start Upload"}
           </button>
         </div>
       </div>

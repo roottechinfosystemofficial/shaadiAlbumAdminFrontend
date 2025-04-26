@@ -7,15 +7,7 @@ import { FaAngleDown, FaUser } from "react-icons/fa";
 import { BiMenu } from "react-icons/bi";
 import "../css/Navbar.css";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  setAccessToken,
-  setAuthUser,
-  setRefreshToken,
-} from "../Redux/Slices/UserSlice";
-import { USER_API_END_POINT } from "../constant";
-import apiRequest from "../utils/apiRequest";
-import Cookies from "js-cookie";
-import toast from "../utils/toast.js";
+
 import { logoutUser } from "../utils/logoutUser.js";
 
 const Navbar = () => {

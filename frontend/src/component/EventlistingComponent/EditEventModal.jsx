@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import toast from "../../utils/toast.js";
 import { editEvent } from "../../utils/editEvents.util.js";
 
 const EditEventModal = ({
@@ -12,6 +13,7 @@ const EditEventModal = ({
 }) => {
   const [hasChanges, setHasChanges] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const initialEditFormRef = useRef(null);
   const { accessToken } = useSelector((state) => state.user);
   const dispatch = useDispatch();
@@ -32,11 +34,13 @@ const EditEventModal = ({
 
   const handleEditFormChange = (field, value) => {
     setEditForm((prev) => ({ ...prev, [field]: value }));
-    setFormErrors((prev) => ({ ...prev, [field]: "" })); // clear error when user types
+    setFormErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+
     try {
       const res = await editEvent(
         editingEvent._id,
@@ -46,6 +50,8 @@ const EditEventModal = ({
       );
 
       if (res?.status === 200) {
+        toast.success("Event updated successfully!");
+
         setEvents((prev) =>
           prev.map((event) =>
             event._id === editingEvent._id ? { ...event, ...editForm } : event
@@ -65,9 +71,13 @@ const EditEventModal = ({
         } else if (message.includes("password")) {
           setFormErrors({ eventPassword: message });
         } else {
-          alert(message);
+          toast.error(message || "Failed to update event.");
         }
+      } else {
+        toast.error("Something went wrong.");
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -81,7 +91,6 @@ const EditEventModal = ({
             onClick={() => {
               initialEditFormRef.current = null;
               setOpenEditModel(false);
-
               setFormErrors({});
             }}
           >
@@ -202,7 +211,6 @@ const EditEventModal = ({
               onClick={() => {
                 initialEditFormRef.current = null;
                 setOpenEditModel(false);
-
                 setFormErrors({});
               }}
             >
@@ -212,10 +220,15 @@ const EditEventModal = ({
             <button
               type="submit"
               className={`${
-                hasChanges ? "bg-primary" : "bg-primary cursor-not-allowed"
-              } text-white px-4 py-2 rounded-md hover:bg-primary-dark`}
-              disabled={!hasChanges}
+                hasChanges && !isSubmitting
+                  ? "bg-primary hover:bg-primary-dark"
+                  : "bg-gray-300 cursor-not-allowed"
+              } text-white px-4 py-2 rounded-md flex items-center gap-2`}
+              disabled={!hasChanges || isSubmitting}
             >
+              {isSubmitting && (
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              )}
               Save Changes
             </button>
           </div>

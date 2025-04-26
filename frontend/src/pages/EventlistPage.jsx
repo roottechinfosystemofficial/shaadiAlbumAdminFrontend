@@ -7,6 +7,7 @@ import EditEventModal from "../component/EventlistingComponent/EditEventModal";
 import EventModal from "../component/EventlistingComponent/EventModal";
 import apiRequest from "../utils/apiRequest";
 import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
+import toast from "../utils/toast.js";
 
 const EventlistPage = () => {
   const [showModal, setShowModal] = useState(false);
@@ -16,6 +17,7 @@ const EventlistPage = () => {
   const [events, setEvents] = useState([]);
   const [useEventId, setUseEventId] = useState();
   const [openEditModel, setOpenEditModel] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const dispatch = useDispatch();
   const { accessToken } = useSelector((state) => state.user);
@@ -30,12 +32,18 @@ const EventlistPage = () => {
   });
 
   const getAllEventsOfUser = async () => {
+    setLoading(true);
     try {
       const endpoint = `${EVENT_API_END_POINT}/getAllEventsOfUser`;
       const res = await apiRequest("GET", endpoint, {}, accessToken, dispatch);
-      if (res?.status === 200) setEvents(res?.data?.data || []);
+      if (res?.status === 200) {
+        setEvents(res?.data?.data || []);
+      }
     } catch (error) {
+      toast.error("Failed to fetch events.");
       console.error("Error fetching events:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -55,18 +63,20 @@ const EventlistPage = () => {
         accessToken,
         dispatch
       );
-      if (res?.status === 200) getAllEventsOfUser();
+      if (res?.status === 200) {
+        toast.success("Event added successfully!");
+        getAllEventsOfUser();
+      }
     } catch (error) {
+      toast.error("Error adding event.");
       console.error("Error adding event:", error);
     }
-
     setShowModal(false);
   };
 
   // Fetch single event with custom hook
   useGetSingleEvent(useEventId);
 
-  // Update edit form when event is fetched
   useEffect(() => {
     if (singleEvent?._id === useEventId) {
       setEditingEvent(singleEvent);
@@ -85,9 +95,8 @@ const EventlistPage = () => {
   };
 
   const handleDelete = (id) => {
-    console.log("Delete event with id:", id);
+    toast.info(`Delete event with id: ${id}`);
   };
-  console.log(editingEvent);
 
   return (
     <div className="max-w-6xl mx-auto mt-10 px-4">
@@ -110,7 +119,12 @@ const EventlistPage = () => {
 
       <hr className="border-t-1 border-gray-300 mt-3 mb-6" />
 
-      {events?.length === 0 ? (
+      {loading ? (
+        <div className="text-center py-10">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2" />
+          <p className="text-gray-600">Loading events...</p>
+        </div>
+      ) : events?.length === 0 ? (
         <div className="flex flex-col items-center justify-center text-center py-8">
           <p className="text-xl font-semibold text-gray-600 mb-2">
             No events available.
@@ -138,7 +152,7 @@ const EventlistPage = () => {
           ))}
         </div>
       )}
-  
+
       {/* Add Event Modal */}
       {showModal && (
         <EventModal
@@ -158,8 +172,8 @@ const EventlistPage = () => {
           setEditingEvent={setEditingEvent}
           editForm={editForm}
           setEditForm={setEditForm}
-          setOpenEditModel={setOpenEditModel} // can reuse this
-          setEvents={setEvents} // 👈 pass this down
+          setOpenEditModel={setOpenEditModel}
+          setEvents={setEvents}
         />
       )}
     </div>

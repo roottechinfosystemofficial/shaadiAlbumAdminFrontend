@@ -9,6 +9,9 @@ import {
   Share2,
   ArrowDownToLineIcon,
 } from "lucide-react";
+import apiRequest from "../../utils/apiRequest";
+import { S3_API_END_POINT } from "../../constant";
+import { useDispatch, useSelector } from "react-redux";
 
 const ClientPhotosView = ({ singleEvent }) => {
   const { eventId } = useParams();
@@ -18,7 +21,8 @@ const ClientPhotosView = ({ singleEvent }) => {
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showImages, setShowImages] = useState(false);
-
+  const dispatch = useDispatch();
+  const { accessToken } = useSelector((state) => state.user);
   const goBack = () => navigate(-1);
 
   const fetchImages = async () => {
@@ -27,19 +31,23 @@ const ClientPhotosView = ({ singleEvent }) => {
     setIsLoading(true);
 
     try {
-      const { data } = await axios.get(
-        "http://localhost:5000/api/v1/list-images",
+      const endpoint = `${S3_API_END_POINT}/list-images`;
+      const res = await apiRequest(
+        "POST",
+        endpoint,
         {
-          params: {
-            eventId,
-            continuationToken: nextToken,
-          },
-        }
+          eventId,
+          continuationToken: nextToken,
+        },
+        accessToken,
+        dispatch
       );
 
-      setFetchedImages((prev) => [...prev, ...data.images]);
-      setNextToken(data.nextToken);
-      setHasMore(!!data.nextToken);
+      console.log(res);
+
+      // setFetchedImages((prev) => [...prev, ...data.images]);
+      // setNextToken(data.nextToken);
+      // setHasMore(!!data.nextToken);
 
       // Simulate 3s skeleton delay
       setTimeout(() => {
@@ -57,7 +65,7 @@ const ClientPhotosView = ({ singleEvent }) => {
     setNextToken(null);
     setHasMore(true);
     setShowImages(false);
-    fetchImages();
+    // fetchImages();
   }, [eventId]);
 
   return (
