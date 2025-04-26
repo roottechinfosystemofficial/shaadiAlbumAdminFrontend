@@ -132,6 +132,7 @@ export const editEventById = async (req, res) => {
       eventDeleteDate,
       isPublished,
       imageCount,
+      eventDescription,
     } = req.body;
     const eventId = req.params.eventId;
 
@@ -152,7 +153,8 @@ export const editEventById = async (req, res) => {
     if (eventPassword !== undefined) findEvent.eventPassword = eventPassword;
     if (eventDeleteDate !== undefined)
       findEvent.eventDeleteDate = new Date(eventDeleteDate);
-
+    if (eventDescription !== undefined)
+      findEvent.eventDescription = eventDescription;
     await findEvent.save();
 
     return res

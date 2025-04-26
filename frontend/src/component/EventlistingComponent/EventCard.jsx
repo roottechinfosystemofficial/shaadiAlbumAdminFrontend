@@ -7,29 +7,32 @@ const EventCard = ({ event, onEdit, onDelete, setOpenEditModel }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const navigate = useNavigate();
 
-  const eventImage = event?.eventImage || "fallback-image-url"; // Add a fallback image URL
-  const eventName = event?.eventName || "Untitled Event"; // Fallback text for missing name
+  const eventImage = event?.eventImage || "fallback-image-url";
+  const eventName = event?.eventName || "Untitled Event";
   const eventDate = event?.eventDate
     ? new Date(event.eventDate).toLocaleString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
       })
-    : "No Date Provided"; // Fallback for missing eventDate
-  const eventCode = event?.eventCode || "N/A"; // Fallback for missing eventCode
-  const eventPassword = event?.eventPassword || "N/A"; // Fallback for missing eventPassword
-  const isPublished = event?.isPublished || false; // Default to unpublished if not defined
+    : "No Date Provided";
+  const eventCode = event?.eventCode || "N/A";
+  const eventPassword = event?.eventPassword || "N/A";
+  const isPublished = event?.isPublished || false;
+
+  const totalImages = event?.eventTotalImages || "";
+  const totalSubEvents = event?.subevents?.length || "";
 
   return (
     <div className="bg-white shadow-lg rounded-lg overflow-hidden w-full max-w-xs mx-auto relative">
       {/* Event Image & More Options */}
       <div className="relative cursor-pointer">
         <img
-          src={eventImage} // Display fallback image if eventImage is not available
-          alt={eventName} // Display fallback name if eventName is not available
+          src={eventImage}
+          alt={eventName}
           className="w-full h-40 object-cover"
           onClick={() => {
-            navigate(`/personalfolder/${event?._id || 1}`); // Fall back to 1 if event._id is missing
+            navigate(`/personalfolder/${event?._id || 1}`);
           }}
         />
         <button
@@ -39,9 +42,8 @@ const EventCard = ({ event, onEdit, onDelete, setOpenEditModel }) => {
           <MoreVertical size={20} />
         </button>
 
-        {/* Dropdown Menu */}
         {isDropdownOpen && (
-          <div className="absolute top-10 right-2 bg-white shadow-lg rounded-md w-32">
+          <div className="absolute top-10 right-2 bg-white shadow-lg rounded-md w-32 z-10">
             <button
               onClick={() => {
                 onEdit(event?._id);
@@ -68,9 +70,13 @@ const EventCard = ({ event, onEdit, onDelete, setOpenEditModel }) => {
       {/* Event Details */}
       <div className="p-4">
         <h3 className="text-lg font-semibold text-center">{eventName}</h3>
+        {/* Images & Sub-events */}
+        <div className="text-xs text-gray-500 mt-1 text-center font-semibold">
+          {totalImages} Photos | {totalSubEvents} Sub-events
+        </div>
+        {/* Event Date & Publish Status */}
         <div className="flex justify-between text-sm text-gray-600 mt-2">
           <p>{eventDate}</p>
-
           <p
             className={`font-semibold ${
               isPublished ? "text-green-600" : "text-red-600"
@@ -79,15 +85,14 @@ const EventCard = ({ event, onEdit, onDelete, setOpenEditModel }) => {
             {isPublished ? "Published" : "Unpublished"}
           </p>
         </div>
+
+        {/* Event Code & Password */}
         <div className="flex justify-between items-center text-sm text-gray-600 mt-3">
           <div className="flex items-center gap-2">
             <span>{eventCode}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span>
-              {showPassword ? eventPassword : "********"}
-              {/* Toggle password visibility */}
-            </span>
+            <span>{showPassword ? eventPassword : "********"}</span>
             <button
               onClick={() => setShowPassword(!showPassword)}
               className="text-gray-600 hover:text-black"

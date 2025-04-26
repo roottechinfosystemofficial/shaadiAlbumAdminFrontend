@@ -20,6 +20,7 @@ const eventSchema = new mongoose.Schema(
     eventPassword: { type: String },
     eventImage: { type: String },
     eventTotalImages: { type: Number },
+    eventDescription: { type: String },
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     subevents: [subEventSchema], // Embedding the subevents array
   },

@@ -1,5 +1,6 @@
+import { useState } from "react";
 import boximg from "../assets/box1.png";
-import { EditIcon, Trash2, MoreVertical, Settings2 } from "lucide-react";
+import { EditIcon, Trash2, Settings2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setSingleEvent } from "../Redux/Slices/EventSlice";
@@ -13,6 +14,11 @@ const PersonalfolderAside = ({ singleEvent }) => {
   const { accessToken } = useSelector((state) => state.user);
   const dispatch = useDispatch();
 
+  const [isLoading, setIsLoading] = useState(false);
+  const [description, setDescription] = useState(
+    singleEvent?.eventDescription || ""
+  );
+
   const eventDate = singleEvent?.eventDate
     ? new Date(singleEvent.eventDate).toLocaleString("en-US", {
         month: "short",
@@ -25,9 +31,9 @@ const PersonalfolderAside = ({ singleEvent }) => {
 
   const togglePublishStatus = async () => {
     const newStatus = !isPublished;
-    const payload = {
-      isPublished: newStatus,
-    };
+    const payload = { isPublished: newStatus };
+
+    setIsLoading(true);
     try {
       const res = await editEvent(
         singleEvent?._id,
@@ -42,22 +48,53 @@ const PersonalfolderAside = ({ singleEvent }) => {
     } catch (error) {
       toast.error("Failed to update publish status.");
       console.error("Error updating publish status:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdateDescription = async () => {
+    if (!description.trim()) return toast.error("Description cannot be empty.");
+
+    setIsLoading(true);
+    try {
+      const res = await editEvent(
+        singleEvent?._id,
+        { eventDescription: description },
+        dispatch,
+        accessToken
+      );
+      dispatch(setSingleEvent(res.data.data));
+      toast.success("Description updated successfully!");
+      setDescription("");
+    } catch (error) {
+      toast.error("Failed to update description.");
+      console.error("Error updating description:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <aside className="p-4 text-gray-900 space-y-6 sidebar-content">
+    <aside className="relative p-4 text-gray-900 space-y-6 sidebar-content">
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-50 rounded-lg">
+          <div className="w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
+
       {/* Top Action Buttons */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <button
           onClick={() => navigate("/eventsetting")}
-          className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-medium text-sm py-2.5 rounded-lg transition shadow"
+          className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-medium text-sm py-2.5 px-1 rounded-lg transition shadow"
         >
-          <Settings2 size={18} />
-          Event Settings
+          <Settings2 size={16} />
+          Event Setting
         </button>
-        <button className="flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white font-medium text-sm py-2.5 rounded-lg transition shadow">
-          <Trash2 size={18} />
+        <button className="flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white font-medium text-sm py-2.5 px-1 rounded-lg transition shadow">
+          <Trash2 size={16} />
           Delete Event
         </button>
       </div>
@@ -65,6 +102,7 @@ const PersonalfolderAside = ({ singleEvent }) => {
       {/* Event Info */}
       <div className="space-y-1">
         <h2 className="text-2xl font-bold">{singleEvent?.eventName}</h2>
+
         <div className="flex justify-between text-sm text-gray-500">
           <p>{eventDate}</p>
         </div>
@@ -94,14 +132,20 @@ const PersonalfolderAside = ({ singleEvent }) => {
 
           <button
             onClick={togglePublishStatus}
-            className={`text-xs font-medium rounded-lg px-3 py-1.5 transition-all ${
+            disabled={isLoading}
+            className={`flex items-center justify-center gap-2 text-xs font-medium rounded-lg px-3 py-1.5 transition-all ${
               isPublished
                 ? "bg-red-100 text-red-600 hover:bg-red-200"
                 : "bg-green-100 text-green-600 hover:bg-green-200"
-            }`}
-            title={isPublished ? "Click to Unpublish" : "Click to Publish"}
+            } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
           >
-            {isPublished ? "Unpublish" : "Publish"}
+            {isLoading ? (
+              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+            ) : isPublished ? (
+              "Unpublish"
+            ) : (
+              "Publish"
+            )}
           </button>
         </div>
 
@@ -131,17 +175,27 @@ const PersonalfolderAside = ({ singleEvent }) => {
       {/* Description Field */}
       <div className="space-y-2">
         <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
           placeholder="Add Description (max 250 characters)"
           maxLength={250}
           className="w-full p-3 border border-slate rounded-lg shadow-sm resize-none bg-white text-sm text-gray-800 focus:outline-none focus:border-primary"
         />
-        <button className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-md text-sm font-medium shadow transition">
-          Update
+        <button
+          onClick={handleUpdateDescription}
+          disabled={isLoading}
+          className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-md text-sm font-medium shadow transition disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? (
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            "Update"
+          )}
         </button>
       </div>
 
       {/* ✅ Sub-Event Component */}
-      <SubEventSection singleEvent={singleEvent} />
+      <SubEventSection singleEvent={singleEvent} setIsLoading={setIsLoading} />
 
       {/* Event Code and Buttons */}
       <div className="space-y-4 p-4 bg-white border border-slate rounded-xl shadow-sm pb-28 sm:pb-4">
@@ -149,7 +203,13 @@ const PersonalfolderAside = ({ singleEvent }) => {
           <p className="text-xs text-gray-500">Event Code:</p>
           <div className="flex justify-between items-center">
             <p className="font-semibold">{singleEvent?.eventCode}</p>
-            <button className="text-primary text-xs hover:underline">
+            <button
+              className="text-primary text-xs hover:underline"
+              onClick={() => {
+                navigator.clipboard.writeText(singleEvent?.eventCode);
+                toast.success("Copied to clipboard!");
+              }}
+            >
               Copy
             </button>
           </div>
@@ -158,12 +218,9 @@ const PersonalfolderAside = ({ singleEvent }) => {
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={() => navigate(`/${eventId}/clientview`)}
-            className="flex-1 bg-slate hover:bg-primary-dark hover:text-white text-sm py-2.5 rounded-xl font-medium shadow-md transition"
+            className="flex-1 bg-slate hover:bg-primary-dark hover:text-white text-sm py-2.5 rounded-xl font-semibold shadow-md transition"
           >
             Preview
-          </button>
-          <button className="flex-1 bg-slate text-gray-800 hover:text-white hover:bg-primary-dark text-sm py-2.5 rounded-xl font-medium shadow-sm transition">
-            Insights
           </button>
         </div>
 

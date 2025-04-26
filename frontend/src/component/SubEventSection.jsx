@@ -1,42 +1,64 @@
 import React, { useState } from "react";
-import { MoreVertical, Trash2, EditIcon } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { EVENT_API_END_POINT } from "../constant";
 import apiRequest from "../utils/apiRequest";
 import { useDispatch, useSelector } from "react-redux";
 import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
 import { setSelectedSubEvent } from "../Redux/Slices/EventSlice";
+import toast from "../utils/toast";
 
-const SubEventSection = ({ singleEvent }) => {
-  const [showOptionsIndex, setShowOptionsIndex] = useState(false);
+const SubEventSection = ({ singleEvent, setIsLoading }) => {
   const [showInput, setShowInput] = useState(false);
   const [subEventName, setSubEventName] = useState("");
   const { accessToken } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const { refetchEvent } = useGetSingleEvent(singleEvent?._id);
+  const { selectedSubEvent } = useSelector((state) => state.event);
 
   const handleCreateSubEvent = async () => {
-    if (!subEventName.trim()) return;
+    const cleanName = subEventName.trim();
+    if (!cleanName) {
+      toast.error("Sub-event name cannot be empty.");
+      return;
+    }
+
     try {
+      setIsLoading?.(true);
+
       const endpoint = `${EVENT_API_END_POINT}/createSubEvent/${singleEvent?._id}`;
       const res = await apiRequest(
         "POST",
         endpoint,
-        { subEventName },
+        { subEventName: cleanName },
         accessToken,
         dispatch
       );
-      console.log(res);
 
-      await refetchEvent();
-      setSubEventName("");
-      setShowInput(false);
+      if (res.status === 201) {
+        await refetchEvent();
+        setSubEventName("");
+        setShowInput(false);
+        toast.success("Sub-event created successfully!");
+      }
     } catch (error) {
-      console.log(error);
+      toast.error("Failed to create sub-event.");
+      console.error("Create sub-event error:", error);
+    } finally {
+      setIsLoading?.(false);
     }
   };
 
   const handleSubEvent = (sub) => {
     dispatch(setSelectedSubEvent(sub));
+  };
+
+  // Determine if the sub-event is selected
+  const isSelected = (subEvent) => selectedSubEvent?._id === subEvent?._id;
+
+  // Log sub-event ID when trash button is clicked
+  const handleDeleteSubEvent = (subEventId) => {
+    console.log("Sub-event ID to be deleted:", subEventId);
+    // You can also make an API call to delete the sub-event if required
   };
 
   return (
@@ -51,7 +73,6 @@ const SubEventSection = ({ singleEvent }) => {
         </button>
       </div>
 
-      {/* Add New Sub-Event Input */}
       {showInput && (
         <div className="flex items-center gap-2 mb-4">
           <input
@@ -70,13 +91,16 @@ const SubEventSection = ({ singleEvent }) => {
         </div>
       )}
 
-      {/* Render Sub-events from backend */}
       {singleEvent?.subevents?.length > 0 ? (
-        singleEvent?.subevents.map((sub, index) => (
+        singleEvent.subevents.map((sub, index) => (
           <div
             onClick={() => handleSubEvent(sub)}
             key={index}
-            className="flex cursor-pointer justify-between items-center bg-slate border border-slate rounded-lg px-3 py-2 shadow-sm mb-3"
+            className={`flex cursor-pointer justify-between items-center border border-slate rounded-lg px-3 py-2 shadow-sm mb-3 transition-all duration-200 ease-in-out ${
+              isSelected(sub)
+                ? "bg-primary text-white"
+                : "hover:bg-slate hover:text-black"
+            }`}
           >
             <div className="flex items-center gap-2">
               <span className="text-yellow-500">✨</span>
@@ -86,27 +110,14 @@ const SubEventSection = ({ singleEvent }) => {
               </span>
             </div>
 
-            <div className="relative">
-              <button onClick={() => setShowOptionsIndex(!showOptionsIndex)}>
-                <MoreVertical size={18} className="text-gray-500" />
+            {/* Trash Button */}
+            <div className="flex items-center ml-2">
+              <button
+                className="p-2 rounded-full text-red-600 hover:bg-red-100 hover:scale-105 transition-all duration-200"
+                onClick={() => handleDeleteSubEvent(sub._id)} // Log sub-event ID on click
+              >
+                <Trash2 size={18} />
               </button>
-
-              {showOptionsIndex && (
-                <div className="absolute top-0 left-full w-44 bg-white text-gray-900 rounded-md shadow-lg z-10 text-sm border border-slate overflow-hidden">
-                  <button className="w-full text-left px-4 py-2 hover:bg-slate">
-                    Make Private
-                  </button>
-                  <button className="w-full text-left px-4 py-2 hover:bg-slate">
-                    Rename
-                  </button>
-                  <button className="w-full text-left px-4 py-2 hover:bg-slate">
-                    Delete All Images
-                  </button>
-                  <button className="w-full text-left px-4 py-2 text-rose-600 hover:bg-rose-50">
-                    Delete
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         ))
