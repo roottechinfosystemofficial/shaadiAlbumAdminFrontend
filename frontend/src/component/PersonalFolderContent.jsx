@@ -4,6 +4,7 @@ import PhotosPanel from "./Personalfoldercomponent/PhotosPanel";
 import { useSelector } from "react-redux";
 import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
 import { useParams } from "react-router-dom";
+import FaceScan from "./FaceScan";
 
 const FavouritePanel = () => (
   <p className="text-center text-slate-dark mt-10">No Favourite Found!</p>
@@ -23,7 +24,7 @@ const PersonalFolderContent = () => {
       case "flipbook":
         return <FlipbookPanel />;
       case "favourite":
-        return <FavouritePanel />;
+        return <FaceScan />;
       default:
         return null;
     }

@@ -15,8 +15,8 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "30mb" })); // Set 10MB limit
+app.use(express.urlencoded({ extended: true, limit: "30mb" }));
 
 // Ensure cookie-parser is placed before routes to parse cookies properly
 app.use(cookieParser());
