@@ -8,9 +8,9 @@ import {
 
 const photoS3Router = express.Router();
 
-photoS3Router.post("/api/s3/get-presigned-url", getPresignedUrl);
-photoS3Router.get("/list-images", getEventImages);
+photoS3Router.post("/s3/get-presigned-url", getPresignedUrl);
+photoS3Router.get("/s3/list-images", getEventImages);
 photoS3Router.get("/list-app-images", getAppEventImages);
-photoS3Router.get("/getEventImageCount", getEventImageCount);
+photoS3Router.get("/s3/getEventImageCount", getEventImageCount);
 
 export default photoS3Router;

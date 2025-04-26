@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import apiRequest from "../utils/apiRequest";
 import { editEvent } from "../utils/editEvents.util";
 import { updateEventImageCount } from "../Redux/Slices/EventSlice";
+import { S3_API_END_POINT } from "../constant";
 
 export const useGetEventImagesCount = (eventId) => {
   const dispatch = useDispatch();
@@ -10,7 +11,7 @@ export const useGetEventImagesCount = (eventId) => {
 
   const getEventImagesCount = async () => {
     try {
-      const endpoint = `http://localhost:5000/api/v1/getEventImageCount?eventId=${eventId}`;
+      const endpoint = `${S3_API_END_POINT}/getEventImageCount?eventId=${eventId}`;
       const res = await apiRequest("GET", endpoint, {}, accessToken, dispatch);
 
       if (res?.status === 200) {

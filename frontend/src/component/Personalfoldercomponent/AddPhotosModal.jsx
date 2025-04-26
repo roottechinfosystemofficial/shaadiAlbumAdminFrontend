@@ -4,6 +4,7 @@ import imageCompression from "browser-image-compression";
 import { X, CheckCircle, Circle, FolderOpen, ImagePlus } from "lucide-react";
 import { useSelector } from "react-redux";
 import { useGetEventImagesCount } from "../../Hooks/useGetEventImagesCount";
+import { S3_API_END_POINT } from "../../constant";
 
 const AddPhotosModal = ({
   isOpen,
@@ -61,18 +62,15 @@ const AddPhotosModal = ({
   };
 
   const uploadBatchToS3 = async (compressedFiles) => {
-    // Get presigned URLs for the batch of compressed files
-    const { data } = await axios.post(
-      "http://localhost:5000/api/v1/api/s3/get-presigned-url",
-      {
-        eventId: singleEvent?._id,
-        subEventId: selectedSubEvent?._id,
-        files: compressedFiles.map(({ fileName, fileType }) => ({
-          fileName,
-          fileType,
-        })),
-      }
-    );
+    const endpoint = `${S3_API_END_POINT}/get-presigned-url`;
+    const { data } = await axios.post(endpoint, {
+      eventId: singleEvent?._id,
+      subEventId: selectedSubEvent?._id,
+      files: compressedFiles.map(({ fileName, fileType }) => ({
+        fileName,
+        fileType,
+      })),
+    });
 
     // Upload the batch of files in parallel
     const uploadPromises = compressedFiles.map((compressedFile, index) =>

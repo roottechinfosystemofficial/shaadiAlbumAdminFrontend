@@ -4,6 +4,7 @@ import AddPhotosModal from "./AddPhotosModal";
 import { useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useSelector } from "react-redux";
+import { S3_API_END_POINT } from "../../constant";
 
 const PhotosPanel = () => {
   const [images, setImages] = useState([]);
@@ -35,17 +36,15 @@ const PhotosPanel = () => {
 
       setIsLoading(true);
       try {
-        const res = await axios.get(
-          "http://localhost:5000/api/v1/list-images",
-          {
-            params: {
-              eventId,
-              continuationToken,
-              pageSize,
-              subEventId: selectedSubEvent._id,
-            },
-          }
-        );
+        const endpoint = `${S3_API_END_POINT}/list-images`;
+        const res = await axios.get(endpoint, {
+          params: {
+            eventId,
+            continuationToken,
+            pageSize,
+            subEventId: selectedSubEvent._id,
+          },
+        });
 
         const data = res.data.images || [];
         const nextToken = res.data.nextToken;
