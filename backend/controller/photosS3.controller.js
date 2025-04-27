@@ -22,6 +22,7 @@ const s3Client = new S3Client({
   },
 });
 
+
 const BATCH_SIZE = 50;
 const MAX_FILE_SIZE_MB = 10;
 
@@ -63,7 +64,7 @@ export const getPresignedUrl = async (req, res) => {
             );
           }
 
-          const uniqueKey = `eventimages/${eventId}/${subEventId}/${timestamp}-${index}-${fileName}`;
+          const uniqueKey = `eventimages/${eventId}/${subEventId}/${timestamp}/${index}${fileName}`;
           const command = new PutObjectCommand({
             Bucket: process.env.BUCKET_NAME,
             Key: uniqueKey,
@@ -237,76 +238,5 @@ export const getEventImageCount = async (req, res) => {
   } catch (err) {
     console.error("Error counting images in S3:", err);
     res.status(500).json({ error: "Could not count images" });
-  }
-};
-
-const BUCKET_NAME = process.env.BUCKET_NAME;
-
-const rekognition = new RekognitionClient({ region: "ap-south-1" });
-
-export const searchFaceHandler = async (req, res) => {
-  try {
-    // Extract base64 image from the request body
-    const { imageBase64 } = req.body;
-
-    // Check if base64 string is provided
-    if (!imageBase64 || imageBase64.trim() === "") {
-      return res.status(400).json({ message: "No image provided" });
-    }
-
-    // Convert the base64 string to a buffer
-    const imageBuffer = Buffer.from(imageBase64, "base64");
-
-    // Set parameters for the Rekognition search
-    const params = {
-      CollectionId: "event-face-collection", // The collection you want to search in
-      Image: { Bytes: imageBuffer }, // Image as buffer
-      FaceMatchThreshold: 80, // You can adjust the threshold as needed
-      MaxFaces: 10, // Maximum number of faces to match
-    };
-
-    // Create and send the Rekognition command
-    const command = new SearchFacesByImageCommand(params);
-    const result = await rekognition.send(command); // Get the result from Rekognition
-
-    const matchedImages = [];
-
-    // If face matches were found
-    if (result.FaceMatches && result.FaceMatches.length > 0) {
-      for (const match of result.FaceMatches) {
-        // Construct the S3 key for the image
-        console.log(match);
-
-        const imageKey = match.Face.ImageId; // Assuming ImageId corresponds to the image key
-
-        // Generate presigned URL for each matched image
-        const getCommand = new GetObjectCommand({
-          Bucket: BUCKET_NAME,
-          Key: imageKey,
-        });
-
-        const imageUrl = await getSignedUrl(s3Client, getCommand, {
-          expiresIn: 60 * 5,
-        }); // 5 minutes expiration
-
-        // Push match details and image URL into the matchedImages array
-        matchedImages.push({
-          faceId: match.Face.FaceId,
-          imageId: imageKey,
-          imageUrl: imageUrl, // Image URL (presigned)
-          similarity: match.Similarity,
-          confidence: match.Face.Confidence,
-        });
-      }
-    } else {
-      return res.status(404).json({ message: "No matches found" });
-    }
-
-    // Send the matched images to the frontend
-    return res.status(200).json({ matchedImages });
-  } catch (error) {
-    // Log any error and return a 500 error response
-    console.error("Error searching face:", error);
-    res.status(500).json({ message: "Failed to search face" });
   }
 };
