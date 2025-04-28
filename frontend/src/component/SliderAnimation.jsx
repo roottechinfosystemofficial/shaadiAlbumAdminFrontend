@@ -61,17 +61,17 @@ const imagesWithoutQR = [
 
 // QR settings for each image
 const qrSettings = {
-  0: { top: "50%", left: "50%", size: "38%" },
-  1: { top: "52%", left: "50%", size: "38%" },
+  0: { top: "52%", left: "50%", size: "33%" },
+  1: { top: "52%", left: "50%", size: "30%" },
   2: { top: "50%", left: "70%", size: "38%" },
-  3: { top: "51%", left: "50%", size: "35%" },
-  4: { top: "50%", left: "50%", size: "38%" },
-  5: { top: "60%", left: "50%", size: "38%" },
-  6: { top: "63%", left: "50%", size: "38%" },
-  7: { top: "48%", left: "50%", size: "38%" },
-  8: { top: "48%", left: "50%", size: "50%" },
-  9: { top: "73%", left: "50%", size: "38%" },
-  10: { top: "47%", left: "50%", size: "50%" },
+  3: { top: "51%", left: "50%", size: "29%" },
+  4: { top: "52%", left: "50%", size: "33%" },
+  5: { top: "60%", left: "50%", size: "29%" },
+  6: { top: "63%", left: "50%", size: "33%" },
+  7: { top: "48%", left: "50%", size: "33%" },
+  8: { top: "48%", left: "50%", size: "40%" },
+  9: { top: "71%", left: "50%", size: "30%" },
+  10: { top: "54%", left: "50%", size: "30%" },
 };
 
 const SliderAnimation = () => {
