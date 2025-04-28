@@ -86,21 +86,14 @@ const Navbar = () => {
             </Link>
 
             {/* Settings Dropdown */}
-            <div
-              className="relative"
-              onClick={changeSettingOpen}
-              onMouseEnter={() => {
-                setIsSettingsOpen(true);
-                setIsProfileOpen(false);
-              }}
-            >
-              <Link to="/setting">
-                <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
+            <div className="relative">
+              <li className="flex items-center justify-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
+                <Link to="/setting" className="flex gap-2 items-center">
                   <IoMdSettings />
                   Settings
-                  <FaAngleDown />
-                </li>
-              </Link>
+                </Link>
+                <FaAngleDown onClick={changeSettingOpen} />
+              </li>
 
               {isSettingsOpen && (
                 <ul
@@ -136,10 +129,6 @@ const Navbar = () => {
         {/* User Profile Dropdown */}
         <div
           className="relative flex items-center gap-2"
-          onMouseEnter={() => {
-            setIsProfileOpen(true);
-            setIsSettingsOpen(false);
-          }}
           onClick={changeProfileOpen}
         >
           <img
