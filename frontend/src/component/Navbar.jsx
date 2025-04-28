@@ -64,26 +64,26 @@ const Navbar = () => {
         {/* Navigation Links */}
         <div>
           <ul className={`${isMenuOpen ? "menu-open" : "menu-hidden"}`}>
-            <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
-              <IoIosHome />
-              <Link to="/" onClick={() => setIsMenuOpen(false)}>
+            <Link to="/" onClick={() => setIsMenuOpen(false)}>
+              <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
+                <IoIosHome />
                 Dashboard
-              </Link>
-            </li>
+              </li>
+            </Link>
 
-            <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
-              <GrGallery />
-              <Link to="/event" onClick={() => setIsMenuOpen(false)}>
+            <Link to="/event" onClick={() => setIsMenuOpen(false)}>
+              <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
+                <GrGallery />
                 Client Gallery
-              </Link>
-            </li>
+              </li>
+            </Link>
 
-            <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
-              <FaUser />
-              <Link to="/users" onClick={() => setIsMenuOpen(false)}>
+            <Link to="/users" onClick={() => setIsMenuOpen(false)}>
+              <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
+                <FaUser />
                 Users
-              </Link>
-            </li>
+              </li>
+            </Link>
 
             {/* Settings Dropdown */}
             <div
@@ -94,11 +94,13 @@ const Navbar = () => {
                 setIsProfileOpen(false);
               }}
             >
-              <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
-                <IoMdSettings />
-                Settings
-                <FaAngleDown />
-              </li>
+              <Link to="/setting">
+                <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
+                  <IoMdSettings />
+                  Settings
+                  <FaAngleDown />
+                </li>
+              </Link>
 
               {isSettingsOpen && (
                 <ul

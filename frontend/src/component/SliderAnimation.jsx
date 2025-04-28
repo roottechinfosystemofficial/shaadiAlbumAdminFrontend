@@ -1,12 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, ChevronLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import img1 from "../assets/Standy/1.jpg";
 import img2 from "../assets/Standy/2.jpg";
 import img3 from "../assets/Standy/3.jpg";
 import img4 from "../assets/Standy/4.jpg";
 import img5 from "../assets/Standy/5.jpg";
-``;
 import img6 from "../assets/Standy/6.jpg";
 import img7 from "../assets/Standy/7.jpg";
 import img8 from "../assets/Standy/8.jpg";
@@ -29,9 +28,19 @@ const images = [
   img11,
 ];
 
+const qrLink = "https://shaadialbumadminfrontend.onrender.com"; // <-- Apna link yaha daale
+
 const SliderAnimation = () => {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(0);
+  const [qrUrl, setQrUrl] = useState("");
+
+  useEffect(() => {
+    const generatedQr = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
+      qrLink
+    )}&size=150x150`;
+    setQrUrl(generatedQr);
+  }, []);
 
   const prevSlide = () => {
     setDirection(-1);
@@ -41,6 +50,42 @@ const SliderAnimation = () => {
   const nextSlide = () => {
     setDirection(1);
     setCurrent((prev) => (prev + 1) % images.length);
+  };
+
+  const handleDownload = async () => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = images[current];
+
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+
+      const qrImg = new Image();
+      qrImg.crossOrigin = "anonymous";
+      qrImg.src = qrUrl;
+
+      qrImg.onload = () => {
+        const padding = 30;
+        const qrSize = 150;
+        ctx.drawImage(
+          qrImg,
+          canvas.width - qrSize - padding,
+          canvas.height - qrSize - padding,
+          qrSize,
+          qrSize
+        );
+
+        const link = document.createElement("a");
+        link.download = `standy-with-qr-${current + 1}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      };
+    };
   };
 
   return (
@@ -59,16 +104,9 @@ const SliderAnimation = () => {
         </h1>
         <button
           className="text-white bg-primary hover:bg-primary-dark px-4 py-2 rounded transition"
-          onClick={() => {
-            const link = document.createElement("a");
-            link.href = images[current];
-            link.download = `standy-${current + 1}.jpg`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          }}
+          onClick={handleDownload}
         >
-          Download
+          Download with QR
         </button>
       </div>
 
@@ -85,7 +123,7 @@ const SliderAnimation = () => {
           &#10094;
         </button>
 
-        {/* Image Slider */}
+        {/* Image with QR */}
         <div className="relative w-[1200px] h-[600px] flex mt-9 justify-center overflow-hidden">
           {images.map((img, i) => {
             const offset = (i - current + images.length) % images.length;
@@ -95,7 +133,6 @@ const SliderAnimation = () => {
                 : offset <= images.length / 2
                 ? offset
                 : offset - images.length;
-
             const depth = Math.abs(visibleOffset);
             if (depth > 2) return null;
 
@@ -116,9 +153,8 @@ const SliderAnimation = () => {
             const opacity = depth === 2 ? 0.2 : 1;
 
             return (
-              <motion.img
+              <motion.div
                 key={i}
-                src={img}
                 layout
                 layoutId={`img-${i}`}
                 transition={{
@@ -127,7 +163,7 @@ const SliderAnimation = () => {
                     ease: [0.25, 0.1, 0.25, 0.5],
                   },
                 }}
-                className="absolute object-cover rounded-xl shadow-2xl border border-slate bg-white"
+                className="absolute rounded-xl shadow-2xl border border-slate bg-white overflow-hidden"
                 style={{
                   width: `${width}px`,
                   height: `${height}px`,
@@ -136,7 +172,23 @@ const SliderAnimation = () => {
                   zIndex: 10 - depth * 2,
                   opacity,
                 }}
-              />
+              >
+                <img src={img} alt="" className="w-full h-full object-cover" />
+                {depth === 0 && qrUrl && (
+                  <img
+                    src={qrUrl}
+                    alt="QR Code"
+                    className="absolute bg-white p-1 rounded shadow-md"
+                    style={{
+                      width: "120px",
+                      height: "120px",
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                    }}
+                  />
+                )}
+              </motion.div>
             );
           })}
         </div>
