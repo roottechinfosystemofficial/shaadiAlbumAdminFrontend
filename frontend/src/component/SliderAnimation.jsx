@@ -73,6 +73,24 @@ const qrSettings = {
   9: { top: "71%", left: "50%", size: "30%" },
   10: { top: "54%", left: "50%", size: "30%" },
 };
+const textSettings = {
+  0: {
+    top: "80%",
+    left: "50%",
+    fontSize: "200px",
+    text: "Event A JSBAJ ABSJGASj",
+  },
+  1: { top: "75%", left: "50%", fontSize: "18px", text: "Event B" },
+  2: { top: "70%", left: "50%", fontSize: "22px", text: "Event C" },
+  3: { top: "75%", left: "50%", fontSize: "19px", text: "Event D" },
+  4: { top: "80%", left: "50%", fontSize: "20px", text: "Event E" },
+  5: { top: "70%", left: "50%", fontSize: "21px", text: "Event F" },
+  6: { top: "85%", left: "50%", fontSize: "19px", text: "Event G" },
+  7: { top: "60%", left: "50%", fontSize: "22px", text: "Event H" },
+  8: { top: "65%", left: "50%", fontSize: "18px", text: "Event I" },
+  9: { top: "80%", left: "50%", fontSize: "20px", text: "Event J" },
+  10: { top: "75%", left: "50%", fontSize: "21px", text: "Event K" },
+};
 
 const SliderAnimation = () => {
   const [current, setCurrent] = useState(0);
@@ -151,9 +169,28 @@ const SliderAnimation = () => {
           // Step 4: Draw the QR code over the image
           ctx.drawImage(qrImg, qrLeft, qrTop, qrWidth, qrHeight);
 
-          // Step 5: Download the final image
+          // Step 5: Draw the event name text
+          const {
+            top: textTop,
+            left: textLeft,
+            fontSize,
+            text,
+          } = textSettings[current]; // Get text settings for this image
+          const fontSizePx = parseInt(fontSize); // Convert font size to pixels
+          ctx.font = `bold ${fontSizePx}px Arial`; // Make the text bold
+          ctx.fillStyle = "black"; // Text color set to black
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+
+          const textTopOffset = (parseInt(textTop) / 100) * canvas.height;
+          const textLeftOffset = (parseInt(textLeft) / 100) * canvas.width;
+
+          // Draw the text on the canvas
+          ctx.fillText(text, textLeftOffset, textTopOffset);
+
+          // Step 6: Download the final image
           const link = document.createElement("a");
-          link.download = "standy_with_real_qr.jpg";
+          link.download = "standy_with_qr_and_text.jpg";
           link.href = canvas.toDataURL("image/jpeg", 0.95);
           link.click();
 
