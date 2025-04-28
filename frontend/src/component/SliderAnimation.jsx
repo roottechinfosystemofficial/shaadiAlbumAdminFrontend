@@ -170,11 +170,13 @@ const SliderAnimation = () => {
           ctx.drawImage(qrImg, qrLeft, qrTop, qrWidth, qrHeight);
 
           // Step 5: Draw the event name text
+          const eventName = singleEvent?.eventName || "Event Name";
+          console.log(eventName);
+
           const {
             top: textTop,
             left: textLeft,
             fontSize,
-            text,
           } = textSettings[current]; // Get text settings for this image
           const fontSizePx = parseInt(fontSize); // Convert font size to pixels
           ctx.font = `bold ${fontSizePx}px Arial`; // Make the text bold
@@ -186,7 +188,7 @@ const SliderAnimation = () => {
           const textLeftOffset = (parseInt(textLeft) / 100) * canvas.width;
 
           // Draw the text on the canvas
-          ctx.fillText(text, textLeftOffset, textTopOffset);
+          ctx.fillText(eventName, textLeftOffset, textTopOffset);
 
           // Step 6: Download the final image
           const link = document.createElement("a");
