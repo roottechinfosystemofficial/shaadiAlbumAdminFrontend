@@ -28,6 +28,7 @@ import img21 from "../assets/Standy_qr/11.jpg";
 import tableImg from "../assets/Standy/qr_back.png";
 import { useSelector } from "react-redux";
 import QRCode from "qrcode";
+import toast from "../utils/toast.js";
 
 // Images with fake QR (shown in the slider)
 const imagesWithFakeQR = [
@@ -60,23 +61,23 @@ const imagesWithoutQR = [
 
 // QR settings for each image
 const qrSettings = {
-  0: { top: "50%", left: "50%", size: "38%" }, // QR is 40% of the image width
+  0: { top: "50%", left: "50%", size: "38%" },
   1: { top: "52%", left: "50%", size: "38%" },
   2: { top: "50%", left: "70%", size: "38%" },
-  3: { top: "51%", left: "50%", size: "35%" }, // 35% for larger QR
+  3: { top: "51%", left: "50%", size: "35%" },
   4: { top: "50%", left: "50%", size: "38%" },
   5: { top: "60%", left: "50%", size: "38%" },
   6: { top: "63%", left: "50%", size: "38%" },
   7: { top: "48%", left: "50%", size: "38%" },
-  8: { top: "48%", left: "50%", size: "50%" }, // 50% for even larger QR
+  8: { top: "48%", left: "50%", size: "50%" },
   9: { top: "73%", left: "50%", size: "38%" },
-  10: { top: "47%", left: "50%", size: "50%" }, // 50% for visibility
+  10: { top: "47%", left: "50%", size: "50%" },
 };
 
 const SliderAnimation = () => {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(0);
-
+  const [loading, setLoading] = useState(false); // State for loading
   const { singleEvent } = useSelector((state) => state.event);
 
   useEffect(() => {
@@ -109,6 +110,7 @@ const SliderAnimation = () => {
   };
 
   const handleDownload = async () => {
+    setLoading(true); // Set loading to true
     try {
       const currentImage = imagesWithoutQR[current]; // Get the real image (without fake QR)
       const qrData = "https://www.google.co.in"; // Always generate this QR
@@ -154,10 +156,15 @@ const SliderAnimation = () => {
           link.download = "standy_with_real_qr.jpg";
           link.href = canvas.toDataURL("image/jpeg", 0.95);
           link.click();
+
+          setLoading(false); // Set loading to false after download
+          toast.success("Download started successfully!");
         };
       };
     } catch (error) {
       console.error("Download failed", error);
+      setLoading(false); // Set loading to false on error
+      toast.error("Download failed. Please try again.");
     }
   };
 
@@ -177,8 +184,9 @@ const SliderAnimation = () => {
         <button
           className="text-white bg-primary hover:bg-primary-dark px-4 py-2 rounded transition"
           onClick={handleDownload}
+          disabled={loading} // Disable button while loading
         >
-          Download with QR
+          {loading ? "Downloading..." : "Download with QR"}
         </button>
       </div>
 
