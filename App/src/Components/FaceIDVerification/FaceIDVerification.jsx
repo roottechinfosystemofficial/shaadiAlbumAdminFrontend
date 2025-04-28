@@ -57,6 +57,7 @@ const FaceIDVerification = () => {
 
         <TouchableOpacity
           style={[styles.button, { backgroundColor: theme.colours.primary }]}
+          onPress={() => navigation.navigate("FaceSelfieCam")}
         >
           <Text style={styles.buttonText}>Proceed to take selfie</Text>
         </TouchableOpacity>

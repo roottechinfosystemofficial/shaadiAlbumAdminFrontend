@@ -26,6 +26,7 @@ import ImageSelection from "../Screens/ImageSelection";
 import SeletEventImages from "../Screens/SelectEventImages";
 import EventFolders from "../Screens/EventFolders";
 import SelectionEventFolders from "../Screens/SelectionEventFolders";
+import FaceSelfieCam from "../Components/FaceIDVerification/FaceSelfieCam";
 
 const Stack = createStackNavigator();
 
@@ -57,6 +58,7 @@ const AppNavigator = () => {
       <Stack.Screen name="ImageSelection" component={ImageSelection} />
       <Stack.Screen name="SeletEventImages" component={SeletEventImages} />
       <Stack.Screen name="EventFolders" component={EventFolders} />
+      <Stack.Screen name="FaceSelfieCam" component={FaceSelfieCam} />
       <Stack.Screen
         name="SelectionEventFolders"
         component={SelectionEventFolders}

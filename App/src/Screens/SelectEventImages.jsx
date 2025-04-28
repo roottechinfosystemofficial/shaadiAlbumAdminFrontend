@@ -139,7 +139,7 @@ const SeletEventImages = () => {
 
     try {
       const response = await fetch(
-        `http://192.168.1.66:5000/api/v1/list-app-images?eventId=${id}&page=${pageToFetch}&subEventId=${subId}`
+        `http://192.168.26.31:5000/api/v1/list-app-images?eventId=${id}&page=${pageToFetch}&subEventId=${subId}`
       );
 
       const responseText = await response.text();
