@@ -75,28 +75,29 @@ const qrSettings = {
 };
 const textSettings = {
   0: {
-    top: "80%",
+    top: "28%",
     left: "50%",
-    fontSize: "200px",
-    text: "Event A JSBAJ ABSJGASj",
+    fontSize: "100px",
   },
-  1: { top: "75%", left: "50%", fontSize: "18px", text: "Event B" },
-  2: { top: "70%", left: "50%", fontSize: "22px", text: "Event C" },
-  3: { top: "75%", left: "50%", fontSize: "19px", text: "Event D" },
-  4: { top: "80%", left: "50%", fontSize: "20px", text: "Event E" },
-  5: { top: "70%", left: "50%", fontSize: "21px", text: "Event F" },
-  6: { top: "85%", left: "50%", fontSize: "19px", text: "Event G" },
-  7: { top: "60%", left: "50%", fontSize: "22px", text: "Event H" },
-  8: { top: "65%", left: "50%", fontSize: "18px", text: "Event I" },
-  9: { top: "80%", left: "50%", fontSize: "20px", text: "Event J" },
-  10: { top: "75%", left: "50%", fontSize: "21px", text: "Event K" },
+  1: { top: "28%", left: "50%", fontSize: "100px" },
+  2: { top: "28%", left: "70%", fontSize: "100px" },
+  3: { top: "32%", left: "50%", fontSize: "100px" },
+  4: { top: "32%", left: "48%", fontSize: "120px" },
+  5: { top: "43%", left: "50%", fontSize: "100px" },
+  6: { top: "43%", left: "50%", fontSize: "100px" },
+  7: { top: "27%", left: "50%", fontSize: "110px" },
+  8: { top: "24%", left: "50%", fontSize: "110px" },
+  9: { top: "32%", left: "50%", fontSize: "140px" },
+  10: { top: "35%", left: "50%", fontSize: "130px" },
 };
 
 const SliderAnimation = () => {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(0);
   const [loading, setLoading] = useState(false); // State for loading
+
   const { singleEvent } = useSelector((state) => state.event);
+  console.log(singleEvent);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
