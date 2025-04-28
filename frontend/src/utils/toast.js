@@ -93,4 +93,18 @@ toast.warn = (message, options = {}) =>
     },
   });
 
+toast.loading = (message, options = {}) =>
+  originalToast(message, {
+    ...toastConfig,
+    ...options,
+    type: "loading",
+    icon: "⏳",
+    style: {
+      ...baseStyle,
+      backgroundColor: "#F1F4F8",
+      color: "#6366F1",
+      ...options.style,
+    },
+  });
+
 export default toast;
