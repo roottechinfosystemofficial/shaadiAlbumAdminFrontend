@@ -1,24 +1,51 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
-import img1 from "../assets/Standy/1.jpg";
-import img2 from "../assets/Standy/2.jpg";
-import img3 from "../assets/Standy/3.jpg";
-import img4 from "../assets/Standy/4.jpg";
-import img5 from "../assets/Standy/5.jpg";
-import img6 from "../assets/Standy/6.jpg";
-import img7 from "../assets/Standy/7.jpg";
-import img8 from "../assets/Standy/8.jpg";
-import img9 from "../assets/Standy/9.jpg";
-import img10 from "../assets/Standy/10.jpg";
-import img11 from "../assets/Standy/11.jpg";
+import img0 from "../assets/Standy/1.jpg";
+import img1 from "../assets/Standy/2.jpg";
+import img2 from "../assets/Standy/3.jpg";
+import img3 from "../assets/Standy/4.jpg";
+import img4 from "../assets/Standy/5.jpg";
+import img5 from "../assets/Standy/6.jpg";
+import img6 from "../assets/Standy/7.jpg";
+import img7 from "../assets/Standy/8.jpg";
+import img8 from "../assets/Standy/9.jpg";
+import img9 from "../assets/Standy/10.jpg";
+import img10 from "../assets/Standy/11.jpg";
+
+// Images with fake QR (for the slider display)
+import img11 from "../assets/Standy_qr/1.jpg";
+import img12 from "../assets/Standy_qr/2.jpg";
+import img13 from "../assets/Standy_qr/3.jpg";
+import img14 from "../assets/Standy_qr/4.jpg";
+import img15 from "../assets/Standy_qr/5.jpg";
+import img16 from "../assets/Standy_qr/6.jpg";
+import img17 from "../assets/Standy_qr/7.jpg";
+import img18 from "../assets/Standy_qr/8.jpg";
+import img19 from "../assets/Standy_qr/9.jpg";
+import img20 from "../assets/Standy_qr/10.jpg";
+import img21 from "../assets/Standy_qr/11.jpg";
 import tableImg from "../assets/Standy/qr_back.png";
 import { useSelector } from "react-redux";
 import QRCode from "qrcode";
-// Fake QR for display purposes
-import fakeQrImage from "/Fakeqrbg.png"; // Add a transparent fake QR code image
 
-const images = [
+// Images with fake QR (shown in the slider)
+const imagesWithFakeQR = [
+  img11,
+  img12,
+  img13,
+  img14,
+  img15,
+  img16,
+  img17,
+  img18,
+  img19,
+  img20,
+  img21,
+];
+
+const imagesWithoutQR = [
+  img0,
   img1,
   img2,
   img3,
@@ -29,40 +56,30 @@ const images = [
   img8,
   img9,
   img10,
-  img11,
 ];
 
-// QR Settings (for each image)
+// QR settings for each image
 const qrSettings = {
-  0: { top: "50%", left: "50%", size: 100 },
-  1: { top: "52%", left: "50%", size: 100 },
-  2: { top: "50%", left: "70%", size: 100 },
-  3: { top: "51%", left: "50%", size: 90 },
-  4: { top: "50%", left: "50%", size: 100 },
-  5: { top: "60%", left: "50%", size: 100 },
-  6: { top: "63%", left: "50%", size: 100 },
-  7: { top: "48%", left: "50%", size: 100 },
-  8: { top: "48%", left: "50%", size: 120 },
-  9: { top: "73%", left: "50%", size: 100 },
-  10: { top: "47%", left: "50%", size: 130 },
+  0: { top: "50%", left: "50%", size: "38%" }, // QR is 40% of the image width
+  1: { top: "52%", left: "50%", size: "38%" },
+  2: { top: "50%", left: "70%", size: "38%" },
+  3: { top: "51%", left: "50%", size: "35%" }, // 35% for larger QR
+  4: { top: "50%", left: "50%", size: "38%" },
+  5: { top: "60%", left: "50%", size: "38%" },
+  6: { top: "63%", left: "50%", size: "38%" },
+  7: { top: "48%", left: "50%", size: "38%" },
+  8: { top: "48%", left: "50%", size: "50%" }, // 50% for even larger QR
+  9: { top: "73%", left: "50%", size: "38%" },
+  10: { top: "47%", left: "50%", size: "50%" }, // 50% for visibility
 };
 
-const qrLink = "https://shaadialbumadminfrontend.onrender.com";
 const SliderAnimation = () => {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(0);
-  const [qrUrl, setQrUrl] = useState("");
+
   const { singleEvent } = useSelector((state) => state.event);
 
-  // Generate QR code URL
   useEffect(() => {
-    const generatedQr = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
-      qrLink
-    )}&size=150x150`;
-    console.log(generatedQr);
-
-    setQrUrl(generatedQr);
-
     const handleKeyDown = (e) => {
       e.preventDefault();
       if (e.key === "ArrowRight") {
@@ -81,16 +98,67 @@ const SliderAnimation = () => {
 
   const prevSlide = () => {
     setDirection(-1);
-    setCurrent((prev) => (prev - 1 + images.length) % images.length);
+    setCurrent(
+      (prev) => (prev - 1 + imagesWithFakeQR.length) % imagesWithFakeQR.length
+    );
   };
 
   const nextSlide = () => {
     setDirection(1);
-    setCurrent((prev) => (prev + 1) % images.length);
+    setCurrent((prev) => (prev + 1) % imagesWithFakeQR.length);
   };
 
   const handleDownload = async () => {
-    alert("Download");
+    try {
+      const currentImage = imagesWithoutQR[current]; // Get the real image (without fake QR)
+      const qrData = "https://www.google.co.in"; // Always generate this QR
+
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = currentImage;
+
+      img.onload = async () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        // Step 1: Draw the original image (without the fake QR)
+        ctx.drawImage(img, 0, 0);
+
+        // Step 2: Generate the new QR code
+        const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
+          width: 250, // This is still fixed but we'll scale based on percentage
+          margin: 0, // No margin so it looks tight
+        });
+
+        const qrImg = new Image();
+        qrImg.src = qrCodeDataUrl;
+
+        qrImg.onload = () => {
+          // Step 3: Get QR position and size based on the image
+          const { top, left, size } = qrSettings[current]; // Using settings for this image
+          const qrWidth = (parseInt(size) / 100) * canvas.width; // Size as percentage of image width
+          const qrHeight = qrWidth; // Keep it square
+
+          // Calculate the top and left offsets as percentages of the image size
+          const qrTop = (parseInt(top) / 100) * canvas.height - qrHeight / 2;
+          const qrLeft = (parseInt(left) / 100) * canvas.width - qrWidth / 2;
+
+          // Step 4: Draw the QR code over the image
+          ctx.drawImage(qrImg, qrLeft, qrTop, qrWidth, qrHeight);
+
+          // Step 5: Download the final image
+          const link = document.createElement("a");
+          link.download = "standy_with_real_qr.jpg";
+          link.href = canvas.toDataURL("image/jpeg", 0.95);
+          link.click();
+        };
+      };
+    } catch (error) {
+      console.error("Download failed", error);
+    }
   };
 
   return (
@@ -126,14 +194,15 @@ const SliderAnimation = () => {
         </button>
 
         <div className="relative w-[1200px] h-[600px] flex mt-9 justify-center overflow-hidden">
-          {images.map((img, i) => {
-            const offset = (i - current + images.length) % images.length;
+          {imagesWithFakeQR.map((img, i) => {
+            const offset =
+              (i - current + imagesWithFakeQR.length) % imagesWithFakeQR.length;
             const visibleOffset =
               offset === 0
                 ? 0
-                : offset <= images.length / 2
+                : offset <= imagesWithFakeQR.length / 2
                 ? offset
-                : offset - images.length;
+                : offset - imagesWithFakeQR.length;
             const depth = Math.abs(visibleOffset);
             if (depth > 2) return null;
 
@@ -152,15 +221,6 @@ const SliderAnimation = () => {
             }px)`;
 
             const opacity = depth === 2 ? 0.2 : 1;
-
-            // QR Settings for each image (same QR settings applied to all images)
-            const settings = qrSettings[i] || {};
-            const qrSize = settings.size || 120;
-            const qrTop = settings.top || "50%";
-            const qrLeft = settings.left || "50%";
-
-            // Scale the QR code size based on image's size
-            const qrScaledSize = qrSize * scale;
 
             return (
               <motion.div
@@ -184,19 +244,6 @@ const SliderAnimation = () => {
                 }}
               >
                 <img src={img} alt="" className="w-full h-full object-cover" />
-                {/* Fake QR Code on all images */}
-                <img
-                  src={fakeQrImage}
-                  alt="QR Code"
-                  className="absolute bg-transparent p-1 rounded"
-                  style={{
-                    top: qrTop,
-                    left: qrLeft,
-                    width: qrScaledSize,
-                    height: qrScaledSize,
-                    transform: "translate(-50%, -50%)",
-                  }}
-                />
               </motion.div>
             );
           })}
