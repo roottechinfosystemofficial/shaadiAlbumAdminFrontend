@@ -17,6 +17,7 @@ const AddPhotosModal = ({
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgresses, setUploadProgresses] = useState({});
+  const [uploadStatuses, setUploadStatuses] = useState({});
   const [uploadedCount, setUploadedCount] = useState(0);
   const { singleEvent } = useSelector((state) => state.event);
   const { accessToken } = useSelector((state) => state.user);
@@ -36,50 +37,67 @@ const AddPhotosModal = ({
     setSelectedFiles(updated);
   };
 
-  const compressFile = async (file) => {
+  const compressFile = async (file, index) => {
     try {
-      return await imageCompression(file, {
+      setUploadStatuses((prev) => ({ ...prev, [index]: "Preparing..." }));
+
+      // Simulate progress to 30%
+      for (let p = 5; p <= 50; p += 5) {
+        await new Promise((res) => setTimeout(res, 50));
+        setUploadProgresses((prev) => ({ ...prev, [index]: p }));
+      }
+
+      const compressed = await imageCompression(file, {
         maxSizeMB: 1,
         maxWidthOrHeight: 1920,
         useWebWorker: true,
       });
+
+      return compressed;
     } catch (err) {
       console.error("Compression failed:", err);
+      setUploadStatuses((prev) => ({ ...prev, [index]: "Failed" }));
       return null;
     }
   };
 
   const uploadFile = async (url, file, index) => {
     try {
+      setUploadStatuses((prev) => ({ ...prev, [index]: "Uploading..." }));
       await axios.put(url, file, {
         headers: { "Content-Type": file.type },
         onUploadProgress: (e) => {
-          const progress = Math.round((e.loaded * 100) / e.total);
+          const percent = Math.round((e.loaded * 70) / e.total); // 0–70 range
+          const progress = 50 + percent; // map to 30–100
           setUploadProgresses((prev) => ({ ...prev, [index]: progress }));
         },
       });
+      setUploadStatuses((prev) => ({ ...prev, [index]: "Completed ✅" }));
+      setUploadProgresses((prev) => ({ ...prev, [index]: 100 }));
       setUploadedCount((prev) => prev + 1);
     } catch (err) {
       console.error("Upload failed:", err);
+      setUploadStatuses((prev) => ({ ...prev, [index]: "Failed ❌" }));
       setUploadProgresses((prev) => ({ ...prev, [index]: -1 }));
     }
   };
 
-  const uploadBatchSequentially = async () => {
+  const processInPipeline = async (files, batchSize = 5) => {
     setUploading(true);
     setUploadedCount(0);
     toast.loading("Uploading images...");
 
-    const batchSize = 10;
-    const queue = [];
-
     try {
-      await Promise.all(
-        selectedFiles.map(async (file, index) => {
-          const compressed = await compressFile(file);
-          if (!compressed) return;
+      // Step 1: Compress and upload images progressively
+      const uploadPromises = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
 
-          const res = await apiRequest(
+        // Compress the image
+        const compressedFile = await compressFile(file, i);
+        if (compressedFile) {
+          // Get presigned URL for this image
+          const urlResponse = await apiRequest(
             "POST",
             `${S3_API_END_POINT}/get-presigned-url`,
             {
@@ -87,9 +105,9 @@ const AddPhotosModal = ({
               subEventId: selectedSubEvent?._id,
               files: [
                 {
-                  fileName: compressed.name,
-                  fileType: compressed.type,
-                  fileSize: compressed.size,
+                  fileName: compressedFile.name,
+                  fileType: compressedFile.type,
+                  fileSize: compressedFile.size,
                 },
               ],
             },
@@ -97,27 +115,24 @@ const AddPhotosModal = ({
             dispatch
           );
 
-          const url = res?.data?.urls?.[0]?.url;
-          if (!url) return;
-
-          queue.push({ file: compressed, url, index });
-
-          if (queue.length >= batchSize) {
-            const currentBatch = queue.splice(0, batchSize);
-            await Promise.all(
-              currentBatch.map(({ file, url, index }) =>
-                uploadFile(url, file, index)
-              )
-            );
+          const url = urlResponse?.data?.urls?.[0]?.url;
+          if (url) {
+            // Upload the file concurrently as soon as it's compressed
+            const uploadPromise = uploadFile(url, compressedFile, i);
+            uploadPromises.push(uploadPromise);
           }
-        })
-      );
+        }
 
-      // Upload remaining
-      if (queue.length > 0) {
-        await Promise.all(
-          queue.map(({ file, url, index }) => uploadFile(url, file, index))
-        );
+        // Limit concurrency based on batchSize
+        if (uploadPromises.length >= batchSize) {
+          await Promise.all(uploadPromises); // Wait for the current batch to complete
+          uploadPromises.length = 0; // Reset batch for the next group of images
+        }
+      }
+
+      // Wait for any remaining uploads
+      if (uploadPromises.length > 0) {
+        await Promise.all(uploadPromises);
       }
 
       await refetchImageCount();
@@ -134,9 +149,18 @@ const AddPhotosModal = ({
     }
   };
 
+  const getTotalSize = (files) => {
+    const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
+    const totalMB = totalBytes / (1024 * 1024);
+    return totalMB >= 1024
+      ? `${(totalMB / 1024).toFixed(2)} GB`
+      : `${totalMB.toFixed(2)} MB`;
+  };
+
   const handleClose = () => {
     setSelectedFiles([]);
     setUploadProgresses({});
+    setUploadStatuses({});
     setUploadedCount(0);
     setUploading(false);
     onClose();
@@ -183,36 +207,53 @@ const AddPhotosModal = ({
         </div>
 
         {selectedFiles.length > 0 && (
-          <div className="mb-4 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
-            {selectedFiles.map((file, index) => (
-              <div key={index} className="mb-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm truncate max-w-xs">{file.name}</span>
-                  <button
-                    onClick={() => handleRemoveFile(index)}
-                    className="text-xs text-red-500"
-                  >
-                    Remove
-                  </button>
-                </div>
-                {uploading && (
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                    <div
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        uploadProgresses[index] === -1
-                          ? "bg-red-500 w-full"
-                          : "bg-primary"
-                      }`}
-                      style={{ width: `${uploadProgresses[index] || 0}%` }}
-                    ></div>
+          <>
+            <div className="text-sm text-gray-700 mb-2">
+              Selected {selectedFiles.length} files (
+              {getTotalSize(selectedFiles)})
+            </div>
+            <div className="mb-4 max-h-64 overflow-y-auto border rounded p-2 bg-gray-50">
+              {selectedFiles.map((file, index) => (
+                <div key={index} className="mb-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm truncate max-w-xs">
+                      {file.name}
+                    </span>
+                    {!uploading && (
+                      <button
+                        onClick={() => handleRemoveFile(index)}
+                        className="text-xs text-red-500"
+                      >
+                        Remove
+                      </button>
+                    )}
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
+                  {uploading && (
+                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                      <div
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          uploadProgresses[index] === -1
+                            ? "bg-red-500 w-full"
+                            : "bg-primary"
+                        }`}
+                        style={{
+                          width: `${uploadProgresses[index] || 5}%`,
+                        }}
+                      ></div>
+                    </div>
+                  )}
+                  {uploading && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {uploadStatuses[index] || "Queued..."}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
         )}
 
-        {uploading && (
+        {uploading && selectedFiles.length > 0 && (
           <p className="text-sm text-gray-600 text-right">
             Uploaded {uploadedCount} of {selectedFiles.length} images
           </p>
@@ -227,7 +268,7 @@ const AddPhotosModal = ({
             Cancel
           </button>
           <button
-            onClick={uploadBatchSequentially}
+            onClick={() => processInPipeline(selectedFiles)}
             className="w-full sm:w-auto bg-primary text-white px-6 py-2 rounded-lg disabled:opacity-50"
             disabled={uploading || selectedFiles.length === 0}
           >

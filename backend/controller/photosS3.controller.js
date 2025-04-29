@@ -18,9 +18,6 @@ const s3Client = new S3Client({
   },
 });
 
-const BATCH_SIZE = 50;
-const MAX_FILE_SIZE_MB = 10;
-
 // Utility: Convert stream to buffer
 const streamToBuffer = async (stream) => {
   return new Promise((resolve, reject) => {
@@ -34,6 +31,7 @@ const streamToBuffer = async (stream) => {
 export const getPresignedUrl = async (req, res) => {
   const { files, eventId, subEventId } = req.body;
 
+  // Validate the request body
   if (!files || !Array.isArray(files) || !eventId || !subEventId) {
     return res
       .status(400)
@@ -41,51 +39,75 @@ export const getPresignedUrl = async (req, res) => {
   }
 
   const timestamp = Date.now();
+  const signedUrls = [];
+  const failedFiles = [];
 
-  const generateBatchUrls = async (files, eventId, subEventId) => {
-    const batches = [];
-    for (let i = 0; i < files.length; i += BATCH_SIZE) {
-      const batch = files.slice(i, i + BATCH_SIZE);
-      batches.push(batch);
-    }
-
-    let signedUrls = [];
-
-    for (const batch of batches) {
-      const batchUrls = await Promise.all(
-        batch.map(async ({ fileName, fileType, fileSize }, index) => {
-          if (fileSize > MAX_FILE_SIZE_MB * 1024 * 1024) {
-            throw new Error(
-              `File ${fileName} exceeds the size limit of ${MAX_FILE_SIZE_MB} MB.`
-            );
-          }
-
-          const fileExt = fileName.substring(fileName.lastIndexOf("."));
-          const baseName = fileName.substring(0, fileName.lastIndexOf("."));
-          const uniqueKey = `eventimages/${eventId}/${subEventId}/${timestamp}/${baseName}_${index}${fileExt}`;
-
-          const command = new PutObjectCommand({
-            Bucket: process.env.BUCKET_NAME,
-            Key: uniqueKey,
-            ContentType: fileType,
-          });
-
-          const url = await getSignedUrl(s3Client, command);
-          return { url, key: uniqueKey, fileName };
-        })
-      );
-      signedUrls = [...signedUrls, ...batchUrls];
-    }
-
-    return signedUrls;
-  };
-
+  // Process each file in the request
   try {
-    const signedUrls = await generateBatchUrls(files, eventId, subEventId);
-    res.status(200).json({ urls: signedUrls });
+    const urlPromises = files.map(async (file, index) => {
+      const { fileName, fileType } = file;
+
+      try {
+        // Ensure the file has an extension
+        const fileExt = fileName.includes(".")
+          ? fileName.substring(fileName.lastIndexOf("."))
+          : ".jpg"; // Default to .jpg if no extension
+        const baseName = fileName.substring(0, fileName.lastIndexOf("."));
+
+        // Create a unique key with timestamp, eventId, subEventId, and index
+        const uniqueKey = `eventimages/${eventId}/${subEventId}/${timestamp}_${index}_${baseName}${fileExt}`;
+
+        // Prepare the command to get the presigned URL
+        const command = new PutObjectCommand({
+          Bucket: process.env.BUCKET_NAME,
+          Key: uniqueKey,
+          ContentType: fileType,
+        });
+
+        // Get the presigned URL
+        const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+
+        // Push the signed URL and key to the response data
+        return { url, key: uniqueKey, fileName };
+      } catch (err) {
+        console.error(`Error generating URL for ${fileName}:`, err);
+        return {
+          fileName,
+          reason: "Internal error generating URL",
+        };
+      }
+    });
+
+    // Resolve all file promises
+    const results = await Promise.all(urlPromises);
+
+    // Separate successful URLs from failed files
+    results.forEach((result) => {
+      if (result.url) {
+        signedUrls.push(result);
+      } else {
+        failedFiles.push(result);
+      }
+    });
+
+    // If no signed URLs were generated, return an error
+    if (signedUrls.length === 0) {
+      return res.status(500).json({
+        error: "Failed to generate any signed URLs",
+        failedFiles,
+      });
+    }
+
+    // Return the signed URLs and any failed files
+    return res.status(200).json({
+      urls: signedUrls,
+      failedFiles,
+    });
   } catch (err) {
-    console.error("Error generating signed URLs:", err);
-    res.status(500).json({ error: "Could not generate signed URLs" });
+    console.error("Unexpected error during URL generation:", err);
+    return res
+      .status(500)
+      .json({ error: "Unexpected error during URL generation" });
   }
 };
 
