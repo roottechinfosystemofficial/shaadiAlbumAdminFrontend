@@ -19,6 +19,9 @@ const AddPhotosModal = ({
   const [uploadProgresses, setUploadProgresses] = useState({});
   const [uploadStatuses, setUploadStatuses] = useState({});
   const [uploadedCount, setUploadedCount] = useState(0);
+  const [cancelTokens, setCancelTokens] = useState([]);
+  const [cancelRequested, setCancelRequested] = useState(false);
+
   const { singleEvent } = useSelector((state) => state.event);
   const { accessToken } = useSelector((state) => state.user);
   const { refetchImageCount } = useGetEventImagesCount(singleEvent?._id);
@@ -40,19 +43,15 @@ const AddPhotosModal = ({
   const compressFile = async (file, index) => {
     try {
       setUploadStatuses((prev) => ({ ...prev, [index]: "Preparing..." }));
-
-      // Simulate progress to 30%
       for (let p = 5; p <= 50; p += 5) {
         await new Promise((res) => setTimeout(res, 50));
         setUploadProgresses((prev) => ({ ...prev, [index]: p }));
       }
-
       const compressed = await imageCompression(file, {
         maxSizeMB: 1,
         maxWidthOrHeight: 1920,
         useWebWorker: true,
       });
-
       return compressed;
     } catch (err) {
       console.error("Compression failed:", err);
@@ -61,42 +60,58 @@ const AddPhotosModal = ({
     }
   };
 
-  const uploadFile = async (url, file, index) => {
+  const uploadFile = async (url, file, index, cancelToken) => {
     try {
       setUploadStatuses((prev) => ({ ...prev, [index]: "Uploading..." }));
       await axios.put(url, file, {
         headers: { "Content-Type": file.type },
         onUploadProgress: (e) => {
-          const percent = Math.round((e.loaded * 70) / e.total); // 0–70 range
-          const progress = 50 + percent; // map to 30–100
+          const percent = Math.round((e.loaded * 70) / e.total);
+          const progress = 50 + percent;
           setUploadProgresses((prev) => ({ ...prev, [index]: progress }));
         },
+        cancelToken: cancelToken.token,
       });
       setUploadStatuses((prev) => ({ ...prev, [index]: "Completed ✅" }));
       setUploadProgresses((prev) => ({ ...prev, [index]: 100 }));
       setUploadedCount((prev) => prev + 1);
     } catch (err) {
-      console.error("Upload failed:", err);
-      setUploadStatuses((prev) => ({ ...prev, [index]: "Failed ❌" }));
-      setUploadProgresses((prev) => ({ ...prev, [index]: -1 }));
+      if (axios.isCancel(err)) {
+        console.log(`Upload for ${file.name} was canceled`);
+      } else {
+        console.error("Upload failed:", err);
+        setUploadStatuses((prev) => ({ ...prev, [index]: "Failed ❌" }));
+        setUploadProgresses((prev) => ({ ...prev, [index]: -1 }));
+      }
     }
   };
 
-  const processInPipeline = async (files, batchSize = 5) => {
+  const processInPipeline = async (files) => {
+    const BATCH_SIZE = 50;
+    const MAX_CONCURRENT_UPLOADS = 5;
+
     setUploading(true);
     setUploadedCount(0);
+    setCancelRequested(false); // Reset cancellation
     toast.loading("Uploading images...");
 
     try {
-      // Step 1: Compress and upload images progressively
-      const uploadPromises = [];
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+      for (let i = 0; i < files.length; i += BATCH_SIZE) {
+        if (cancelRequested) break;
+        const batch = files.slice(i, i + BATCH_SIZE);
+        const uploadQueue = [...batch.entries()];
+        const activeUploads = [];
 
-        // Compress the image
-        const compressedFile = await compressFile(file, i);
-        if (compressedFile) {
-          // Get presigned URL for this image
+        const startUpload = async ([batchIndex, file]) => {
+          const globalIndex = i + batchIndex;
+          if (cancelRequested) return;
+
+          const cancelToken = axios.CancelToken.source();
+          setCancelTokens((prev) => [...prev, cancelToken]);
+
+          const compressedFile = await compressFile(file, globalIndex);
+          if (!compressedFile || cancelRequested) return;
+
           const urlResponse = await apiRequest(
             "POST",
             `${S3_API_END_POINT}/get-presigned-url`,
@@ -116,37 +131,62 @@ const AddPhotosModal = ({
           );
 
           const url = urlResponse?.data?.urls?.[0]?.url;
-          if (url) {
-            // Upload the file concurrently as soon as it's compressed
-            const uploadPromise = uploadFile(url, compressedFile, i);
-            uploadPromises.push(uploadPromise);
+          if (url && !cancelRequested) {
+            await uploadFile(url, compressedFile, globalIndex, cancelToken);
+          }
+        };
+
+        while (
+          !cancelRequested &&
+          (uploadQueue.length > 0 || activeUploads.length > 0)
+        ) {
+          while (
+            !cancelRequested &&
+            activeUploads.length < MAX_CONCURRENT_UPLOADS &&
+            uploadQueue.length > 0
+          ) {
+            const uploadPromise = startUpload(uploadQueue.shift());
+            activeUploads.push(uploadPromise);
+            uploadPromise.finally(() => {
+              const index = activeUploads.indexOf(uploadPromise);
+              if (index !== -1) activeUploads.splice(index, 1);
+            });
+          }
+
+          if (activeUploads.length > 0) {
+            await Promise.race(activeUploads);
           }
         }
-
-        // Limit concurrency based on batchSize
-        if (uploadPromises.length >= batchSize) {
-          await Promise.all(uploadPromises); // Wait for the current batch to complete
-          uploadPromises.length = 0; // Reset batch for the next group of images
-        }
       }
 
-      // Wait for any remaining uploads
-      if (uploadPromises.length > 0) {
-        await Promise.all(uploadPromises);
+      if (!cancelRequested) {
+        await refetchImageCount();
+        toast.dismiss();
+        toast.success("Images uploaded ✅");
+        onUploadSuccess?.();
+        handleClose();
       }
-
-      await refetchImageCount();
-      toast.dismiss();
-      toast.success("Images uploaded ✅");
-      onUploadSuccess?.();
-      handleClose();
     } catch (err) {
-      console.error("Upload error:", err);
-      toast.dismiss();
-      toast.error("Upload failed ❌");
+      if (!cancelRequested) {
+        console.error("Upload error:", err);
+        toast.dismiss();
+        toast.error("Upload failed ❌");
+      }
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleClose = () => {
+    setCancelRequested(true);
+    cancelTokens.forEach((cancelToken) => cancelToken.cancel());
+    setSelectedFiles([]);
+    setUploadProgresses({});
+    setUploadStatuses({});
+    setUploadedCount(0);
+    setUploading(false);
+    setCancelTokens([]);
+    onClose();
   };
 
   const getTotalSize = (files) => {
@@ -155,15 +195,6 @@ const AddPhotosModal = ({
     return totalMB >= 1024
       ? `${(totalMB / 1024).toFixed(2)} GB`
       : `${totalMB.toFixed(2)} MB`;
-  };
-
-  const handleClose = () => {
-    setSelectedFiles([]);
-    setUploadProgresses({});
-    setUploadStatuses({});
-    setUploadedCount(0);
-    setUploading(false);
-    onClose();
   };
 
   return (
@@ -263,7 +294,7 @@ const AddPhotosModal = ({
           <button
             onClick={handleClose}
             className="w-full sm:w-auto border border-gray-300 text-gray-700 px-6 py-2 rounded-lg"
-            disabled={uploading}
+            disabled={!uploading && selectedFiles.length === 0}
           >
             Cancel
           </button>
