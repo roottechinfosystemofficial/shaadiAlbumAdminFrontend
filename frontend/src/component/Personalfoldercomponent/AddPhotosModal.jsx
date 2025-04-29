@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import axios from "axios";
 import imageCompression from "browser-image-compression";
-import { X, CheckCircle, Circle, FolderOpen, ImagePlus } from "lucide-react";
+import { X, FolderOpen, ImagePlus } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { useGetEventImagesCount } from "../../Hooks/useGetEventImagesCount";
 import { S3_API_END_POINT } from "../../constant";
-import toast from "../../utils/toast.js";
-import apiRequest from "../../utils/apiRequest.js";
+import toast from "../../utils/toast";
+import apiRequest from "../../utils/apiRequest";
+import { useGetEventImagesCount } from "../../Hooks/useGetEventImagesCount";
 
 const AddPhotosModal = ({
   isOpen,
@@ -15,15 +15,13 @@ const AddPhotosModal = ({
   selectedSubEvent,
 }) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
-  const [duplicateHandling, setDuplicateHandling] = useState("skip");
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadProgresses, setUploadProgresses] = useState({});
   const [uploadedCount, setUploadedCount] = useState(0);
   const { singleEvent } = useSelector((state) => state.event);
-
-  const dispatch = useDispatch();
   const { accessToken } = useSelector((state) => state.user);
   const { refetchImageCount } = useGetEventImagesCount(singleEvent?._id);
+  const dispatch = useDispatch();
 
   if (!isOpen) return null;
 
@@ -32,138 +30,116 @@ const AddPhotosModal = ({
     setSelectedFiles((prev) => [...prev, ...files]);
   };
 
-  const handleClose = () => {
-    setSelectedFiles([]);
-    setUploadProgress(0);
-    setUploadedCount(0);
-    setUploading(false);
-    onClose();
-  };
-
   const handleRemoveFile = (index) => {
     const updated = [...selectedFiles];
     updated.splice(index, 1);
     setSelectedFiles(updated);
   };
 
-  const handleDuplicateOption = (mode) => {
-    setDuplicateHandling(mode);
-  };
-
   const compressFile = async (file) => {
     try {
-      const compressed = await imageCompression(file, {
+      return await imageCompression(file, {
         maxSizeMB: 1,
         maxWidthOrHeight: 1920,
         useWebWorker: true,
       });
-      return compressed;
-    } catch (error) {
-      console.error("Compression error:", error);
+    } catch (err) {
+      console.error("Compression failed:", err);
       return null;
     }
   };
 
-  const uploadFile = async (url, file) => {
+  const uploadFile = async (url, file, index) => {
     try {
       await axios.put(url, file, {
         headers: { "Content-Type": file.type },
-        onUploadProgress: (progressEvent) => {
-          const progress = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
-          );
-          setUploadProgress(progress);
+        onUploadProgress: (e) => {
+          const progress = Math.round((e.loaded * 100) / e.total);
+          setUploadProgresses((prev) => ({ ...prev, [index]: progress }));
         },
       });
-
-      setUploadedCount((count) => {
-        const newCount = count + 1;
-        setUploadProgress((newCount / selectedFiles.length) * 100);
-        return newCount;
-      });
-    } catch (error) {
-      console.error("Error uploading file:", error);
-    }
-  };
-
-  const uploadBatchToS3 = async (compressedFiles) => {
-    try {
-      const endpoint = `${S3_API_END_POINT}/get-presigned-url`;
-
-      const res = await apiRequest(
-        "POST",
-        endpoint,
-        {
-          eventId: singleEvent?._id,
-          subEventId: selectedSubEvent?._id,
-          files: compressedFiles.map(({ fileName, fileType }) => ({
-            fileName,
-            fileType,
-          })),
-        },
-        accessToken,
-        dispatch
-      );
-
-      if (res.status !== 200) throw new Error("Failed to get S3 URLs");
-
-      const data = res.data;
-
-      const uploadPromises = compressedFiles.map((compressedFile, index) =>
-        uploadFile(data.urls[index].url, compressedFile.file)
-      );
-
-      await Promise.all(uploadPromises);
+      setUploadedCount((prev) => prev + 1);
     } catch (err) {
-      console.error("Error uploading files to S3:", err);
-      throw err;
+      console.error("Upload failed:", err);
+      setUploadProgresses((prev) => ({ ...prev, [index]: -1 }));
     }
   };
 
-  const handleUpload = async () => {
-    if (!selectedFiles.length) return;
-
+  const uploadBatchSequentially = async () => {
     setUploading(true);
-    setUploadProgress(0);
     setUploadedCount(0);
     toast.loading("Uploading images...");
 
-    const batchSize = 50;
-    const compressedBatch = [];
+    const batchSize = 10;
+    const queue = [];
 
     try {
-      for (let i = 0; i < selectedFiles.length; i++) {
-        const file = selectedFiles[i];
+      await Promise.all(
+        selectedFiles.map(async (file, index) => {
+          const compressed = await compressFile(file);
+          if (!compressed) return;
 
-        const compressedFile = await compressFile(file);
-        if (compressedFile) {
-          compressedBatch.push({
-            file: compressedFile,
-            fileName: compressedFile.name,
-            fileType: compressedFile.type,
-          });
-        }
+          const res = await apiRequest(
+            "POST",
+            `${S3_API_END_POINT}/get-presigned-url`,
+            {
+              eventId: singleEvent?._id,
+              subEventId: selectedSubEvent?._id,
+              files: [
+                {
+                  fileName: compressed.name,
+                  fileType: compressed.type,
+                  fileSize: compressed.size,
+                },
+              ],
+            },
+            accessToken,
+            dispatch
+          );
 
-        if (
-          compressedBatch.length >= batchSize ||
-          i === selectedFiles.length - 1
-        ) {
-          await uploadBatchToS3(compressedBatch);
-          compressedBatch.length = 0;
-        }
+          const url = res?.data?.urls?.[0]?.url;
+          if (!url) return;
+
+          queue.push({ file: compressed, url, index });
+
+          if (queue.length >= batchSize) {
+            const currentBatch = queue.splice(0, batchSize);
+            await Promise.all(
+              currentBatch.map(({ file, url, index }) =>
+                uploadFile(url, file, index)
+              )
+            );
+          }
+        })
+      );
+
+      // Upload remaining
+      if (queue.length > 0) {
+        await Promise.all(
+          queue.map(({ file, url, index }) => uploadFile(url, file, index))
+        );
       }
 
       await refetchImageCount();
-      toast.success("Images uploaded successfully ✅");
+      toast.dismiss();
+      toast.success("Images uploaded ✅");
       onUploadSuccess?.();
       handleClose();
     } catch (err) {
       console.error("Upload error:", err);
-      toast.error("Upload failed. Please try again ❌");
-      setUploading(false);
-    } finally {
       toast.dismiss();
+      toast.error("Upload failed ❌");
+    } finally {
+      setUploading(false);
     }
+  };
+
+  const handleClose = () => {
+    setSelectedFiles([]);
+    setUploadProgresses({});
+    setUploadedCount(0);
+    setUploading(false);
+    onClose();
   };
 
   return (
@@ -177,27 +153,6 @@ const AddPhotosModal = ({
           >
             <X />
           </button>
-        </div>
-
-        <div className="flex items-center gap-4 mb-4">
-          {["skip", "overwrite"].map((mode) => (
-            <button
-              key={mode}
-              onClick={() => handleDuplicateOption(mode)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full border transition ${
-                duplicateHandling === mode
-                  ? "bg-primary text-white border-primary"
-                  : "bg-gray-100 border-gray-300 text-gray-700"
-              }`}
-            >
-              {duplicateHandling === mode ? (
-                <CheckCircle size={18} />
-              ) : (
-                <Circle size={18} />
-              )}
-              {mode === "skip" ? "Skip Duplicates" : "Overwrite Duplicates"}
-            </button>
-          ))}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 mb-4">
@@ -230,36 +185,37 @@ const AddPhotosModal = ({
         {selectedFiles.length > 0 && (
           <div className="mb-4 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
             {selectedFiles.map((file, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between py-1 px-2 hover:bg-gray-100 rounded"
-              >
-                <span className="text-sm text-gray-700 truncate max-w-xs">
-                  {file.name}
-                </span>
-                <button
-                  onClick={() => handleRemoveFile(index)}
-                  className="text-red-500 hover:text-red-700 text-xs font-medium"
-                >
-                  Remove
-                </button>
+              <div key={index} className="mb-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm truncate max-w-xs">{file.name}</span>
+                  <button
+                    onClick={() => handleRemoveFile(index)}
+                    className="text-xs text-red-500"
+                  >
+                    Remove
+                  </button>
+                </div>
+                {uploading && (
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                    <div
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        uploadProgresses[index] === -1
+                          ? "bg-red-500 w-full"
+                          : "bg-primary"
+                      }`}
+                      style={{ width: `${uploadProgresses[index] || 0}%` }}
+                    ></div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         )}
 
         {uploading && (
-          <div className="mb-4">
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-primary h-2 rounded-full transition-all duration-300 ease-in-out"
-                style={{ width: `${uploadProgress}%` }}
-              ></div>
-            </div>
-            <p className="text-sm text-gray-700 mt-2 text-center">
-              Uploading images...
-            </p>
-          </div>
+          <p className="text-sm text-gray-600 text-right">
+            Uploaded {uploadedCount} of {selectedFiles.length} images
+          </p>
         )}
 
         <div className="flex justify-between items-center gap-4">
@@ -271,7 +227,7 @@ const AddPhotosModal = ({
             Cancel
           </button>
           <button
-            onClick={handleUpload}
+            onClick={uploadBatchSequentially}
             className="w-full sm:w-auto bg-primary text-white px-6 py-2 rounded-lg disabled:opacity-50"
             disabled={uploading || selectedFiles.length === 0}
           >

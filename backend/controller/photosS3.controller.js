@@ -7,10 +7,6 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import dotenv from "dotenv";
 import sharp from "sharp";
-import {
-  RekognitionClient,
-  SearchFacesByImageCommand,
-} from "@aws-sdk/client-rekognition";
 
 dotenv.config();
 
@@ -21,7 +17,6 @@ const s3Client = new S3Client({
     secretAccessKey: process.env.SECRETACCESSKEY,
   },
 });
-
 
 const BATCH_SIZE = 50;
 const MAX_FILE_SIZE_MB = 10;
@@ -36,17 +31,18 @@ const streamToBuffer = async (stream) => {
   });
 };
 
-// 🔹 Generate Pre-signed URL for Upload
 export const getPresignedUrl = async (req, res) => {
   const { files, eventId, subEventId } = req.body;
 
-  if (!files || !Array.isArray(files) || !eventId) {
-    return res.status(400).json({ error: "Missing files or eventId" });
+  if (!files || !Array.isArray(files) || !eventId || !subEventId) {
+    return res
+      .status(400)
+      .json({ error: "Missing files, eventId, or subEventId" });
   }
 
   const timestamp = Date.now();
 
-  const generateBatchUrls = async (files, eventId) => {
+  const generateBatchUrls = async (files, eventId, subEventId) => {
     const batches = [];
     for (let i = 0; i < files.length; i += BATCH_SIZE) {
       const batch = files.slice(i, i + BATCH_SIZE);
@@ -64,7 +60,10 @@ export const getPresignedUrl = async (req, res) => {
             );
           }
 
-          const uniqueKey = `eventimages/${eventId}/${subEventId}/${timestamp}/${index}${fileName}`;
+          const fileExt = fileName.substring(fileName.lastIndexOf("."));
+          const baseName = fileName.substring(0, fileName.lastIndexOf("."));
+          const uniqueKey = `eventimages/${eventId}/${subEventId}/${timestamp}/${baseName}_${index}${fileExt}`;
+
           const command = new PutObjectCommand({
             Bucket: process.env.BUCKET_NAME,
             Key: uniqueKey,
@@ -72,7 +71,6 @@ export const getPresignedUrl = async (req, res) => {
           });
 
           const url = await getSignedUrl(s3Client, command);
-
           return { url, key: uniqueKey, fileName };
         })
       );
@@ -83,7 +81,7 @@ export const getPresignedUrl = async (req, res) => {
   };
 
   try {
-    const signedUrls = await generateBatchUrls(files, eventId);
+    const signedUrls = await generateBatchUrls(files, eventId, subEventId);
     res.status(200).json({ urls: signedUrls });
   } catch (err) {
     console.error("Error generating signed URLs:", err);
@@ -94,7 +92,7 @@ export const getPresignedUrl = async (req, res) => {
 // 🔹 Get Paginated Event Images
 export const getEventImages = async (req, res) => {
   const { eventId, continuationToken, subEventId } = req.body;
-  const pageSize = 20;
+  const pageSize = 2;
 
   if (!eventId) {
     return res.status(400).json({ error: "Missing eventId" });

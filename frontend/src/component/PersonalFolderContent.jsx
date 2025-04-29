@@ -14,7 +14,6 @@ const PersonalFolderContent = () => {
   const { eventId } = useParams();
 
   useGetSingleEvent(eventId);
-  const { singleEvent } = useSelector((state) => state.event);
   const [activeTab, setActiveTab] = useState("photos");
   const { selectedSubEvent } = useSelector((state) => state.event);
   const renderContent = () => {

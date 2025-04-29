@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const flipBookSchema = new mongoose.Schema(
   {
     flipBookName: { type: String, required: true },
-    flipBookImagesCount: { type: Number, required: true },
+    flipBookImagesCount: { type: Number },
     eventId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Event",
@@ -13,4 +13,4 @@ const flipBookSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("FlipBook", flipBookSchema);
+export default mongoose.model("FlipBook", flipBookSchema);
