@@ -147,7 +147,7 @@ const EventImages = () => {
 
     try {
       const response = await fetch(
-        `http://192.168.26.31:5000/api/v1/list-app-images?eventId=${id}&page=${pageToFetch}&subEventId=${subId}`
+        `http://192.168.1.101:5000/api/v1/list-app-images?eventId=${id}&page=${pageToFetch}&subEventId=${subId}`
       );
 
       const responseText = await response.text();
@@ -166,6 +166,7 @@ const EventImages = () => {
       if (newImages.length === 0) {
         setHasMore(false);
       } else {
+        // console.log(newImages);
         const processedImages = await Promise.all(
           newImages.map(async (url) => {
             const { width, height } = await getImageDimensions(url);
@@ -339,7 +340,14 @@ const EventImages = () => {
                 renderItem={({ item }) => {
                   return (
                     <TouchableWithoutFeedback onPress={closeModal}>
-                      <View style={styles.imageWrapper}>
+                      <View
+                        style={{
+                          width: Dimensions.get("window").width,
+                          height: Dimensions.get("window").height,
+                          justifyContent: "center",
+                          alignItems: "center",
+                        }}
+                      >
                         <Image
                           source={item.uri} // Load full image here
                           style={styles.fullscreenImage}
@@ -429,11 +437,11 @@ const styles = StyleSheet.create({
 
   modalOverlay: {
     flex: 1,
-    margin: 2,
+    // margin: 2,
     backgroundColor: "rgba(0,0,0,0.9)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: Platform.OS === "ios" ? StatusBar.currentHeight || 44 : 0,
+    // justifyContent: "center",
+    // alignItems: "center",
+    // marginTop: Platform.OS === "ios" ? StatusBar.currentHeight || 44 : 0,
   },
   btnStyle: {
     alignSelf: "flex-start",
@@ -456,10 +464,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  imageWrapper: {
-    width: Dimensions.get("window").width,
-    height: Dimensions.get("window").height,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  // imageWrapper: {
+  //   width: Dimensions.get("window").width,
+  //   height: Dimensions.get("window").height,
+  //   justifyContent: "center",
+  //   alignItems: "center",
+  // },
 });
