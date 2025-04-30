@@ -1,5 +1,6 @@
-import React, { useState, useRef } from "react";
-import { CameraView, useCameraPermissions } from "expo-camera";
+import React, { useState, useRef, useEffect } from "react";
+import { CameraView, Camera } from "expo-camera";
+import * as FaceDetector from "expo-face-detector";
 
 import {
   View,
@@ -10,42 +11,28 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import BackButton from "../BackButton";
 import { useNavigation } from "@react-navigation/native";
+import BackButton from "../BackButton";
 import { hp, wp } from "../../helpers/Common";
 import { theme } from "../../constants/themes";
-import * as FaceDetector from "expo-face-detector";
-
 import ScreenWrapper from "../ScreenWrapper";
 
 const FaceSelfieCam = () => {
   const navigation = useNavigation();
-  const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef(null);
-  const [faceDetected, setFaceDetected] = useState(false); // NEW: track face detection
-  const [isCapturing, setIsCapturing] = useState(false); // prevent multiple captures
+  const [permission, setPermission] = useState(null);
+  const [faceDetected, setFaceDetected] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
 
-  if (!permission) {
-    return <View />;
-  }
-
-  if (!permission.granted) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.message}>
-          We need your permission to show the camera
-        </Text>
-        <Button title="Grant Permission" onPress={requestPermission} />
-      </View>
-    );
-  }
+  useEffect(() => {
+    (async () => {
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      setPermission(status === "granted");
+    })();
+  }, []);
 
   const handleFacesDetected = ({ faces }) => {
-    if (faces.length > 0) {
-      setFaceDetected(true);
-    } else {
-      setFaceDetected(false);
-    }
+    setFaceDetected(faces.length > 0);
   };
 
   const handleCaptureSelfie = async () => {
@@ -59,30 +46,50 @@ const FaceSelfieCam = () => {
 
     if (cameraRef.current && !isCapturing) {
       try {
-        setIsCapturing(true); // avoid double captures
+        setIsCapturing(true);
         const photo = await cameraRef.current.takePictureAsync({
           quality: 0.7,
           base64: true,
         });
-        console.log("Captured selfie:", photo.uri);
+        console.log("Captured selfie URI:", photo.uri);
         Alert.alert("Selfie Captured!", "Check console for URI.");
-        setIsCapturing(false);
       } catch (error) {
-        console.error("Error capturing photo", error);
+        console.error("Error capturing photo:", error);
+      } finally {
         setIsCapturing(false);
       }
     }
   };
 
+  if (permission === null) {
+    return <View style={styles.loadingContainer} />;
+  }
+
+  if (permission === false) {
+    return (
+      <View style={styles.permissionContainer}>
+        <Text style={styles.permissionText}>
+          We need your permission to access the camera
+        </Text>
+        <Button
+          title="Grant Permission"
+          onPress={Camera.requestCameraPermissionsAsync}
+        />
+      </View>
+    );
+  }
+
   return (
     <ScreenWrapper bg="white">
+      {/* Header */}
       <View style={styles.header}>
-        <View style={{ position: "absolute", left: wp(4) }}>
+        <View style={styles.backButton}>
           <BackButton navigation={navigation} />
         </View>
         <Text style={styles.title}>Selfie Capture</Text>
       </View>
 
+      {/* Camera + Controls */}
       <View style={styles.container}>
         <View
           style={[
@@ -94,38 +101,35 @@ const FaceSelfieCam = () => {
             ref={cameraRef}
             style={styles.camera}
             facing="front"
-            onFacesDetected={handleFacesDetected}
+            onFacesDetected={({ faces }) => {
+              console.log("Faces detected:", faces); // LOG ADD KIYA
+              if (faces.length > 0) {
+                console.log("✅ Face detected!");
+                setFaceDetected(true);
+              } else {
+                setFaceDetected(false);
+              }
+            }}
             faceDetectorSettings={{
               mode: FaceDetector.FaceDetectorMode.fast,
               detectLandmarks: FaceDetector.FaceDetectorLandmarks.none,
               runClassifications: FaceDetector.FaceDetectorClassifications.none,
-              minDetectionInterval: 100,
-              tracking: true,
             }}
           />
         </View>
 
-        <View style={{ marginTop: hp(5), alignItems: "center" }}>
+        {/* Instructions + Capture Button */}
+        <View style={styles.instructionContainer}>
+          <Text style={styles.instructionText}>Take a Selfie</Text>
           <Text
-            style={{
-              color: theme.colours.primary,
-              fontSize: 16,
-              marginBottom: 10,
-            }}
-          >
-            Take Selfie
-          </Text>
-
-          <Text
-            style={{
-              color: faceDetected ? "green" : "red",
-              fontSize: 14,
-              marginBottom: 10,
-            }}
+            style={[
+              styles.faceDetectionText,
+              { color: faceDetected ? "green" : "red" },
+            ]}
           >
             {faceDetected
-              ? "Face detected! Now you can capture."
-              : "Please keep camera steady towards your face."}
+              ? "Face detected! Ready to capture."
+              : "Keep your face within the frame."}
           </Text>
 
           <TouchableOpacity
@@ -154,27 +158,24 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: 10,
-    paddingVertical: hp(1),
-  },
-  container: {
-    flex: 1,
-    backgroundColor: "white",
-    paddingTop: 50,
     alignItems: "center",
+    paddingVertical: hp(2),
+    position: "relative",
   },
-  message: {
-    textAlign: "center",
-    color: "white",
-    fontSize: 16,
-    marginBottom: 20,
+  backButton: {
+    position: "absolute",
+    left: wp(4),
   },
   title: {
     fontSize: 22,
     fontWeight: "bold",
     color: theme.colours.primary,
     fontFamily: "Poppins",
-    textAlign: "center",
+  },
+  container: {
+    flex: 1,
+    alignItems: "center",
+    backgroundColor: "white",
   },
   cameraWrapper: {
     width: 300,
@@ -182,16 +183,47 @@ const styles = StyleSheet.create({
     borderRadius: 150,
     overflow: "hidden",
     borderWidth: 5,
-    borderColor: "gray", // default gray
+    justifyContent: "center",
+    alignItems: "center",
   },
   camera: {
     flex: 1,
+    width: "100%",
+  },
+  instructionContainer: {
+    marginTop: hp(5),
+    alignItems: "center",
+  },
+  instructionText: {
+    fontSize: 16,
+    color: theme.colours.primary,
+    marginBottom: 10,
+  },
+  faceDetectionText: {
+    fontSize: 14,
+    marginBottom: 10,
   },
   captureButtonWrapper: {
-    marginTop: hp(5),
+    marginTop: hp(3),
     padding: 15,
     borderRadius: 50,
     alignItems: "center",
     justifyContent: "center",
+  },
+  permissionContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "white",
+  },
+  permissionText: {
+    textAlign: "center",
+    fontSize: 16,
+    marginBottom: 20,
+    color: "black",
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: "white",
   },
 });

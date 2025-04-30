@@ -68,6 +68,7 @@ const images = [
 ];
 
 const Favorites = () => {
+  console.log(Camera);
   const [favorites, setFavorites] = useState(images.map((img) => img.id));
   const [gridCount, setGridCount] = useState(2);
   const columnWidth =
