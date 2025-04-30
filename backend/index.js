@@ -8,6 +8,7 @@ import eventRouter from "./routes/event.route.js";
 import appUserRouter from "./routes/appUser.route.js";
 import photoS3Router from "./routes/photoS3.route.js";
 import flipBookRouter from "./routes/flipBook.route.js";
+// import imageRouter from "./routes/imageRoutes.js";
 
 dotenv.config();
 
@@ -36,6 +37,7 @@ app.use("/api/v1", appUserRouter);
 app.use("/api/v1", eventRouter);
 app.use("/api/v1", photoS3Router);
 app.use("/api/v1", flipBookRouter);
+// app.use("/api/v1", imageRouter);
 
 dbConnect();
 

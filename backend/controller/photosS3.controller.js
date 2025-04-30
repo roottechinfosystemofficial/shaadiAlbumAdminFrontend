@@ -7,18 +7,9 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import dotenv from "dotenv";
 import sharp from "sharp";
+// import ImageModel from "../model/ImageMetadata.js";
 
 dotenv.config();
-
-const s3Client = new S3Client({
-  region: "ap-south-1",
-  credentials: {
-    accessKeyId: process.env.ACCESSID,
-    secretAccessKey: process.env.SECRETACCESSKEY,
-  },
-});
-
-// Utility: Convert stream to buffer
 const streamToBuffer = async (stream) => {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -27,6 +18,13 @@ const streamToBuffer = async (stream) => {
     stream.on("error", reject);
   });
 };
+const s3Client = new S3Client({
+  region: "ap-south-1",
+  credentials: {
+    accessKeyId: process.env.ACCESSID,
+    secretAccessKey: process.env.SECRETACCESSKEY,
+  },
+});
 
 export const getPresignedUrl = async (req, res) => {
   const { files, eventId, subEventId } = req.body;
@@ -111,7 +109,6 @@ export const getPresignedUrl = async (req, res) => {
   }
 };
 
-// 🔹 Get Paginated Event Images
 export const getEventImages = async (req, res) => {
   const { eventId, continuationToken, subEventId } = req.body;
   const pageSize = 2;
@@ -151,7 +148,6 @@ export const getEventImages = async (req, res) => {
   }
 };
 
-// 🔹 Get App Images with Sharp Resizing
 export const getAppEventImages = async (req, res) => {
   const { eventId, page = 1, subEventId } = req.query;
   const pageSize = 25;
@@ -260,3 +256,57 @@ export const getEventImageCount = async (req, res) => {
     res.status(500).json({ error: "Could not count images" });
   }
 };
+
+// export const getPresignedUrl = async (req, res) => {
+//   try {
+//     const { files } = req.body; // array of { key, type }
+//     console.log(files);
+
+//     if (!files || !Array.isArray(files)) {
+//       return res.status(400).json({ message: "Invalid files array" });
+//     }
+
+//     const urls = await Promise.all(
+//       files.map(async ({ key }) => {
+//         const command = new PutObjectCommand({
+//           Bucket: process.env.BUCKET_NAME,
+//           Key: key,
+//           ContentType: "image/jpeg",
+//         });
+
+//         const url = await getSignedUrl(s3Client, command, { expiresIn: 300 }); // 5 mins
+//         return { key, url };
+//       })
+//     );
+
+//     res.status(200).json({ urls });
+//   } catch (error) {
+//     console.error("Presigned URL Error:", error);
+//     res.status(500).json({ message: "Error generating presigned URLs" });
+//   }
+// };
+
+// export const getEventImages = async (req, res) => {
+//   try {
+//     const { eventId } = req.params;
+
+//     const images = await ImageModel.find({ eventId });
+
+//     const signedUrls = await Promise.all(
+//       images.map(async (img) => {
+//         const command = new GetObjectCommand({
+//           Bucket: process.env.BUCKET_NAME,
+//           Key: img.thumbnailImageKey,
+//         });
+
+//         const url = await getSignedUrl(s3Client, command);
+//         return url;
+//       })
+//     );
+
+//     res.status(200).json({ urls: signedUrls });
+//   } catch (error) {
+//     console.error("Failed to get images", error);
+//     res.status(500).json({ message: "Failed to get images" });
+//   }
+// };

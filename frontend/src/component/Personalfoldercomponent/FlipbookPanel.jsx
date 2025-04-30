@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Trash, Image, PlusSquare } from "lucide-react";
-import apiRequest from "../../utils/apiRequest";
-import { FLIPBOOK_API_END_POINT } from "../../constant";
+import apiRequest from "../../utils/apiRequest.js";
+import { FLIPBOOK_API_END_POINT } from "../../constant.js";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "../../utils/toast.js";
 
