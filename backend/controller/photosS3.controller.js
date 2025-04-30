@@ -177,37 +177,76 @@ export const getAppEventImages = async (req, res) => {
         : null;
     } while (continuationToken);
 
-    const sortedItems = allItems.sort(
+    // Filter out thumbnails
+    const imageItems = allItems.filter(
+      (item) => !item.Key.includes("/thumbs/")
+    );
+
+    const sortedItems = imageItems.sort(
       (a, b) => new Date(b.LastModified) - new Date(a.LastModified)
     );
 
     const startIndex = (page - 1) * pageSize;
     const paginatedItems = sortedItems.slice(startIndex, startIndex + pageSize);
 
-    const imageUrls = await Promise.all(
+    const images = await Promise.all(
       paginatedItems.map(async (item) => {
-        const getCommand = new GetObjectCommand({
+        const originalCommand = new GetObjectCommand({
           Bucket: process.env.BUCKET_NAME,
           Key: item.Key,
         });
 
-        const image = await s3Client.send(getCommand);
+        const originalUrl = await getSignedUrl(s3Client, originalCommand, {
+          expiresIn: 3600,
+        });
+
+        // Get image buffer
+        const image = await s3Client.send(originalCommand);
         const buffer = await streamToBuffer(image.Body);
 
-        const resizedImage = await sharp(buffer)
+        // Resize for thumbnail
+        const thumbnailBuffer = await sharp(buffer)
           .resize(800)
-          .jpeg({ quality: 50 })
+          .jpeg({ quality: 90 })
           .toBuffer();
 
-        // You can upload the resized image to S3 if desired
-        // Or just return the original image signed URL for now
+        // Derive thumbnail key (insert "thumbs" just before filename)
+        const pathParts = item.Key.split("/");
+        const fileName = pathParts.pop(); // Get file name
+        const thumbKey = [...pathParts.slice(0, -1), "thumbs", fileName].join(
+          "/"
+        );
 
-        return getSignedUrl(s3Client, getCommand, { expiresIn: 3600 });
+        // Upload thumbnail
+        const putCommand = new PutObjectCommand({
+          Bucket: process.env.BUCKET_NAME,
+          Key: thumbKey,
+          Body: thumbnailBuffer,
+          ContentType: "image/jpeg",
+        });
+
+        await s3Client.send(putCommand);
+
+        // Generate thumbnail URL
+        const thumbnailUrl = await getSignedUrl(
+          s3Client,
+          new GetObjectCommand({
+            Bucket: process.env.BUCKET_NAME,
+            Key: thumbKey,
+          }),
+          { expiresIn: 3600 }
+        );
+
+        return {
+          id: item.Key,
+          originalUrl,
+          thumbnailUrl,
+        };
       })
     );
 
     res.status(200).json({
-      images: imageUrls,
+      images,
       hasNextPage: paginatedItems.length === pageSize,
     });
   } catch (err) {

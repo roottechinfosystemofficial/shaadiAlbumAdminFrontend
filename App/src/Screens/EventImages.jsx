@@ -17,11 +17,12 @@ import {
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import ScreenWrapper from "../Components/ScreenWrapper";
+import * as FileSystem from "expo-file-system";
 
 import Modal from "react-native-modal";
 import * as MediaLibrary from "expo-media-library";
 import { Asset } from "expo-asset";
-import { wp } from "../helpers/Common";
+import { hp, wp } from "../helpers/Common";
 import { Camera } from "expo-camera";
 
 import { theme } from "../constants/themes";
@@ -100,8 +101,9 @@ const EventImages = () => {
     );
   };
 
-  const downloadImage = async (image) => {
+  const downloadImage = async (imageUrl) => {
     try {
+      console.log(imageUrl);
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
@@ -111,10 +113,16 @@ const EventImages = () => {
         return;
       }
 
-      const asset = Asset.fromModule(image);
-      await asset.downloadAsync();
-      const savedAsset = await MediaLibrary.createAssetAsync(asset.localUri);
-      await MediaLibrary.createAlbumAsync("Download", savedAsset, false);
+      // Generate local path to save
+      const fileName = imageUrl.split("/").pop().split("?")[0]; // safer filename
+      const fileUri = FileSystem.documentDirectory + fileName;
+
+      // Download original image
+      const downloadedFile = await FileSystem.downloadAsync(imageUrl, fileUri);
+
+      // Save to gallery
+      const asset = await MediaLibrary.createAssetAsync(downloadedFile.uri);
+      await MediaLibrary.createAlbumAsync("Download", asset, false);
 
       Alert.alert("Downloaded", "Image saved to your gallery.");
     } catch (err) {
@@ -166,20 +174,19 @@ const EventImages = () => {
       if (newImages.length === 0) {
         setHasMore(false);
       } else {
-        // console.log(newImages);
+        console.log("thumb", newImages);
         const processedImages = await Promise.all(
-          newImages.map(async (url) => {
-            const { width, height } = await getImageDimensions(url);
-            Image.prefetch(url);
-
-            // let type = "square";
-            // if (width > height) type = "horizontal";
-            // else if (width < height) type = "vertical";
+          newImages.map(async (img) => {
+            const { width, height } = await getImageDimensions(
+              img.thumbnailUrl
+            );
+            Image.prefetch(img.thumbnailUrl);
 
             return {
-              id: url,
-              uri: { uri: url },
-              type: "square",
+              id: img.id,
+              uri: { uri: img.thumbnailUrl }, // for <Image> component
+              originalUrl: img.originalUrl,
+              type: "square", // You can later derive from width/height
             };
           })
         );
@@ -206,7 +213,7 @@ const EventImages = () => {
   const getImageDimensions = (uri) => {
     return new Promise((resolve, reject) => {
       Image.getSize(
-        uri,
+        uri, // must be a string, not { uri: ... }
         (width, height) => resolve({ width, height }),
         (error) => reject(error)
       );
@@ -291,7 +298,12 @@ const EventImages = () => {
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.downloadIcon}
-                    onPress={() => downloadImage(item.uri)}
+                    onPress={() => {
+                      console.log("Original URL: ", item.originalUrl);
+                      console.log("item URL: ", item.uri);
+
+                      return downloadImage(item.originalUrl);
+                    }}
                   >
                     <Ionicons
                       name="download-outline"
@@ -449,7 +461,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     marginLeft: wp(4),
     top: 0,
-    marginTop: wp(4),
+    marginTop: hp(4),
     borderWidth: 3,
     borderColor: theme.colours.primary,
     borderRadius: theme.radius.sm,
