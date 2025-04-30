@@ -27,45 +27,54 @@ const s3Client = new S3Client({
 });
 
 export const getPresignedUrl = async (req, res) => {
-  const { files, eventId, subEventId } = req.body;
+  const { files, eventId, subEventId, usageType, flipbookId } = req.body;
+  console.log(req.body);
 
-  // Validate the request body
-  if (!files || !Array.isArray(files) || !eventId || !subEventId) {
+  // Validate inputs
+  if (!files || !Array.isArray(files) || !eventId) {
+    return res.status(400).json({ error: "Missing files or eventId" });
+  }
+
+  if (usageType === "flipbook" && !flipbookId) {
     return res
       .status(400)
-      .json({ error: "Missing files, eventId, or subEventId" });
+      .json({ error: "Missing flipbookId for flipbook usage" });
+  }
+
+  if (usageType !== "flipbook" && !subEventId) {
+    return res
+      .status(400)
+      .json({ error: "Missing subEventId for event usage" });
   }
 
   const timestamp = Date.now();
   const signedUrls = [];
   const failedFiles = [];
 
-  // Process each file in the request
   try {
     const urlPromises = files.map(async (file, index) => {
       const { fileName, fileType } = file;
 
       try {
-        // Ensure the file has an extension
         const fileExt = fileName.includes(".")
           ? fileName.substring(fileName.lastIndexOf("."))
-          : ".jpg"; // Default to .jpg if no extension
+          : ".jpg";
         const baseName = fileName.substring(0, fileName.lastIndexOf("."));
 
-        // Create a unique key with timestamp, eventId, subEventId, and index
-        const uniqueKey = `eventimages/${eventId}/${subEventId}/${timestamp}_${index}_${baseName}${fileExt}`;
+        const folder =
+          usageType === "flipbook" ? "flipbookimages" : "eventimages";
+        const middleId = usageType === "flipbook" ? flipbookId : subEventId;
 
-        // Prepare the command to get the presigned URL
+        const uniqueKey = `${folder}/${eventId}/${middleId}/Orignal/${timestamp}_${index}_${baseName}${fileExt}`;
+
         const command = new PutObjectCommand({
           Bucket: process.env.BUCKET_NAME,
           Key: uniqueKey,
           ContentType: fileType,
         });
 
-        // Get the presigned URL
         const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
 
-        // Push the signed URL and key to the response data
         return { url, key: uniqueKey, fileName };
       } catch (err) {
         console.error(`Error generating URL for ${fileName}:`, err);
@@ -76,10 +85,8 @@ export const getPresignedUrl = async (req, res) => {
       }
     });
 
-    // Resolve all file promises
     const results = await Promise.all(urlPromises);
 
-    // Separate successful URLs from failed files
     results.forEach((result) => {
       if (result.url) {
         signedUrls.push(result);
@@ -88,7 +95,6 @@ export const getPresignedUrl = async (req, res) => {
       }
     });
 
-    // If no signed URLs were generated, return an error
     if (signedUrls.length === 0) {
       return res.status(500).json({
         error: "Failed to generate any signed URLs",
@@ -96,7 +102,6 @@ export const getPresignedUrl = async (req, res) => {
       });
     }
 
-    // Return the signed URLs and any failed files
     return res.status(200).json({
       urls: signedUrls,
       failedFiles,
@@ -110,17 +115,37 @@ export const getPresignedUrl = async (req, res) => {
 };
 
 export const getEventImages = async (req, res) => {
-  const { eventId, continuationToken, subEventId } = req.body;
-  const pageSize = 200;
+  const { eventId, continuationToken, usageType, subEventId, flipbookId } =
+    req.body;
+  const pageSize = 2;
 
+  // Validate required parameters
   if (!eventId) {
     return res.status(400).json({ error: "Missing eventId" });
   }
 
+  if (usageType === "flipbook" && !flipbookId) {
+    return res
+      .status(400)
+      .json({ error: "Missing flipbookId for flipbook usage" });
+  }
+
+  if (usageType !== "flipbook" && !subEventId) {
+    return res
+      .status(400)
+      .json({ error: "Missing subEventId for event usage" });
+  }
+
   try {
+    // Determine the correct prefix based on usageType
+    const prefix =
+      usageType === "flipbook"
+        ? `flipbookimages/${eventId}/${flipbookId}/`
+        : `eventimages/${eventId}/${subEventId}/Orignal`;
+
     const listCommand = new ListObjectsV2Command({
       Bucket: process.env.BUCKET_NAME,
-      Prefix: `eventimages/${eventId}/${subEventId}/`,
+      Prefix: prefix,
       MaxKeys: pageSize,
       ContinuationToken: continuationToken || undefined,
     });
