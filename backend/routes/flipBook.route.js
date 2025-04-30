@@ -12,6 +12,9 @@ flipBookRouter.get(
   "/flipbook/getAllFlipBookByEvent/:eventId",
   getAllFlipBookByEvent
 );
-flipBookRouter.get("/flipbook/getSingleFlipbookById", getSingleFlipbookById);
+flipBookRouter.get(
+  "/flipbook/getSingleFlipbookById/:flipBookId",
+  getSingleFlipbookById
+);
 
 export default flipBookRouter;

@@ -6,17 +6,27 @@ import { FLIPBOOK_API_END_POINT } from "../../constant.js";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "../../utils/toast.js";
 import { setPersonalFolderContentTab } from "../../Redux/Slices/TabSlice.jsx";
+import { useGetSingleFlipBook } from "../../Hooks/useGetSingleFlipBook.js";
 
 function FlipbookPanel() {
   const [flipbooks, setFlipbooks] = useState([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [formData, setFormData] = useState({ flipBookName: "" });
+  const [flipBookId, setFlipBookId] = useState("");
 
   const dispatch = useDispatch();
   const { accessToken } = useSelector((state) => state.user);
-  const navigate = useNavigate();
   const { eventId } = useParams();
+  const navigate = useNavigate();
+  const { refetchFlipBook } = useGetSingleFlipBook(flipBookId);
+  useEffect(() => {
+    if (flipBookId) {
+      refetchFlipBook();
+      dispatch(setPersonalFolderContentTab("ImagesFlipbookpanel"));
+    }
+  }, [flipBookId]);
 
+  // Fetch all flipbooks for event
   const getAllFlipBookByEvent = async () => {
     try {
       const endpoint = `${FLIPBOOK_API_END_POINT}/getAllFlipBookByEvent/${eventId}`;
@@ -31,8 +41,9 @@ function FlipbookPanel() {
 
   useEffect(() => {
     getAllFlipBookByEvent();
-  }, []);
+  }, [eventId]);
 
+  // Input change handler
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
     setFormData((prev) => ({
@@ -41,11 +52,13 @@ function FlipbookPanel() {
     }));
   };
 
+  // Open modal
   const handleAddFlipbookClick = () => {
     setFormData({ flipBookName: "" });
     setIsAddModalOpen(true);
   };
 
+  // Submit form to create flipbook
   const handleAddFormSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -58,22 +71,28 @@ function FlipbookPanel() {
         dispatch
       );
       if (res?.status === 200) {
-        const createdFlipBook = res?.data?.data;
         toast.success("Flipbook created successfully!");
-        setFlipbooks((prev) => [...prev, createdFlipBook]);
         await getAllFlipBookByEvent();
       }
     } catch (error) {
       console.log(error);
       toast.error("Failed to create flipbook");
+    } finally {
+      setIsAddModalOpen(false);
     }
-    setIsAddModalOpen(false);
   };
 
+  // Delete from local list only (assumes backend call is handled elsewhere)
   const handleDeleteClick = (flipbookId) => {
-    setFlipbooks(flipbooks.filter((fb) => fb?._id !== flipbookId));
+    setFlipbooks((prev) => prev.filter((fb) => fb?._id !== flipbookId));
   };
 
+  // On flipbook click
+  const imageOpenHandler = (id) => {
+    console.log(id);
+
+    setFlipBookId(id);
+  };
   return (
     <div className="p-6">
       {/* Header */}
@@ -123,7 +142,7 @@ function FlipbookPanel() {
 
             <div className="flex justify-between gap-3 mt-auto w-full">
               <button
-                onClick={() => navigate("/")}
+                onClick={() => navigate(`/flipbookUser/${flipbook._id}`)}
                 className="p-3 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center text-xs sm:text-sm w-full sm:w-[50%] gap-2"
               >
                 <Image className="h-3 w-3" />
@@ -131,9 +150,7 @@ function FlipbookPanel() {
               </button>
 
               <button
-                onClick={() =>
-                  dispatch(setPersonalFolderContentTab("ImagesFlipbookpanel"))
-                }
+                onClick={() => imageOpenHandler(flipbook?._id)}
                 className="p-3 bg-yellow-500 text-white rounded hover:bg-yellow-600 flex items-center justify-center text-xs sm:text-sm w-full sm:w-[50%] gap-2"
               >
                 <Image className="h-3 w-3" />

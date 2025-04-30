@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setPersonalFolderContentTab } from "../../Redux/Slices/TabSlice";
 import apiRequest from "../../utils/apiRequest";
@@ -12,8 +12,12 @@ const ImagesFlipbookpanel = () => {
   const [showUploadBox, setShowUploadBox] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]);
-  const { singleEvent } = useSelector((state) => state.event);
+  const [flipbookImages, setFlipbookImages] = useState([]);
+  const [frontCover, setFrontCover] = useState(null);
+  const [backCover, setBackCover] = useState(null);
+  const { singleEvent, selectedFlipBook } = useSelector((state) => state.event);
   const { accessToken } = useSelector((state) => state.user);
+  const [optionsVisible, setOptionsVisible] = useState(null); // store index
 
   const handleBackClick = () => {
     dispatch(setPersonalFolderContentTab("flipbook"));
@@ -58,32 +62,90 @@ const ImagesFlipbookpanel = () => {
 
   const handleUpload = async () => {
     try {
+      const filesMeta = selectedFiles.map((file) => ({
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+      }));
+
       const urlResponse = await apiRequest(
         "POST",
         `${S3_API_END_POINT}/get-presigned-url`,
         {
           eventId: singleEvent?._id,
-
-          files: [
-            {
-              fileName: selectedFiles.name,
-              fileType: selectedFiles.type,
-              fileSize: selectedFiles.size,
-            },
-          ],
+          flipbookId: selectedFlipBook?._id,
+          usageType: "flipbook",
+          files: filesMeta,
         },
         accessToken,
         dispatch
       );
-      console.log(urlResponse);
+
+      const { urls } = urlResponse.data;
+
+      const uploadPromises = urls.map((fileData, index) =>
+        fetch(fileData.url, {
+          method: "PUT",
+          headers: {
+            "Content-Type": selectedFiles[index].type,
+          },
+          body: selectedFiles[index],
+        })
+      );
+
+      const results = await Promise.allSettled(uploadPromises);
+      const failedUploads = results
+        .map((res, idx) => ({ res, idx }))
+        .filter(({ res }) => res.status !== "fulfilled");
+
+      if (failedUploads.length > 0) {
+        setErrorMsg(`${failedUploads.length} uploads failed.`);
+      } else {
+        setErrorMsg("");
+        setSelectedFiles([]);
+        setShowUploadBox(false);
+        fetchFlipbookImages();
+      }
     } catch (error) {
-      console.log(error);
+      console.error("Upload error:", error);
+      setErrorMsg("Something went wrong during upload.");
     }
+  };
+
+  const fetchFlipbookImages = async () => {
+    if (!singleEvent?._id || !selectedFlipBook?._id) return;
+    try {
+      const res = await apiRequest(
+        "POST",
+        `${S3_API_END_POINT}/list-images`,
+        {
+          eventId: singleEvent._id,
+          flipbookId: selectedFlipBook._id,
+          usageType: "flipbook",
+        },
+        accessToken,
+        dispatch
+      );
+      if (res.status === 200) {
+        setFlipbookImages(res.data.images || []);
+      }
+    } catch (err) {
+      console.error("Image load error:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchFlipbookImages();
+  }, [singleEvent?._id, selectedFlipBook?._id]);
+
+  const handleSetCover = (index, type) => {
+    if (type === "front") setFrontCover(index);
+    else if (type === "back") setBackCover(index);
+    setOptionsVisible(null); // hide dropdown after selection
   };
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
-      {/* Top Buttons */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <button
           className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 transition"
@@ -99,7 +161,6 @@ const ImagesFlipbookpanel = () => {
         </button>
       </div>
 
-      {/* Upload Box Modal */}
       {showUploadBox && (
         <div className="fixed top-[20%] left-[60%] -translate-x-1/2 w-full max-w-2xl bg-white shadow-lg border rounded-lg z-50 p-6">
           <div className="flex justify-between items-center mb-4">
@@ -182,6 +243,59 @@ const ImagesFlipbookpanel = () => {
             </button>
           </div>
         </div>
+      )}
+
+      {flipbookImages.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {flipbookImages.map((img, index) => (
+            <div
+              key={index}
+              className="relative border rounded overflow-hidden shadow-sm group"
+            >
+              <img
+                src={img}
+                alt={`Flipbook image ${index + 1}`}
+                className="w-full h-60 object-contain"
+              />
+              <div className="absolute top-2 right-2 z-10">
+                <button
+                  className="p-1 rounded-full bg-white shadow hover:bg-gray-100"
+                  onClick={() =>
+                    setOptionsVisible((prev) => (prev === index ? null : index))
+                  }
+                >
+                  <svg
+                    className="w-5 h-5 text-gray-600"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M6 10a2 2 0 114 0 2 2 0 01-4 0zm4-6a2 2 0 11-4 0 2 2 0 014 0zm0 12a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </button>
+
+                {/* Dropdown menu */}
+                {optionsVisible === index && (
+                  <div className="absolute top-10 right-0 bg-white shadow-lg rounded-md p-2 w-40 z-20">
+                    <button
+                      onClick={() => handleSetCover(index, "front")}
+                      className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                    >
+                      {frontCover === index ? "✓ Frontcover" : "Set Frontcover"}
+                    </button>
+                    <button
+                      onClick={() => handleSetCover(index, "back")}
+                      className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                    >
+                      {backCover === index ? "✓ Backcover" : "Set Backcover"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-gray-500 text-sm mt-6">No images uploaded yet.</p>
       )}
     </div>
   );

@@ -117,7 +117,7 @@ export const getPresignedUrl = async (req, res) => {
 export const getEventImages = async (req, res) => {
   const { eventId, continuationToken, usageType, subEventId, flipbookId } =
     req.body;
-  const pageSize = 2;
+  const pageSize = 200;
 
   // Validate required parameters
   if (!eventId) {

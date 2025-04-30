@@ -2,8 +2,11 @@ import { useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import apiRequest from "../utils/apiRequest";
 import { FLIPBOOK_API_END_POINT } from "../constant";
+import { setSelectedFlipBook } from "../Redux/Slices/EventSlice";
 
 export const useGetSingleFlipBook = (flipBookId) => {
+  console.log(flipBookId);
+
   const dispatch = useDispatch();
   const { accessToken } = useSelector((state) => state.user);
 
@@ -15,7 +18,7 @@ export const useGetSingleFlipBook = (flipBookId) => {
       const res = await apiRequest("GET", endpoint, {}, accessToken, dispatch);
 
       if (res.status === 200) {
-        console.log(res);
+        dispatch(setSelectedFlipBook(res.data.data));
       }
     } catch (err) {
       console.error("🔴 Error fetching single flipbook:", err);

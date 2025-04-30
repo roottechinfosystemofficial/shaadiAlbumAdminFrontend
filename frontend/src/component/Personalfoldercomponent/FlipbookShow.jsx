@@ -1,18 +1,61 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Flipbookfun from "./Flipbookfun";
-
-const imageNumbers = [
-  1, 8, 14, 20, 26, 32, 38, 44, 50, 56, 62, 68, 74, 80, 86, 92, 98, 104, 110,
-  116, 122, 128, 134, 140, 146, 152, 158, 164, 170, 176, 182, 188, 194, 200,
-  206, 212, 218, 224, 230, 236, 242, 248, 254, 260, 332, 338, 344, 350, 362,
-  374, 380, 2,
-];
-const images = imageNumbers.map((num) => `/FlipBook/img${num}.jpg`);
+import { useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { S3_API_END_POINT } from "../../constant";
+import apiRequest from "../../utils/apiRequest";
 
 const FlipbookShow = () => {
+  const { flipBookId } = useParams();
+  const { singleEvent } = useSelector((state) => state.event);
+  const { accessToken } = useSelector((state) => state.user);
+  const [flipbookImages, setFlipbookImages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+
+  const fetchFlipbookImages = async () => {
+    console.log(singleEvent);
+    console.log(flipBookId);
+
+    if (!singleEvent?._id || !flipBookId) return;
+
+    try {
+      const res = await apiRequest(
+        "POST",
+        `${S3_API_END_POINT}/list-images`,
+        {
+          eventId: singleEvent._id,
+          flipbookId: flipBookId,
+          usageType: "flipbook",
+        },
+        accessToken,
+        dispatch
+      );
+      console.log(res);
+
+      if (res.status === 200) {
+        setFlipbookImages(res.data.images || []);
+      }
+    } catch (err) {
+      console.error("Image load error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFlipbookImages();
+  }, [singleEvent?._id, flipBookId]);
+
   return (
-    <div className="">
-      <Flipbookfun images={images} />
+    <div>
+      {loading ? (
+        <p>Loading flipbook...</p>
+      ) : flipbookImages.length > 0 ? (
+        <Flipbookfun images={flipbookImages} />
+      ) : (
+        <p>No flipbook images found.</p>
+      )}
     </div>
   );
 };

@@ -61,9 +61,11 @@ export const getSingleFlipbookById = async (req, res) => {
       return res.status(404).json({ error: "Flipbook not found" });
     }
 
-    res.status(200).json({ flipbook });
+    return res
+      .status(200)
+      .json(new ApiResponse(200, flipbook, "Flipbook fetched successfully"));
   } catch (error) {
     console.error("Error fetching flipbook:", error);
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(400).json(new ApiResponse(400, null, error.message));
   }
 };
