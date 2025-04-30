@@ -26,6 +26,7 @@ const AddPhotosModal = ({
   const { accessToken } = useSelector((state) => state.user);
   const { refetchImageCount } = useGetEventImagesCount(singleEvent?._id);
   const dispatch = useDispatch();
+console.log(singleEvent);
 
   if (!isOpen) return null;
 

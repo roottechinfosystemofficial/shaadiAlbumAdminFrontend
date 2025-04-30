@@ -52,8 +52,6 @@ const PhotosPanel = () => {
           dispatch
         );
 
-        console.log(res);
-
         if (res.status === 200) {
           const data = res.data.images || [];
           const nextToken = res.data.nextToken;

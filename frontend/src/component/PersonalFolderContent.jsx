@@ -4,6 +4,9 @@ import PhotosPanel from "./Personalfoldercomponent/PhotosPanel";
 import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
 import { useParams } from "react-router-dom";
 import FaceScan from "./FaceScan";
+import { useDispatch, useSelector } from "react-redux";
+import { setPersonalFolderContentTab } from "../Redux/Slices/TabSlice";
+import ImagesFlipbookpanel from "./Personalfoldercomponent/ImagesFlipbookpanel";
 
 const FavouritePanel = () => (
   <p className="text-center text-slate-dark mt-10">No Favourite Found!</p>
@@ -11,17 +14,21 @@ const FavouritePanel = () => (
 
 const PersonalFolderContent = () => {
   const { eventId } = useParams();
-
+  const dispatch = useDispatch();
   useGetSingleEvent(eventId);
-  const [activeTab, setActiveTab] = useState("photos");
+  const { personalFolderContentTab } = useSelector((state) => state.tab);
+  console.log(personalFolderContentTab);
+
   const renderContent = () => {
-    switch (activeTab) {
-      case "photos":
+    switch (personalFolderContentTab) {
+      case "PhotosPanel":
         return <PhotosPanel />;
       case "flipbook":
         return <FlipbookPanel />;
       case "favourite":
         return <FaceScan />;
+      case "ImagesFlipbookpanel":
+        return <ImagesFlipbookpanel />;
       default:
         return null;
     }
@@ -35,9 +42,9 @@ const PersonalFolderContent = () => {
           {["photos", "flipbook", "favourite"].map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => dispatch(setPersonalFolderContentTab(tab))}
               className={`px-4 py-2 rounded-md text-sm font-medium transition shrink-0 ${
-                activeTab === tab
+                personalFolderContentTab === tab
                   ? "bg-primary text-white"
                   : "bg-slate text-gray-800 hover:bg-primary-dark hover:text-white"
               }`}

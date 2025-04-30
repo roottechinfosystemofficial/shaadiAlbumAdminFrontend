@@ -46,3 +46,24 @@ export const getAllFlipBookByEvent = async (req, res) => {
     return res.status(400).json(new ApiResponse(400, null, error.message));
   }
 };
+
+export const getSingleFlipbookById = async (req, res) => {
+  try {
+    const flipBookId = req.params.flipBookId;
+
+    if (!flipBookId) {
+      return res.status(400).json({ error: "flipBookId is required" });
+    }
+
+    const flipbook = await FlipBook.findById(flipBookId);
+
+    if (!flipbook) {
+      return res.status(404).json({ error: "Flipbook not found" });
+    }
+
+    res.status(200).json({ flipbook });
+  } catch (error) {
+    console.error("Error fetching flipbook:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};

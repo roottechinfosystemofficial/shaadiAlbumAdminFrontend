@@ -2,7 +2,8 @@ import express from "express";
 import {
   createFlipBook,
   getAllFlipBookByEvent,
-} from "../controller/flipbook.controller.js";
+  getSingleFlipbookById,
+} from "../controller/flipBook.controller.js";
 
 const flipBookRouter = express.Router();
 
@@ -11,5 +12,6 @@ flipBookRouter.get(
   "/flipbook/getAllFlipBookByEvent/:eventId",
   getAllFlipBookByEvent
 );
+flipBookRouter.get("/flipbook/getSingleFlipbookById", getSingleFlipbookById);
 
 export default flipBookRouter;

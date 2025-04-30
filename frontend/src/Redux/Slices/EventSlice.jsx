@@ -5,6 +5,7 @@ export const eventSlice = createSlice({
   initialState: {
     singleEvent: null,
     selectedSubEvent: null,
+    selectedFlipBook: null,
   },
   reducers: {
     setSingleEvent: (state, action) => {
@@ -20,9 +21,17 @@ export const eventSlice = createSlice({
     setSelectedSubEvent: (state, action) => {
       state.selectedSubEvent = action.payload;
     },
+
+    setSelectedFlipBook: (state, action) => {
+      state.selectedFlipBook = action.payload;
+    },
   },
 });
 
-export const { setSingleEvent, updateEventImageCount, setSelectedSubEvent } =
-  eventSlice.actions;
+export const {
+  setSingleEvent,
+  updateEventImageCount,
+  setSelectedSubEvent,
+  setSelectedFlipBook,
+} = eventSlice.actions;
 export default eventSlice.reducer;

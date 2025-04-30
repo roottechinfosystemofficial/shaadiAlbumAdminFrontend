@@ -5,6 +5,7 @@ import apiRequest from "../../utils/apiRequest.js";
 import { FLIPBOOK_API_END_POINT } from "../../constant.js";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "../../utils/toast.js";
+import { setPersonalFolderContentTab } from "../../Redux/Slices/TabSlice.jsx";
 
 function FlipbookPanel() {
   const [flipbooks, setFlipbooks] = useState([]);
@@ -130,7 +131,9 @@ function FlipbookPanel() {
               </button>
 
               <button
-                onClick={() => navigate("/")}
+                onClick={() =>
+                  dispatch(setPersonalFolderContentTab("ImagesFlipbookpanel"))
+                }
                 className="p-3 bg-yellow-500 text-white rounded hover:bg-yellow-600 flex items-center justify-center text-xs sm:text-sm w-full sm:w-[50%] gap-2"
               >
                 <Image className="h-3 w-3" />

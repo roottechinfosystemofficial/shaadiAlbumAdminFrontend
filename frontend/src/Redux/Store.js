@@ -7,6 +7,7 @@ import coverImgReducer from "./Slices/CoverImgSlice";
 import galleryLayoutReducer from "./Slices/GalleryLayoutSlice";
 import userReducer from "./Slices/UserSlice";
 import eventReducer from "./Slices/EventSlice.jsx";
+import tabReducer from "./Slices/TabSlice.jsx";
 
 // 🔐 Persist only `authUser` from user slice
 const authUserTransform = createTransform(
@@ -31,6 +32,7 @@ const rootReducer = combineReducers({
   galleryLayout: galleryLayoutReducer,
   coverImg: coverImgReducer,
   event: eventReducer,
+  tab: tabReducer,
 });
 
 // 🧊 Create persisted reducer
