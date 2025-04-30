@@ -111,7 +111,7 @@ export const getPresignedUrl = async (req, res) => {
 
 export const getEventImages = async (req, res) => {
   const { eventId, continuationToken, subEventId } = req.body;
-  const pageSize = 2;
+  const pageSize = 200;
 
   if (!eventId) {
     return res.status(400).json({ error: "Missing eventId" });

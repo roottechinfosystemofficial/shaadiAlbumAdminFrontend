@@ -122,11 +122,19 @@ function FlipbookPanel() {
 
             <div className="flex justify-between gap-3 mt-auto w-full">
               <button
-                onClick={() => navigate("/flipbookUser")}
+                onClick={() => navigate("/")}
                 className="p-3 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center text-xs sm:text-sm w-full sm:w-[50%] gap-2"
               >
                 <Image className="h-3 w-3" />
                 <span>Open</span>
+              </button>
+
+              <button
+                onClick={() => navigate("/")}
+                className="p-3 bg-yellow-500 text-white rounded hover:bg-yellow-600 flex items-center justify-center text-xs sm:text-sm w-full sm:w-[50%] gap-2"
+              >
+                <Image className="h-3 w-3" />
+                <span>Images</span>
               </button>
             </div>
           </div>
