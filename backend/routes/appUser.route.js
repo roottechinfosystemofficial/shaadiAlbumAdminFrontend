@@ -1,7 +1,9 @@
 import express from "express";
 import {
+  finalSubmitImages,
   findEventByEventcode,
   findEventByEventPin,
+  getSubEventImages,
   login,
   signUp,
   user,
@@ -22,4 +24,6 @@ appUserRouter.post(
   verifyAppJWT,
   findEventByEventPin
 );
+appUserRouter.post("/app-event/final-submit", finalSubmitImages);
+appUserRouter.post("/app-event/client-selected", getSubEventImages);
 export default appUserRouter;

@@ -5,6 +5,13 @@ const subEventSchema = new mongoose.Schema(
     subEventName: { type: String, required: true },
 
     subEventTotalImages: { type: Number },
+    clientSelectedImages: [
+      {
+        id: { type: String, required: true },
+        thumbnailUrl: { type: String, required: true },
+        originalUrl: { type: String, required: true },
+      },
+    ],
   },
   { timestamps: true }
 );

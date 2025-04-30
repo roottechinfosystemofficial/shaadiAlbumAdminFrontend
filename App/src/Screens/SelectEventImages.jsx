@@ -26,6 +26,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import ArrowLeft from "../../assets/Icons/ArrowLeft";
 import ScrollLoading from "../Components/Scrollloading";
 import BackButton from "../Components/BackButton";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const screenWidth = Dimensions.get("window").width;
 const imagePadding = 8;
@@ -34,6 +35,7 @@ const SeletEventImages = () => {
   const route = useRoute();
   const { subId, id, subEventName } = route.params;
   const [images, setImages] = useState([]);
+
   const [favorites, setFavorites] = useState(images.map((img) => img.id));
   const [gridCount, setGridCount] = useState(2);
   const columnWidth =
@@ -49,6 +51,29 @@ const SeletEventImages = () => {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const modalFlatListRef = useRef(null);
+
+  const loadStoredSelections = async (newImages) => {
+    try {
+      const storedData = await AsyncStorage.getItem(`final_selection_${subId}`);
+      if (storedData) {
+        const parsed = JSON.parse(storedData);
+
+        // Match image by `originalUrl`
+        const selectedIds = newImages
+          .filter((img) => parsed.some((sel) => sel.id === img.id))
+          .map((img) => img.id);
+
+        // Update selection state without duplicates
+        setSelectedImages((prev) => {
+          const merged = new Set([...prev, ...selectedIds]);
+          return [...merged];
+        });
+      }
+    } catch (err) {
+      console.error("Failed to load stored selections:", err);
+    }
+  };
+
   useEffect(() => {
     const backAction = () => {
       if (modalVisible) {
@@ -132,6 +157,10 @@ const SeletEventImages = () => {
     fetchEventImages(1);
   }, []);
 
+
+
+
+
   const fetchEventImages = async (pageToFetch) => {
     if (loading || !hasMore) return;
 
@@ -158,15 +187,19 @@ const SeletEventImages = () => {
       if (newImages.length === 0) {
         setHasMore(false);
       } else {
+        // console.log("thumb", newImages);
         const processedImages = await Promise.all(
-          newImages.map(async (url) => {
-            const { width, height } = await getImageDimensions(url);
-            Image.prefetch(url);
+          newImages.map(async (img) => {
+            const { width, height } = await getImageDimensions(
+              img.thumbnailUrl
+            );
+            Image.prefetch(img.thumbnailUrl);
 
             return {
-              id: url,
-              uri: { uri: url },
-              type: "square",
+              id: img.id,
+              uri: { uri: img.thumbnailUrl }, // for <Image> component
+              originalUrl: img.originalUrl,
+              type: "square", // You can later derive from width/height
             };
           })
         );
@@ -178,8 +211,9 @@ const SeletEventImages = () => {
           );
           return [...prev, ...newUniqueImages];
         });
+        await loadStoredSelections(processedImages);
 
-        setPage(pageToFetch);
+        setPage(pageToFetch); // Update state
       }
     } catch (error) {
       console.error("Fetch error:", error);
@@ -189,6 +223,33 @@ const SeletEventImages = () => {
     }
   };
 
+
+  const fetchClientSelectedImages = async () => {
+    try {
+      const response = await fetch("http://192.168.1.101:5000/api/v1/app-event/client-selected", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          eventId: id,
+          subEventId: subId,
+        }),
+      });
+  
+      const data = await response.json();
+  
+      if (response.ok && Array.isArray(data.images)) {
+        const selectedIds = data.images.map((img) => img.id);
+        setSelectedImages(selectedIds);
+      } else {
+        console.warn("Failed to fetch client-selected images");
+      }
+    } catch (error) {
+      console.error("Error fetching client-selected images:", error);
+    }
+  };
+  
   // Helper function to get image dimensions
   const getImageDimensions = (uri) => {
     return new Promise((resolve, reject) => {
@@ -204,6 +265,70 @@ const SeletEventImages = () => {
   images.forEach((img, index) => {
     columns[index % gridCount].push(img);
   });
+
+  const handleFinalSubmit = async () => {
+    if (selectedImages.length === 0) {
+      Alert.alert(
+        "No images selected",
+        "Please select images before submitting."
+      );
+      return;
+    }
+
+    Alert.alert(
+      "Confirm Submission",
+      "Once you submit your selection, you cannot make changes. Do you want to proceed?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Submit",
+          onPress: async () => {
+            try {
+              const selectedImageObjects = images
+                .filter((img) => selectedImages.includes(img.id))
+                .map((img) => ({
+                  id: img.id,
+                  originalUrl: img.originalUrl,
+                  thumbnailUrl: img.uri.uri,
+                }));
+              console.log("Passing data", selectedImageObjects);
+              // Save to AsyncStorage
+              await AsyncStorage.setItem(
+                `final_selection_${subId}`,
+                JSON.stringify(selectedImageObjects)
+              );
+
+              // Send to backend
+              const response = await fetch(
+                "http://192.168.1.101:5000/api/v1/app-event/final-submit",
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    subEventId: subId,
+                    images: selectedImageObjects,
+                  }),
+                }
+              );
+
+              const data = await response.json();
+              if (response.ok) {
+                Alert.alert("Success", "Images submitted successfully.");
+                navigation.goBack();
+              } else {
+                Alert.alert("Error", data.message || "Submission failed.");
+              }
+            } catch (err) {
+              console.error(err);
+              Alert.alert("Error", "An error occurred during submission.");
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const handleLoadMore = () => {
     if (hasMore && !loading) {
@@ -245,6 +370,7 @@ const SeletEventImages = () => {
                 ? styles.gridButton
                 : styles.gridButtonActive
             }
+            onPress={handleFinalSubmit}
           >
             <Text
               style={

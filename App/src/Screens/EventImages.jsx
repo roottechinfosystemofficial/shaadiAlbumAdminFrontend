@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     marginLeft: wp(4),
     top: 0,
-    marginTop: hp(4),
+    marginTop: Platform.OS === "ios" ? StatusBar.currentHeight || hp(7) : hp(3),
     borderWidth: 3,
     borderColor: theme.colours.primary,
     borderRadius: theme.radius.sm,
