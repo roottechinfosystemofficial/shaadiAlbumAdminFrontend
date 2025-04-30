@@ -192,3 +192,104 @@ export const findEventByEventPin = async (req, res) => {
     });
   }
 };
+export const updateClientSelectedImages = async (req, res) => {
+  try {
+    const { subEventId, image } = req.body;
+
+    const event = await Event.findOne({ "subevents._id": subEventId });
+    if (!event) return res.status(404).json({ message: "SubEvent not found" });
+
+    const subevent = event.subevents.id(subEventId);
+
+    const imageIndex = subevent.clientSelectedImages.findIndex(
+      (img) => img.id === image.id
+    );
+
+    if (imageIndex > -1) {
+      // Image already exists → remove it
+      subevent.clientSelectedImages.splice(imageIndex, 1);
+      await event.save();
+      return res.status(200).json({ message: "Image deselected successfully" });
+    } else {
+      // Image not present → add it
+      subevent.clientSelectedImages.push(image);
+      event.markModified("subevents");
+      await event.save();
+      return res.status(200).json({ message: "Image selected successfully" });
+    }
+  } catch (error) {
+    console.error("Update error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+export const finalSubmitImages = async (req, res) => {
+  try {
+    const { subEventId, images } = req.body;
+    console.log(req.body);
+    if (!subEventId || !images || !Array.isArray(images)) {
+      return res.status(400).json({ message: "Invalid request data" });
+    }
+
+    const event = await Event.findOne({ "subevents._id": subEventId });
+    if (!event) {
+      return res.status(404).json({ message: "SubEvent not found" });
+    }
+
+    const subevent = event.subevents.id(subEventId);
+    if (!subevent) {
+      return res.status(404).json({ message: "SubEvent not found" });
+    }
+
+    // Validate image objects
+    for (const image of images) {
+      if (!image.id || !image.thumbnailUrl || !image.originalUrl) {
+        return res.status(400).json({
+          message: "Each image must include id, thumbnailUrl, and originalUrl",
+        });
+      }
+    }
+
+    // Overwrite with new selections
+    subevent.clientSelectedImages = images;
+
+    // Optional: Update total count
+    subevent.subEventTotalImages = images.length;
+
+    await event.save();
+
+    return res.status(200).json({ message: "Images submitted successfully" });
+  } catch (error) {
+    console.error("Error submitting final images:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getSubEventImages = async (req, res) => {
+  const { eventId, subEventId } = req.body;
+
+  try {
+    const event = await Event.findById(eventId);
+
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    const subEvent = event.subevents.id(subEventId);
+
+    if (!subEvent) {
+      return res.status(404).json({ message: "Sub-event not found" });
+    }
+
+    if (
+      subEvent.clientSelectedImages &&
+      subEvent.clientSelectedImages.length > 0
+    ) {
+      return res.status(200).json({ images: subEvent.clientSelectedImages });
+    } else {
+      return res.status(200).json({ images: [] });
+    }
+  } catch (error) {
+    console.error("Error fetching sub-event images:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};

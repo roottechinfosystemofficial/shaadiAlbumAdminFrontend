@@ -187,6 +187,7 @@ export const getAppEventImages = async (req, res) => {
   let continuationToken;
 
   try {
+    // Fetch all image objects
     do {
       const listCommand = new ListObjectsV2Command({
         Bucket: process.env.BUCKET_NAME,
@@ -229,20 +230,30 @@ export const getAppEventImages = async (req, res) => {
         const image = await s3Client.send(originalCommand);
         const buffer = await streamToBuffer(image.Body);
 
-        // Resize for thumbnail
-        const thumbnailBuffer = await sharp(buffer)
-          .resize(800)
-          .jpeg({ quality: 90 })
-          .toBuffer();
+        // Resize and compress thumbnail within 200KB
+        const MAX_THUMBNAIL_SIZE = 200 * 1024;
+        let quality = 90;
+        let thumbnailBuffer;
 
-        // Derive thumbnail key (insert "thumbs" just before filename)
+        do {
+          thumbnailBuffer = await sharp(buffer)
+            .resize(800)
+            .jpeg({ quality })
+            .toBuffer();
+
+          if (thumbnailBuffer.length <= MAX_THUMBNAIL_SIZE || quality <= 30)
+            break;
+          quality -= 5;
+        } while (true);
+
+        // Derive thumbnail key (1 folder up, insert "thumbs")
         const pathParts = item.Key.split("/");
-        const fileName = pathParts.pop(); // Get file name
+        const fileName = pathParts.pop();
         const thumbKey = [...pathParts.slice(0, -1), "thumbs", fileName].join(
           "/"
         );
 
-        // Upload thumbnail
+        // Upload thumbnail to S3
         const putCommand = new PutObjectCommand({
           Bucket: process.env.BUCKET_NAME,
           Key: thumbKey,
@@ -252,14 +263,13 @@ export const getAppEventImages = async (req, res) => {
 
         await s3Client.send(putCommand);
 
-        // Generate thumbnail URL
+        // Get signed URL for thumbnail
         const thumbnailUrl = await getSignedUrl(
           s3Client,
           new GetObjectCommand({
             Bucket: process.env.BUCKET_NAME,
             Key: thumbKey,
-          }),
-          { expiresIn: 3600 }
+          })
         );
 
         return {
