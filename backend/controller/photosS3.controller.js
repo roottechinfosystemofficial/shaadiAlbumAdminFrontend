@@ -7,26 +7,9 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import dotenv from "dotenv";
 import sharp from "sharp";
-import {
-  RekognitionClient,
-  SearchFacesByImageCommand,
-} from "@aws-sdk/client-rekognition";
+// import ImageModel from "../model/ImageMetadata.js";
 
 dotenv.config();
-
-const s3Client = new S3Client({
-  region: "ap-south-1",
-  credentials: {
-    accessKeyId: process.env.ACCESSID,
-    secretAccessKey: process.env.SECRETACCESSKEY,
-  },
-});
-
-
-const BATCH_SIZE = 50;
-const MAX_FILE_SIZE_MB = 10;
-
-// Utility: Convert stream to buffer
 const streamToBuffer = async (stream) => {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -35,66 +18,100 @@ const streamToBuffer = async (stream) => {
     stream.on("error", reject);
   });
 };
+const s3Client = new S3Client({
+  region: "ap-south-1",
+  credentials: {
+    accessKeyId: process.env.ACCESSID,
+    secretAccessKey: process.env.SECRETACCESSKEY,
+  },
+});
 
-// 🔹 Generate Pre-signed URL for Upload
 export const getPresignedUrl = async (req, res) => {
   const { files, eventId, subEventId } = req.body;
 
-  if (!files || !Array.isArray(files) || !eventId) {
-    return res.status(400).json({ error: "Missing files or eventId" });
+  // Validate the request body
+  if (!files || !Array.isArray(files) || !eventId || !subEventId) {
+    return res
+      .status(400)
+      .json({ error: "Missing files, eventId, or subEventId" });
   }
 
   const timestamp = Date.now();
+  const signedUrls = [];
+  const failedFiles = [];
 
-  const generateBatchUrls = async (files, eventId) => {
-    const batches = [];
-    for (let i = 0; i < files.length; i += BATCH_SIZE) {
-      const batch = files.slice(i, i + BATCH_SIZE);
-      batches.push(batch);
-    }
-
-    let signedUrls = [];
-
-    for (const batch of batches) {
-      const batchUrls = await Promise.all(
-        batch.map(async ({ fileName, fileType, fileSize }, index) => {
-          if (fileSize > MAX_FILE_SIZE_MB * 1024 * 1024) {
-            throw new Error(
-              `File ${fileName} exceeds the size limit of ${MAX_FILE_SIZE_MB} MB.`
-            );
-          }
-
-          const uniqueKey = `eventimages/${eventId}/${subEventId}/${timestamp}/${index}${fileName}`;
-          const command = new PutObjectCommand({
-            Bucket: process.env.BUCKET_NAME,
-            Key: uniqueKey,
-            ContentType: fileType,
-          });
-
-          const url = await getSignedUrl(s3Client, command);
-
-          return { url, key: uniqueKey, fileName };
-        })
-      );
-      signedUrls = [...signedUrls, ...batchUrls];
-    }
-
-    return signedUrls;
-  };
-
+  // Process each file in the request
   try {
-    const signedUrls = await generateBatchUrls(files, eventId);
-    res.status(200).json({ urls: signedUrls });
+    const urlPromises = files.map(async (file, index) => {
+      const { fileName, fileType } = file;
+
+      try {
+        // Ensure the file has an extension
+        const fileExt = fileName.includes(".")
+          ? fileName.substring(fileName.lastIndexOf("."))
+          : ".jpg"; // Default to .jpg if no extension
+        const baseName = fileName.substring(0, fileName.lastIndexOf("."));
+
+        // Create a unique key with timestamp, eventId, subEventId, and index
+        const uniqueKey = `eventimages/${eventId}/${subEventId}/${timestamp}_${index}_${baseName}${fileExt}`;
+
+        // Prepare the command to get the presigned URL
+        const command = new PutObjectCommand({
+          Bucket: process.env.BUCKET_NAME,
+          Key: uniqueKey,
+          ContentType: fileType,
+        });
+
+        // Get the presigned URL
+        const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+
+        // Push the signed URL and key to the response data
+        return { url, key: uniqueKey, fileName };
+      } catch (err) {
+        console.error(`Error generating URL for ${fileName}:`, err);
+        return {
+          fileName,
+          reason: "Internal error generating URL",
+        };
+      }
+    });
+
+    // Resolve all file promises
+    const results = await Promise.all(urlPromises);
+
+    // Separate successful URLs from failed files
+    results.forEach((result) => {
+      if (result.url) {
+        signedUrls.push(result);
+      } else {
+        failedFiles.push(result);
+      }
+    });
+
+    // If no signed URLs were generated, return an error
+    if (signedUrls.length === 0) {
+      return res.status(500).json({
+        error: "Failed to generate any signed URLs",
+        failedFiles,
+      });
+    }
+
+    // Return the signed URLs and any failed files
+    return res.status(200).json({
+      urls: signedUrls,
+      failedFiles,
+    });
   } catch (err) {
-    console.error("Error generating signed URLs:", err);
-    res.status(500).json({ error: "Could not generate signed URLs" });
+    console.error("Unexpected error during URL generation:", err);
+    return res
+      .status(500)
+      .json({ error: "Unexpected error during URL generation" });
   }
 };
 
-// 🔹 Get Paginated Event Images
 export const getEventImages = async (req, res) => {
   const { eventId, continuationToken, subEventId } = req.body;
-  const pageSize = 20;
+  const pageSize = 2;
 
   if (!eventId) {
     return res.status(400).json({ error: "Missing eventId" });
@@ -131,7 +148,6 @@ export const getEventImages = async (req, res) => {
   }
 };
 
-// 🔹 Get App Images with Sharp Resizing
 export const getAppEventImages = async (req, res) => {
   const { eventId, page = 1, subEventId } = req.query;
   const pageSize = 25;
@@ -240,3 +256,57 @@ export const getEventImageCount = async (req, res) => {
     res.status(500).json({ error: "Could not count images" });
   }
 };
+
+// export const getPresignedUrl = async (req, res) => {
+//   try {
+//     const { files } = req.body; // array of { key, type }
+//     console.log(files);
+
+//     if (!files || !Array.isArray(files)) {
+//       return res.status(400).json({ message: "Invalid files array" });
+//     }
+
+//     const urls = await Promise.all(
+//       files.map(async ({ key }) => {
+//         const command = new PutObjectCommand({
+//           Bucket: process.env.BUCKET_NAME,
+//           Key: key,
+//           ContentType: "image/jpeg",
+//         });
+
+//         const url = await getSignedUrl(s3Client, command, { expiresIn: 300 }); // 5 mins
+//         return { key, url };
+//       })
+//     );
+
+//     res.status(200).json({ urls });
+//   } catch (error) {
+//     console.error("Presigned URL Error:", error);
+//     res.status(500).json({ message: "Error generating presigned URLs" });
+//   }
+// };
+
+// export const getEventImages = async (req, res) => {
+//   try {
+//     const { eventId } = req.params;
+
+//     const images = await ImageModel.find({ eventId });
+
+//     const signedUrls = await Promise.all(
+//       images.map(async (img) => {
+//         const command = new GetObjectCommand({
+//           Bucket: process.env.BUCKET_NAME,
+//           Key: img.thumbnailImageKey,
+//         });
+
+//         const url = await getSignedUrl(s3Client, command);
+//         return url;
+//       })
+//     );
+
+//     res.status(200).json({ urls: signedUrls });
+//   } catch (error) {
+//     console.error("Failed to get images", error);
+//     res.status(500).json({ message: "Failed to get images" });
+//   }
+// };

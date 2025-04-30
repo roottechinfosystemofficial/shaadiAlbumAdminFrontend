@@ -107,4 +107,8 @@ toast.loading = (message, options = {}) =>
     },
   });
 
+toast.dismiss = () => {
+  originalToast.dismiss();
+};
+
 export default toast;
