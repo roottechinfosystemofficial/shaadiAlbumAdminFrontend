@@ -1,16 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   View,
-  Dimensions,
   ActivityIndicator,
   StyleSheet,
   StatusBar,
-  Platform,
+  Dimensions,
 } from "react-native";
 import { WebView } from "react-native-webview";
 import * as ScreenOrientation from "expo-screen-orientation";
-import { hp } from "../helpers/Common";
-const { width, height } = Dimensions.get("window");
+
 const FlipBookScreen = () => {
   const webviewRef = useRef(null);
   const [loading, setLoading] = useState(true);
@@ -20,21 +18,23 @@ const FlipBookScreen = () => {
       await ScreenOrientation.lockAsync(
         ScreenOrientation.OrientationLock.LANDSCAPE
       );
-      StatusBar.setHidden(true); // Hide the status bar
+      StatusBar.setHidden(true);
     };
 
     lockOrientation();
 
     return () => {
       ScreenOrientation.unlockAsync();
-      StatusBar.setHidden(false); // Show it again on unmount
+      StatusBar.setHidden(false);
     };
   }, []);
 
+  const { width, height } = Dimensions.get("window");
+
   return (
-    <View style={styles.container}>
+    <View style={{ width, height, backgroundColor: "#000" }}>
       {loading && (
-        <ActivityIndicator size="large" color="#000" style={styles.loader} />
+        <ActivityIndicator size="large" color="#fff" style={styles.loader} />
       )}
       <WebView
         ref={webviewRef}
@@ -42,11 +42,11 @@ const FlipBookScreen = () => {
           uri: "https://shaadialbumadminfrontend.onrender.com/flipbookUser/680b55e432fff6cc637292e7/68106258bba9ef2a98415856",
         }}
         onLoadEnd={() => setLoading(false)}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        sharedCookiesEnabled={true}
-        thirdPartyCookiesEnabled={true}
-        style={{ width, height }} // 👈 key fix here
+        javaScriptEnabled
+        domStorageEnabled
+        allowsFullscreenVideo
+        scalesPageToFit={false}
+        style={{ width: width, height, backgroundColor: "#000" }}
       />
     </View>
   );
@@ -55,18 +55,12 @@ const FlipBookScreen = () => {
 export default FlipBookScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
   loader: {
     position: "absolute",
     top: "50%",
     left: "50%",
+    marginLeft: -20,
+    marginTop: -20,
     zIndex: 10,
   },
-  // webview: {
-  //   width: Dimensions.get("window").width,
-  //   height: Dimensions.get("window").height,
-  // },
 });
