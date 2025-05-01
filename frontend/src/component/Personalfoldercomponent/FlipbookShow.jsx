@@ -7,16 +7,13 @@ import apiRequest from "../../utils/apiRequest";
 
 const FlipbookShow = () => {
   const { flipBookId } = useParams();
-  const { singleEvent } = useSelector((state) => state.event);
+  const { singleEvent, selectedFlipBook } = useSelector((state) => state.event);
   const { accessToken } = useSelector((state) => state.user);
   const [flipbookImages, setFlipbookImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const dispatch = useDispatch();
 
   const fetchFlipbookImages = async () => {
-    console.log(singleEvent);
-    console.log(flipBookId);
-
     if (!singleEvent?._id || !flipBookId) return;
 
     try {
@@ -31,8 +28,6 @@ const FlipbookShow = () => {
         accessToken,
         dispatch
       );
-      console.log(res);
-
       if (res.status === 200) {
         setFlipbookImages(res.data.images || []);
       }
@@ -47,12 +42,22 @@ const FlipbookShow = () => {
     fetchFlipbookImages();
   }, [singleEvent?._id, flipBookId]);
 
+  // Extract front and back cover indices from selectedFlipBook
+  const frontCover =
+    selectedFlipBook?.flipbookImages?.frontCoverImageIndex ?? null;
+  const backCover =
+    selectedFlipBook?.flipbookImages?.backCoverImageIndex ?? null;
+
   return (
     <div>
       {loading ? (
         <p>Loading flipbook...</p>
       ) : flipbookImages.length > 0 ? (
-        <Flipbookfun images={flipbookImages} />
+        <Flipbookfun
+          images={flipbookImages}
+          frontCover={frontCover}
+          backCover={backCover}
+        />
       ) : (
         <p>No flipbook images found.</p>
       )}
