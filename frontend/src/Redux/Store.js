@@ -18,11 +18,16 @@ const authUserTransform = createTransform(
 
 // 🗂 Persist only `currentEvent` from event slice
 const singleEventTransform = createTransform(
+  // transform state on its way to being serialized and persisted
   (inboundState) => ({
-    currentEvent: inboundState.currentEvent,
-    flipBookId: inboundState.flipBookId, // ✅ Added this line
+    currentEventId: inboundState.currentEventId,
+    currentSubEventId: inboundState.currentSubEventId,
+    currentFlipbookId: inboundState.currentFlipbookId,
   }),
+
+  // transform state being rehydrated
   (outboundState) => outboundState,
+
   { whitelist: ["event"] }
 );
 

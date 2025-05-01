@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { RefreshCw, MoreVertical, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setCurrentEventId } from "../../Redux/Slices/EventSlice";
 
 const EventCard = ({ event, onEdit, onDelete, setOpenEditModel }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const navigate = useNavigate();
-
+  const dispatch = useDispatch();
   const eventImage = event?.eventImage || "fallback-image-url";
   const eventName = event?.eventName || "Untitled Event";
   const eventDate = event?.eventDate
@@ -32,7 +34,8 @@ const EventCard = ({ event, onEdit, onDelete, setOpenEditModel }) => {
           alt={eventName}
           className="w-full h-40 object-cover"
           onClick={() => {
-            navigate(`/personalfolder/${event?._id || 1}`);
+            navigate(`/personalfolder/${event?._id}`);
+            dispatch(setCurrentEventId(event?._id));
           }}
         />
         <button

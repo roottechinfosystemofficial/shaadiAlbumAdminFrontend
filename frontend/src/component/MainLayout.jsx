@@ -5,16 +5,27 @@ import { setAccessToken, setRefreshToken } from "../Redux/Slices/UserSlice";
 import Cookies from "js-cookie";
 import { useAuthCheck } from "../Hooks/useAuthCheckHook";
 import { useGetSingleFlipBook } from "../Hooks/useGetSingleFlipBook";
+import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
 
 const MainLayout = () => {
   const dispatch = useDispatch();
-  const { flipBookId } = useSelector((state) => state.event);
-  const { refetchFlipBook } = useGetSingleFlipBook(flipBookId);
+  const { currentFlipbookId, currentEventId } = useSelector(
+    (state) => state.event
+  );
+  const { refetchFlipBook } = useGetSingleFlipBook(currentFlipbookId);
+  const { refetchEvent } = useGetSingleEvent(currentEventId);
+
   useEffect(() => {
-    if (flipBookId) {
+    if (currentFlipbookId) {
       refetchFlipBook();
     }
-  }, [flipBookId]);
+  }, [currentFlipbookId]);
+
+  useEffect(() => {
+    if (currentEventId) {
+      refetchEvent();
+    }
+  }, [currentEventId]);
   useEffect(() => {
     const getCookies = () => {
       const accessToken = Cookies.get("accessToken");

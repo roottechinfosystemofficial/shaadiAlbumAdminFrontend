@@ -8,6 +8,7 @@ import EventModal from "../component/EventlistingComponent/EventModal";
 import apiRequest from "../utils/apiRequest";
 import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
 import toast from "../utils/toast.js";
+import { setCurrentEventId } from "../Redux/Slices/EventSlice.jsx";
 
 const EventlistPage = () => {
   const [showModal, setShowModal] = useState(false);
@@ -92,6 +93,7 @@ const EventlistPage = () => {
 
   const handleEdit = (id) => {
     setUseEventId(id);
+    dispatch(setCurrentEventId(id));
   };
 
   const handleDelete = (id) => {

@@ -1,16 +1,12 @@
-import React, { useState } from "react";
+import React from "react";
 import FlipbookPanel from "./Personalfoldercomponent/FlipbookPanel";
 import PhotosPanel from "./Personalfoldercomponent/PhotosPanel";
 import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
 import { useParams } from "react-router-dom";
-import FaceScan from "./FaceScan";
 import { useDispatch, useSelector } from "react-redux";
 import { setPersonalFolderContentTab } from "../Redux/Slices/TabSlice";
 import ImagesFlipbookpanel from "./Personalfoldercomponent/ImagesFlipbookpanel";
-
-const FavouritePanel = () => (
-  <p className="text-center text-slate-dark mt-10">No Favourite Found!</p>
-);
+import FavouritePanel from "./FavouritePanel";
 
 const PersonalFolderContent = () => {
   const { eventId } = useParams();
@@ -25,7 +21,7 @@ const PersonalFolderContent = () => {
       case "flipbook":
         return <FlipbookPanel />;
       case "favourite":
-        return <FaceScan />;
+        return <FavouritePanel />;
       case "ImagesFlipbookpanel":
         return <ImagesFlipbookpanel />;
       default:

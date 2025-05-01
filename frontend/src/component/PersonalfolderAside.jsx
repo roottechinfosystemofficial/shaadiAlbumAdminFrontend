@@ -11,7 +11,7 @@ import { useGetSingleEvent } from "../Hooks/useGetSingleEvent.js";
 
 const PersonalfolderAside = () => {
   const { eventId } = useParams();
-  useGetSingleEvent(eventId); // Assuming this hook updates the currentEvent state
+  useGetSingleEvent(eventId); 
 
   const { currentEvent } = useSelector((state) => state.event);
 
