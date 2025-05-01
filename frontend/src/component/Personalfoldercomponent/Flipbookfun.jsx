@@ -113,10 +113,10 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
           className="transform origin-center"
           style={{
             transform: "rotate(90deg)",
-            width: "300px",
-            height: "200px",
-            touchAction: "pan-y",
-            WebkitTapHighlightColor: "transparent",
+            width: "100vh",
+            height: "100vw",
+            overflow: "hidden",
+            touchAction: "none",
           }}
         >
           <HTMLFlipBook
