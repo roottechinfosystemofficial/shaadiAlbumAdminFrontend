@@ -7,6 +7,7 @@ import {
   setAuthUser,
   setRefreshToken,
 } from "../Redux/Slices/UserSlice.jsx";
+import { setSingleEvent } from "../Redux/Slices/EventSlice.jsx";
 
 export const logoutUser = async ({ accessToken, dispatch, navigate }) => {
   try {
@@ -45,6 +46,7 @@ const handleFrontendLogout = (dispatch, navigate) => {
   dispatch(setAuthUser(null));
   dispatch(setAccessToken(null));
   dispatch(setRefreshToken(null));
+  dispatch(setSingleEvent(null));
 
   // Redirect to login page
   navigate("/login");

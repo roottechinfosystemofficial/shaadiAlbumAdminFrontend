@@ -69,3 +69,40 @@ export const getSingleFlipbookById = async (req, res) => {
     return res.status(400).json(new ApiResponse(400, null, error.message));
   }
 };
+
+export const setFrontBackCoverImg = async (req, res) => {
+  try {
+    const { flipbookId, imageIndex, type } = req.body;
+
+    if (
+      !flipbookId ||
+      !Number.isInteger(imageIndex) ||
+      !["front", "back"].includes(type)
+    ) {
+      return res.status(400).json({ message: "Invalid data provided" });
+    }
+
+    const updateField =
+      type === "front"
+        ? { "flipbookImages.frontCoverImageIndex": imageIndex }
+        : { "flipbookImages.backCoverImageIndex": imageIndex };
+
+    const updated = await FlipBook.findByIdAndUpdate(
+      flipbookId,
+      { $set: updateField },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Flipbook not found" });
+    }
+
+    return res.status(200).json({
+      message: `${type} cover updated successfully`,
+      flipbook: updated,
+    });
+  } catch (error) {
+    console.error("Error setting cover image index:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};

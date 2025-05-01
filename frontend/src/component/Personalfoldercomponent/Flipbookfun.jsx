@@ -40,7 +40,9 @@ const splitImage = (src) => {
   });
 };
 
-const Flipbookfun = ({ images }) => {
+const Flipbookfun = ({ images, frontCover, backCover }) => {
+  console.log({ images, frontCover, backCover });
+
   const bookRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [pages, setPages] = useState([]);
@@ -51,9 +53,11 @@ const Flipbookfun = ({ images }) => {
       if (!images || images.length === 0) return;
 
       setLoading(true);
-      const processed = [images[0]]; // Front cover
 
-      const middleImages = images.slice(1, images.length - 1);
+      const processed = [images[frontCover]]; // Use passed front cover
+      const middleImages = images.filter(
+        (_, i) => i !== frontCover && i !== backCover
+      );
 
       const splitImagesBatch = async (imgSources) => {
         const promises = imgSources.map((src) => splitImage(src));
@@ -65,7 +69,7 @@ const Flipbookfun = ({ images }) => {
 
       try {
         const splitPages = await splitImagesBatch(middleImages);
-        processed.push(...splitPages, images[images.length - 1]); // Back cover
+        processed.push(...splitPages, images[backCover]); // Use passed back cover
         setPages(processed);
       } catch (err) {
         console.error("Error processing images:", err);
@@ -75,7 +79,7 @@ const Flipbookfun = ({ images }) => {
     };
 
     preparePages();
-  }, [images]);
+  }, [images, frontCover, backCover]);
 
   const nextPage = () => {
     if (currentPage < pages.length - 1) {
@@ -157,7 +161,14 @@ const Flipbookfun = ({ images }) => {
           className="shadow-xl"
         >
           {pages.map((src, index) => (
-            <div key={index} className="w-full h-full">
+            <div
+              key={index}
+              className={`w-full h-full ${
+                index === frontCover || index === backCover
+                  ? "border-4 border-yellow-500"
+                  : ""
+              }`}
+            >
               <img
                 src={src}
                 alt={`Page ${index + 1}`}
