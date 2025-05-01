@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import Flipbookfun from "./Flipbookfun";
+import Flipbookfun1 from "./Flipbookfun";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { S3_API_END_POINT } from "../../constant";
@@ -85,7 +85,7 @@ const FlipbookShow = () => {
           </button>
         </div>
       ) : (
-        <Flipbookfun
+        <Flipbookfun1
           images={flipbookImages}
           frontCover={frontCover}
           backCover={backCover}
