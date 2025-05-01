@@ -110,19 +110,22 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
       {/* 📱 Mobile Version */}
       <div className="sm:hidden absolute top-0 left-0 w-full h-full flex items-center justify-center">
         <div
-          className="transform origin-center"
+          className="absolute top-0 left-0"
           style={{
-            transform: "rotate(90deg)",
-            width: "100vh",
-            height: "100vw",
+            width: "100%",
+            height: "100%",
             overflow: "hidden",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "black",
             touchAction: "none",
           }}
         >
           <HTMLFlipBook
             width={window.innerHeight}
             height={window.innerWidth}
-            size="fixed"
+            size="stretch"
             showCover={true}
             usePortrait={false}
             mobileScrollSupport={true}
