@@ -36,23 +36,36 @@ export const login = async (req, res) => {
   try {
     const { phone, password } = req.body;
 
-    const user = await AppUser.findOne({ phoneNo: phone });
-    if (!user) {
-      throw new ApiError(404, "AppUser not found with this email");
+    // First, fetch user WITH password
+    const userWithPassword = await AppUser.findOne({ phoneNo: phone }).select(
+      "+password"
+    );
+
+    if (!userWithPassword) {
+      throw new ApiError(404, "AppUser not found with this phone number");
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    // Check password
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      userWithPassword.password
+    );
     if (!isPasswordValid) {
       throw new ApiError(400, "Invalid credentials");
     }
 
+    // Now re-fetch the user with populated fields and without password
+    const user = await AppUser.findById(userWithPassword._id)
+      .select("-password")
+      .populate("searchEvent")
+      .populate("imageSelectionEvent");
+
+    // Generate access token
     const accessToken = jwt.sign(
       { userId: user._id },
       process.env.ACCESS_TOKEN_SECRET,
       { expiresIn: "5d" }
     );
-
-    await user.save();
 
     return res.status(200).json(
       new ApiResponse(

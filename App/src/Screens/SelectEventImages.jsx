@@ -127,14 +127,34 @@ const SeletEventImages = () => {
         return { width: columnWidth, height: columnWidth }; // Square images
     }
   };
-  const toggleSelectedImage = (id) => {
-    setSelectedImages(
-      (prevSelected) =>
-        prevSelected.includes(id)
-          ? prevSelected.filter((itemId) => itemId !== id) // Remove if already selected
-          : [...prevSelected, id] // Add if not selected
-    );
-    console.log(selectedImages);
+  const toggleSelectedImage = async (id) => {
+    let updatedSelectedImages;
+
+    if (selectedImages.includes(id)) {
+      updatedSelectedImages = selectedImages.filter((itemId) => itemId !== id);
+    } else {
+      updatedSelectedImages = [...selectedImages, id];
+    }
+
+    setSelectedImages(updatedSelectedImages);
+
+    // Build updated image objects and store
+    const updatedSelectedImageObjects = images
+      .filter((img) => updatedSelectedImages.includes(img.id))
+      .map((img) => ({
+        id: img.id,
+        originalUrl: img.originalUrl,
+        thumbnailUrl: img.uri.uri,
+      }));
+
+    try {
+      await AsyncStorage.setItem(
+        `final_selection_${subId}`,
+        JSON.stringify(updatedSelectedImageObjects)
+      );
+    } catch (err) {
+      console.error("Failed to store updated selection in AsyncStorage:", err);
+    }
   };
 
   const toggleFavorite = (id) => {
@@ -243,6 +263,7 @@ const SeletEventImages = () => {
       const newImages = data.images || [];
       if (response.ok && data.images.length > 0) {
         setHasSelectedImages(true);
+        await AsyncStorage.removeItem(`final_selection_${subId}`);
         // console.log(data.images);
         const selectedIds = data.images.map((img) => img.id);
 
