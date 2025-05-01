@@ -19,6 +19,7 @@ const PhotosPanel = () => {
   const [reloadKey, setReloadKey] = useState(0); // to force refetch
   const dispatch = useDispatch();
   const { accessToken } = useSelector((state) => state.user);
+  const { personalFolderContentTab } = useSelector((state) => state.tab);
 
   const pageSize = 100;
 
@@ -51,6 +52,7 @@ const PhotosPanel = () => {
           accessToken,
           dispatch
         );
+        console.log(res);
 
         if (res.status === 200) {
           const data = res.data.images || [];

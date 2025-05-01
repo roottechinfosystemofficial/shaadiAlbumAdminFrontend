@@ -117,7 +117,7 @@ export const getPresignedUrl = async (req, res) => {
 export const getEventImages = async (req, res) => {
   const { eventId, continuationToken, usageType, subEventId, flipbookId } =
     req.body;
-  const pageSize = 200;
+  const pageSize = 20;
 
   // Validate required parameters
   if (!eventId) {
@@ -137,23 +137,33 @@ export const getEventImages = async (req, res) => {
   }
 
   try {
-    // Determine the correct prefix based on usageType
     const prefix =
       usageType === "flipbook"
         ? `flipbookimages/${eventId}/${flipbookId}/`
         : `eventimages/${eventId}/${subEventId}/Orignal`;
 
-    const listCommand = new ListObjectsV2Command({
-      Bucket: process.env.BUCKET_NAME,
-      Prefix: prefix,
-      MaxKeys: pageSize,
-      ContinuationToken: continuationToken || undefined,
-    });
+    let allContents = [];
+    let nextToken = continuationToken || undefined;
 
-    const response = await s3Client.send(listCommand);
+    do {
+      const listCommand = new ListObjectsV2Command({
+        Bucket: process.env.BUCKET_NAME,
+        Prefix: prefix,
+        MaxKeys: usageType === "flipbook" ? 1000 : pageSize,
+        ContinuationToken: nextToken,
+      });
+
+      const response = await s3Client.send(listCommand);
+      allContents.push(...(response.Contents || []));
+
+      nextToken = response.NextContinuationToken;
+
+      // Stop if not flipbook (i.e. paginated call)
+      if (usageType !== "flipbook") break;
+    } while (nextToken);
 
     const imageUrls = await Promise.all(
-      (response.Contents || []).map(async (item) => {
+      allContents.map(async (item) => {
         const getCommand = new GetObjectCommand({
           Bucket: process.env.BUCKET_NAME,
           Key: item.Key,
@@ -161,14 +171,13 @@ export const getEventImages = async (req, res) => {
         return getSignedUrl(s3Client, getCommand);
       })
     );
-    console.log(imageUrls.length);
 
     res.status(200).json({
       images: imageUrls,
-      nextToken: response.NextContinuationToken || null,
+      nextToken: usageType === "flipbook" ? null : nextToken || null,
     });
   } catch (err) {
-    console.error("Error fetching paginated images:", err);
+    console.error("Error fetching images:", err);
     res.status(500).json({ error: "Could not retrieve images" });
   }
 };

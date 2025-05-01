@@ -38,7 +38,7 @@ const PersonalFolderContent = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-end gap-4 mb-4 border-b-2 border-slate pb-3">
         <div className="flex gap-2 overflow-x-auto md:overflow-visible whitespace-nowrap scrollbar-hide">
-          {["photos", "flipbook", "favourite"].map((tab) => (
+          {["PhotosPanel", "flipbook", "favourite"].map((tab) => (
             <button
               key={tab}
               onClick={() => dispatch(setPersonalFolderContentTab(tab))}
@@ -48,8 +48,8 @@ const PersonalFolderContent = () => {
                   : "bg-slate text-gray-800 hover:bg-primary-dark hover:text-white"
               }`}
             >
-              {tab === "photos"
-                ? "Photos"
+              {tab === "PhotosPanel"
+                ? "PhotosPanel"
                 : tab === "flipbook"
                 ? "Flipbook"
                 : "Total Favourite - 0"}
