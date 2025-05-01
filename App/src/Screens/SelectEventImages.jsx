@@ -13,12 +13,13 @@ import {
   BackHandler,
   Keyboard,
   StatusBar,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import ScreenWrapper from "../Components/ScreenWrapper";
 
 import Modal from "react-native-modal";
-import { wp } from "../helpers/Common";
+import { hp, wp } from "../helpers/Common";
 import { Camera } from "expo-camera";
 
 import { theme } from "../constants/themes";
@@ -404,7 +405,17 @@ const SeletEventImages = () => {
 
   return (
     <ScreenWrapper bg="#FBFBFB">
-      <StatusBar backgroundColor="transparent" translucent />
+      <StatusBar
+        barStyle={modalVisible ? "light-content" : "dark-content"} // icon/text color
+        backgroundColor={
+          Platform.OS === "android"
+            ? modalVisible
+              ? "#000"
+              : "transparent"
+            : "transparent"
+        }
+        translucent
+      />
       <View style={styles.container}>
         <View style={styles.header}>
           <BackButton navigation={navigation} />
@@ -642,6 +653,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 30,
     right: 30,
+    marginTop: Platform.OS === "ios" ? StatusBar.currentHeight || hp(5) : hp(3),
   },
 
   scroll: {
@@ -741,6 +753,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colours.primary,
     borderRadius: theme.radius.sm,
     backgroundColor: theme.colours.primary,
+    marginTop: Platform.OS === "ios" ? StatusBar.currentHeight || hp(8) : hp(3),
   },
   fullscreenImage: {
     width: Dimensions.get("window").width,

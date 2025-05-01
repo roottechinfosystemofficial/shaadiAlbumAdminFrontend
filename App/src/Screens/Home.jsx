@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
+  StatusBar,
+  Platform,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import {
@@ -78,6 +80,11 @@ const Home = () => {
   }, []);
   return (
     <ScreenWrapper bg="white">
+      <StatusBar
+        barStyle={"dark-content"} // icon/text color
+        backgroundColor={Platform.OS === "android" ? "#000" : "transparent"}
+        translucent
+      />
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
