@@ -26,7 +26,6 @@ const MainLayout = () => {
 
     getCookies();
   }, [dispatch]);
-  // const { refetchFlipBook } = useGetSingleFlipBook(flipBookId);
 
   useAuthCheck();
 
