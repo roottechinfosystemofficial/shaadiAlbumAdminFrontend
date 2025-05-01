@@ -60,7 +60,15 @@ const FlipbookShow = () => {
   return (
     <div className="">
       {loading ? (
-        <p>Loading flipbook...</p>
+        <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white space-y-6">
+          <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin" />
+          <p className="text-2xl font-semibold animate-pulse tracking-wide">
+            Loading your flipbook...
+          </p>
+          <p className="text-sm text-gray-400">
+            This may take a few seconds ⏳
+          </p>
+        </div>
       ) : isDataMissing ? (
         <div className="text-center space-y-4">
           <h2 className="text-xl font-semibold text-gray-700">
