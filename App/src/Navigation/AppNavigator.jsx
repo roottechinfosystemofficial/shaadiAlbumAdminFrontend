@@ -27,6 +27,7 @@ import SeletEventImages from "../Screens/SelectEventImages";
 import EventFolders from "../Screens/EventFolders";
 import SelectionEventFolders from "../Screens/SelectionEventFolders";
 import FaceSelfieCam from "../Components/FaceIDVerification/FaceSelfieCam";
+import ChangePassword from "../Screens/ChangePassword";
 
 const Stack = createStackNavigator();
 
@@ -45,6 +46,7 @@ const AppNavigator = () => {
       <Stack.Screen name="HomeScreen" component={HomeScreen} />
       <Stack.Screen name="PinVerify" component={PinVerify} />
       <Stack.Screen name="ResetPassword" component={ResetPassword} />
+      <Stack.Screen name="ChangePassword" component={ChangePassword} />
       <Stack.Screen name="ResetSuccess" component={ResetSuccess} />
       <Stack.Screen name="SuccessSignUp" component={SuccessSignUp} />
       <Stack.Screen name="Account" component={Account} />
