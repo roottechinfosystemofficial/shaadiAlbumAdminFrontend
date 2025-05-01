@@ -42,7 +42,6 @@ const appRouter = createBrowserRouter([
             ],
           },
           // ✅ Flipbook user view (only after login)
-          { path: "flipbookUser/:flipBookId", element: <FlipbookShow /> },
         ],
       },
 
@@ -57,6 +56,10 @@ const appRouter = createBrowserRouter([
 
       // 🌐 External client view (no auth needed)
       { path: ":eventId/clientview", element: <Clientview /> },
+      {
+        path: "flipbookUser/:eventId/:flipBookId",
+        element: <FlipbookShow />,
+      },
       { path: "*", element: <Notfound /> },
     ],
   },

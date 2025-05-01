@@ -4,31 +4,33 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { S3_API_END_POINT } from "../../constant";
 import apiRequest from "../../utils/apiRequest";
+import { useGetSingleFlipBook } from "../../Hooks/useGetSingleFlipBook";
 
 const FlipbookShow = () => {
-  const { flipBookId } = useParams();
-  const { singleEvent, selectedFlipBook } = useSelector((state) => state.event);
+  const { flipBookId, eventId } = useParams();
+  const { selectedFlipBook } = useSelector((state) => state.event);
   const { accessToken } = useSelector((state) => state.user);
   const [flipbookImages, setFlipbookImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
+  useGetSingleFlipBook(flipBookId);
   const fetchFlipbookImages = async () => {
-    if (!singleEvent?._id || !flipBookId) return;
+    if (!eventId || !flipBookId) return;
 
     try {
       const res = await apiRequest(
         "POST",
         `${S3_API_END_POINT}/list-images`,
         {
-          eventId: singleEvent._id,
+          eventId,
           flipbookId: flipBookId,
           usageType: "flipbook",
         },
         accessToken,
         dispatch
       );
+
       if (res.status === 200) {
         setFlipbookImages(res.data.images || []);
       }
@@ -41,7 +43,7 @@ const FlipbookShow = () => {
 
   useEffect(() => {
     fetchFlipbookImages();
-  }, [singleEvent?._id, flipBookId]);
+  }, [eventId, flipBookId]);
 
   const frontCover =
     selectedFlipBook?.flipbookImages?.frontCoverImageIndex ?? null;
@@ -49,7 +51,7 @@ const FlipbookShow = () => {
     selectedFlipBook?.flipbookImages?.backCoverImageIndex ?? null;
 
   const handleNavigateBack = () => {
-    navigate(`/personalfolder/${singleEvent?._id || 1}`);
+    navigate(`/personalfolder/${eventId || 1}`);
   };
 
   const isDataMissing =

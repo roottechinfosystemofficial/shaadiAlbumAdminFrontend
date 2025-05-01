@@ -96,7 +96,7 @@ function FlipbookPanel() {
   };
 
   const flipBookOpenHandler = (id) => {
-    navigate(`/flipbookUser/${id}`);
+    navigate(`/flipbookUser/${eventId}/${id}`);
     dispatch(setFlipBookId(id));
   };
   return (
