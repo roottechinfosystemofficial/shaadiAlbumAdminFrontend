@@ -6,9 +6,9 @@ const ProtectedRoute = () => {
   const { authUser } = useSelector((state) => state.user);
 
   // Check if user is logged in
-  // if (!authUser) {
-  //   return <Navigate to="/login" />;
-  // }
+  if (!authUser) {
+    return <Navigate to="/login" />;
+  }
 
   // ✅ Allow access
   return <Outlet />;
