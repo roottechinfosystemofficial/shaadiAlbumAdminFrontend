@@ -5,8 +5,6 @@ import { FLIPBOOK_API_END_POINT } from "../constant";
 import { setSelectedFlipBook } from "../Redux/Slices/EventSlice";
 
 export const useGetSingleFlipBook = (flipBookId) => {
-  console.log(flipBookId);
-
   const dispatch = useDispatch();
   const { accessToken } = useSelector((state) => state.user);
 

@@ -1,13 +1,20 @@
 import React, { useEffect } from "react";
 import { Outlet } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setAccessToken, setRefreshToken } from "../Redux/Slices/UserSlice";
 import Cookies from "js-cookie";
 import { useAuthCheck } from "../Hooks/useAuthCheckHook";
+import { useGetSingleFlipBook } from "../Hooks/useGetSingleFlipBook";
 
 const MainLayout = () => {
   const dispatch = useDispatch();
-
+  const { flipBookId } = useSelector((state) => state.event);
+  const { refetchFlipBook } = useGetSingleFlipBook(flipBookId);
+  useEffect(() => {
+    if (flipBookId) {
+      refetchFlipBook();
+    }
+  }, [flipBookId]);
   useEffect(() => {
     const getCookies = () => {
       const accessToken = Cookies.get("accessToken");

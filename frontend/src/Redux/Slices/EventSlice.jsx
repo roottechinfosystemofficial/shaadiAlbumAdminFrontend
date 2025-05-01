@@ -6,6 +6,7 @@ export const eventSlice = createSlice({
     singleEvent: null,
     selectedSubEvent: null,
     selectedFlipBook: null,
+    flipBookId: "",
   },
   reducers: {
     setSingleEvent: (state, action) => {
@@ -25,6 +26,10 @@ export const eventSlice = createSlice({
     setSelectedFlipBook: (state, action) => {
       state.selectedFlipBook = action.payload;
     },
+
+    setFlipBookId: (state, action) => {
+      state.flipBookId = action.payload;
+    },
   },
 });
 
@@ -33,5 +38,6 @@ export const {
   updateEventImageCount,
   setSelectedSubEvent,
   setSelectedFlipBook,
+  setFlipBookId,
 } = eventSlice.actions;
 export default eventSlice.reducer;

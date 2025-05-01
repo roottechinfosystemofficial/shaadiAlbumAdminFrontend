@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Flipbookfun from "./Flipbookfun";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { S3_API_END_POINT } from "../../constant";
 import apiRequest from "../../utils/apiRequest";
@@ -12,6 +12,7 @@ const FlipbookShow = () => {
   const [flipbookImages, setFlipbookImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const fetchFlipbookImages = async () => {
     if (!singleEvent?._id || !flipBookId) return;
@@ -42,24 +43,43 @@ const FlipbookShow = () => {
     fetchFlipbookImages();
   }, [singleEvent?._id, flipBookId]);
 
-  // Extract front and back cover indices from selectedFlipBook
   const frontCover =
     selectedFlipBook?.flipbookImages?.frontCoverImageIndex ?? null;
   const backCover =
     selectedFlipBook?.flipbookImages?.backCoverImageIndex ?? null;
 
+  const handleNavigateBack = () => {
+    navigate(`/personalfolder/${singleEvent?._id || 1}`);
+  };
+
+  const isDataMissing =
+    !flipbookImages.length || frontCover === null || backCover === null;
+
   return (
-    <div>
+    <div className="">
       {loading ? (
         <p>Loading flipbook...</p>
-      ) : flipbookImages.length > 0 ? (
+      ) : isDataMissing ? (
+        <div className="text-center space-y-4">
+          <h2 className="text-xl font-semibold text-gray-700">
+            Flipbook content is incomplete or unavailable.
+          </h2>
+          <p className="text-gray-500">
+            Please ensure images, front cover, and back cover are configured.
+          </p>
+          <button
+            onClick={handleNavigateBack}
+            className="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+          >
+            Go to Personal Folder
+          </button>
+        </div>
+      ) : (
         <Flipbookfun
           images={flipbookImages}
           frontCover={frontCover}
           backCover={backCover}
         />
-      ) : (
-        <p>No flipbook images found.</p>
       )}
     </div>
   );

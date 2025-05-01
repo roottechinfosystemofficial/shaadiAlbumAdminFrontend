@@ -17,7 +17,6 @@ const PersonalFolderContent = () => {
   const dispatch = useDispatch();
   useGetSingleEvent(eventId);
   const { personalFolderContentTab } = useSelector((state) => state.tab);
-  console.log(personalFolderContentTab);
 
   const renderContent = () => {
     switch (personalFolderContentTab) {
