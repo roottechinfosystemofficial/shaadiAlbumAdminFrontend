@@ -56,12 +56,13 @@ const appRouter = createBrowserRouter([
 
       // 🌐 External client view (no auth needed)
       { path: ":eventId/clientview", element: <Clientview /> },
-      {
-        path: "flipbookUser/:eventId/:flipBookId",
-        element: <FlipbookShow />,
-      },
+
       { path: "*", element: <Notfound /> },
     ],
+  },
+  {
+    path: "flipbookUser/:eventId/:flipBookId",
+    element: <FlipbookShow />,
   },
 ]);
 
