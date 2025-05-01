@@ -108,14 +108,13 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
   return (
     <div className="flex flex-col gap-y-10 items-center justify-center w-full min-h-screen bg-black relative overflow-hidden">
       {/* 📱 Mobile Version */}
-      <div className="sm:hidden fixed top-0 left-0 w-screen h-screen flex items-center justify-center overflow-hidden bg-black">
+      <div className="sm:hidden absolute top-0 left-0 w-full h-full flex items-center justify-center">
         <div
           className="transform origin-center"
           style={{
             transform: "rotate(90deg)",
-            width: "80vh",
-            height: "80vw",
-            overflow: "hidden",
+            width: "300px",
+            height: "200px",
             touchAction: "pan-y",
             WebkitTapHighlightColor: "transparent",
           }}
