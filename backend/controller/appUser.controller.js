@@ -70,6 +70,37 @@ export const login = async (req, res) => {
   }
 };
 
+export const changePassword = async (req, res) => {
+  try {
+    const { phone, oldPassword, newPassword } = req.body;
+
+    if (!phone || !oldPassword || !newPassword) {
+      throw new ApiError(400, "Missing required fields");
+    }
+
+    const user = await AppUser.findOne({ phoneNo: phone });
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      throw new ApiError(401, "Old password is incorrect");
+    }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedNewPassword;
+    await user.save();
+
+    return res.json(
+      new ApiResponse(200, null, "Password changed successfully")
+    );
+  } catch (error) {
+    console.error("🔴 Error in changePassword:", error);
+    return res.status(400).json(new ApiResponse(400, null, error.message));
+  }
+};
+
 export const user = async (req, res) => {
   try {
     const userId = req.userId;
@@ -93,7 +124,27 @@ export const user = async (req, res) => {
     return res.status(400).json(new ApiResponse(400, null, error.message));
   }
 };
+export const updateUserName = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { name } = req.body;
 
+    if (!name || name.trim() === "") {
+      return res.status(400).json({ error: "Name cannot be empty" });
+    }
+
+    const updatedUser = await AppUser.findByIdAndUpdate(
+      userId,
+      { name },
+      { new: true }
+    );
+
+    res.status(200).json({ message: "Profile updated", user: updatedUser });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
 export const findEventByEventcode = async (req, res) => {
   try {
     const { eventCode } = req.body;

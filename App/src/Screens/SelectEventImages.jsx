@@ -43,6 +43,7 @@ const SeletEventImages = () => {
   const navigation = useNavigation();
   const [selectedImage, setSelectedImage] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [hasSelectedImages, setHasSelectedImages] = useState(false);
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [hasPermission, setHasPermission] = useState(null);
@@ -154,12 +155,11 @@ const SeletEventImages = () => {
   };
 
   useEffect(() => {
-    fetchEventImages(1);
+    const init = async () => {
+      await fetchClientSelectedImages();
+    };
+    init();
   }, []);
-
-
-
-
 
   const fetchEventImages = async (pageToFetch) => {
     if (loading || !hasMore) return;
@@ -223,33 +223,62 @@ const SeletEventImages = () => {
     }
   };
 
-
   const fetchClientSelectedImages = async () => {
     try {
-      const response = await fetch("http://192.168.1.101:5000/api/v1/app-event/client-selected", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          eventId: id,
-          subEventId: subId,
-        }),
-      });
-  
+      const response = await fetch(
+        "http://192.168.1.101:5000/api/v1/app-event/client-selected",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            eventId: id,
+            subEventId: subId,
+          }),
+        }
+      );
+
       const data = await response.json();
-  
-      if (response.ok && Array.isArray(data.images)) {
+      const newImages = data.images || [];
+      if (response.ok && data.images.length > 0) {
+        setHasSelectedImages(true);
+        // console.log(data.images);
         const selectedIds = data.images.map((img) => img.id);
-        setSelectedImages(selectedIds);
+
+        const processedImages = await Promise.all(
+          newImages.map(async (img) => {
+            const { width, height } = await getImageDimensions(
+              img.thumbnailUrl
+            );
+            Image.prefetch(img.thumbnailUrl);
+
+            return {
+              id: img.id,
+              uri: { uri: img.thumbnailUrl }, // for <Image> component
+              originalUrl: img.originalUrl,
+              type: "square", // You can later derive from width/height
+            };
+          })
+        );
+
+        setImages((prev) => {
+          const existingIds = new Set(prev.map((img) => img.id));
+          const newUniqueImages = processedImages.filter(
+            (img) => !existingIds.has(img.id)
+          );
+          return [...prev, ...newUniqueImages];
+        });
       } else {
         console.warn("Failed to fetch client-selected images");
+        setHasSelectedImages(false);
+        fetchEventImages(1);
       }
     } catch (error) {
       console.error("Error fetching client-selected images:", error);
     }
   };
-  
+
   // Helper function to get image dimensions
   const getImageDimensions = (uri) => {
     return new Promise((resolve, reject) => {
@@ -358,30 +387,36 @@ const SeletEventImages = () => {
       <View style={styles.container}>
         <View style={styles.header}>
           <BackButton navigation={navigation} />
-          <Text style={styles.title}>
-            {selectedImages?.length === 0
-              ? "Select"
-              : `${selectedImages?.length} Selected`}
-          </Text>
+          {hasSelectedImages ? (
+            <Text style={styles.title}>Allready Selected</Text>
+          ) : (
+            <>
+              <Text style={styles.title}>
+                {selectedImages?.length === 0
+                  ? "Select"
+                  : `${selectedImages?.length} Selected`}
+              </Text>
 
-          <TouchableOpacity
-            style={
-              selectedImages.length == 0
-                ? styles.gridButton
-                : styles.gridButtonActive
-            }
-            onPress={handleFinalSubmit}
-          >
-            <Text
-              style={
-                selectedImages.length == 0
-                  ? styles.Subbutton
-                  : styles.ActiveSubbutton
-              }
-            >
-              Submit
-            </Text>
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={
+                  selectedImages.length == 0
+                    ? styles.gridButton
+                    : styles.gridButtonActive
+                }
+                onPress={handleFinalSubmit}
+              >
+                <Text
+                  style={
+                    selectedImages.length == 0
+                      ? styles.Subbutton
+                      : styles.ActiveSubbutton
+                  }
+                >
+                  Submit
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
         <FlatList
           data={images}
@@ -424,95 +459,101 @@ const SeletEventImages = () => {
           onEndReachedThreshold={0.5}
           ListFooterComponent={loading && <ScrollLoading />}
         />
-        <Modal
-          isVisible={modalVisible}
-          onBackdropPress={closeModal}
-          style={{ margin: 0 }}
-          animationIn="fadeIn"
-          animationOut="fadeOut"
-        >
-          <View style={styles.modalOverlay}>
-            <Pressable onPress={closeModal} style={styles.fullscreenImage}>
-              <FlatList
-                ref={modalFlatListRef}
-                horizontal
-                pagingEnabled
-                windowSize={3}
-                initialNumToRender={1}
-                maxToRenderPerBatch={2}
-                removeClippedSubviews={true}
-                showsHorizontalScrollIndicator={false}
-                data={images}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                  <View style={styles.imageWrapper}>
-                    {/* Background touch area */}
-                    <TouchableWithoutFeedback onPress={closeModal}>
-                      <View style={styles.fullscreenBackground} />
-                    </TouchableWithoutFeedback>
+        {hasSelectedImages ? null : (
+          <Modal
+            isVisible={modalVisible}
+            onBackdropPress={closeModal}
+            style={{ margin: 0 }}
+            animationIn="fadeIn"
+            animationOut="fadeOut"
+          >
+            <View style={styles.modalOverlay}>
+              <Pressable onPress={closeModal} style={styles.fullscreenImage}>
+                <FlatList
+                  ref={modalFlatListRef}
+                  horizontal
+                  pagingEnabled
+                  windowSize={3}
+                  initialNumToRender={1}
+                  maxToRenderPerBatch={2}
+                  removeClippedSubviews={true}
+                  showsHorizontalScrollIndicator={false}
+                  data={images}
+                  keyExtractor={(item) => item.id}
+                  renderItem={({ item }) => (
+                    <View style={styles.imageWrapper}>
+                      {/* Background touch area */}
+                      <TouchableWithoutFeedback onPress={closeModal}>
+                        <View style={styles.fullscreenBackground} />
+                      </TouchableWithoutFeedback>
 
-                    {/* Image */}
-                    <Image
-                      source={item.uri}
-                      style={styles.fullscreenImage}
-                      resizeMode="contain"
-                    />
-                    <View style={styles.navigationButtons}>
-                      <TouchableOpacity
-                        onPress={handlePrevImage}
-                        style={styles.navButton}
-                      >
-                        <Ionicons name="chevron-back" size={30} color="white" />
-                      </TouchableOpacity>
+                      {/* Image */}
+                      <Image
+                        source={item.uri}
+                        style={styles.fullscreenImage}
+                        resizeMode="contain"
+                      />
+                      <View style={styles.navigationButtons}>
+                        <TouchableOpacity
+                          onPress={handlePrevImage}
+                          style={styles.navButton}
+                        >
+                          <Ionicons
+                            name="chevron-back"
+                            size={30}
+                            color="white"
+                          />
+                        </TouchableOpacity>
 
-                      <TouchableOpacity
-                        onPress={handleNextImage}
-                        style={styles.navButton}
+                        <TouchableOpacity
+                          onPress={handleNextImage}
+                          style={styles.navButton}
+                        >
+                          <Ionicons
+                            name="chevron-forward"
+                            size={30}
+                            color="white"
+                          />
+                        </TouchableOpacity>
+                      </View>
+                      {/* Select button */}
+                      <Pressable
+                        onPress={() => toggleSelectedImage(item.id)}
+                        style={styles.checkButton}
                       >
                         <Ionicons
-                          name="chevron-forward"
+                          name={
+                            selectedImages.includes(item.id)
+                              ? "checkmark-circle"
+                              : "ellipse-outline"
+                          }
                           size={30}
-                          color="white"
+                          color={
+                            selectedImages.includes(item.id) ? "green" : "white"
+                          }
                         />
-                      </TouchableOpacity>
+                      </Pressable>
                     </View>
-                    {/* Select button */}
-                    <Pressable
-                      onPress={() => toggleSelectedImage(item.id)}
-                      style={styles.checkButton}
-                    >
-                      <Ionicons
-                        name={
-                          selectedImages.includes(item.id)
-                            ? "checkmark-circle"
-                            : "ellipse-outline"
-                        }
-                        size={30}
-                        color={
-                          selectedImages.includes(item.id) ? "green" : "white"
-                        }
-                      />
-                    </Pressable>
-                  </View>
-                )}
-                getItemLayout={(data, index) => ({
-                  length: screenWidth, // Adjust to your item height (or width for horizontal scroll)
-                  offset: screenWidth * index, // Calculate offset for each item
-                  index,
-                })}
-                onScrollToIndexFailed={(error) => {
-                  const offset =
-                    error.index > 0 ? error.index * screenWidth : 0;
-                  modalFlatListRef.current?.scrollToOffset({ offset });
-                }}
-              />
-            </Pressable>
-            {/* Back button */}
-            <Pressable onPress={closeModal} style={styles.btnStyle}>
-              <ArrowLeft strokeWidth={3} color="white" />
-            </Pressable>
-          </View>
-        </Modal>
+                  )}
+                  getItemLayout={(data, index) => ({
+                    length: screenWidth, // Adjust to your item height (or width for horizontal scroll)
+                    offset: screenWidth * index, // Calculate offset for each item
+                    index,
+                  })}
+                  onScrollToIndexFailed={(error) => {
+                    const offset =
+                      error.index > 0 ? error.index * screenWidth : 0;
+                    modalFlatListRef.current?.scrollToOffset({ offset });
+                  }}
+                />
+              </Pressable>
+              {/* Back button */}
+              <Pressable onPress={closeModal} style={styles.btnStyle}>
+                <ArrowLeft strokeWidth={3} color="white" />
+              </Pressable>
+            </View>
+          </Modal>
+        )}
       </View>
     </ScreenWrapper>
   );

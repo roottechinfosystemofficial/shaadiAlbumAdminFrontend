@@ -24,16 +24,40 @@ import useAuth from "../Context/UserContext";
 
 const EditProfile = () => {
   const navigation = useNavigation();
-  const { user } = useAuth();
+  const { user, token, setUser } = useAuth();
   const [error, setError] = useState("");
   const [userName, setUserName] = useState("");
   const [phone, setPhone] = useState("");
   const [profileImage, setProfileImage] = useState(null);
   const [isModalVisible, setModalVisible] = useState(false);
 
-  const handleReset = () => {
-    // Submit logic here
+  const handleReset = async () => {
+    try {
+      const res = await fetch(
+        "http://192.168.1.101:5000/api/v1/app-user/update-profile",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token,
+          },
+          body: JSON.stringify({ name: userName }),
+        }
+      );
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to update profile");
+      }
+
+      Alert.alert("Success", "Profile updated");
+      setUser(data.user);
+      // Optionally navigate or update context
+    } catch (err) {
+      setError(err.message);
+    }
   };
+
   useEffect(() => {
     if (user) {
       setUserName(user.name);
@@ -81,12 +105,12 @@ const EditProfile = () => {
               style={styles.inIcon}
             />
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: "#999" }]} // Optional: grey out the text
               value={phone}
-              placeholder="Enter your Email"
+              placeholder="Enter your Phone"
               placeholderTextColor={theme.colours.primary}
-              textContentType="phoneNumber"
-              onChangeText={setPhone}
+              textContentType="telephoneNumber"
+              editable={false} // ✅ Make it read-only
             />
           </View>
 
