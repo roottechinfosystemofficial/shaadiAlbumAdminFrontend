@@ -1,6 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
 import HTMLFlipBook from "react-pageflip";
-import { ArrowLeft, ArrowRight } from "lucide-react";
 
 // Function to split an image into left and right halves
 const splitImage = (src) => {
@@ -42,24 +41,8 @@ const splitImage = (src) => {
 
 const Flipbookfun1 = ({ images, frontCover, backCover }) => {
   const bookRef = useRef(null);
-  const [currentPage, setCurrentPage] = useState(0);
   const [pages, setPages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [windowSize, setWindowSize] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight,
-  });
-
-  useEffect(() => {
-    const handleResize = () =>
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   useEffect(() => {
     const preparePages = async () => {
@@ -67,7 +50,7 @@ const Flipbookfun1 = ({ images, frontCover, backCover }) => {
 
       setLoading(true);
 
-      const processed = [images[frontCover]]; // Use passed front cover
+      const processed = [images[frontCover]];
       const middleImages = images.filter(
         (_, i) => i !== frontCover && i !== backCover
       );
@@ -82,7 +65,7 @@ const Flipbookfun1 = ({ images, frontCover, backCover }) => {
 
       try {
         const splitPages = await splitImagesBatch(middleImages);
-        processed.push(...splitPages, images[backCover]); // Use passed back cover
+        processed.push(...splitPages, images[backCover]);
         setPages(processed);
       } catch (err) {
         console.error("Error processing images:", err);
@@ -94,98 +77,94 @@ const Flipbookfun1 = ({ images, frontCover, backCover }) => {
     preparePages();
   }, [images, frontCover, backCover]);
 
-  // const nextPage = () => {
-  //   if (currentPage < pages.length - 1) {
-  //     bookRef.current.pageFlip().flipNext();
-  //   }
-  // };
-
-  // const prevPage = () => {
-  //   if (currentPage > 0) {
-  //     bookRef.current.pageFlip().flipPrev();
-  //   }
-  // };
-
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white space-y-6">
         <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin" />
-        <p className="text-2xl font-semibold animate-pulse tracking-wide">
+        <p className="text-2xl font-semibold animate-pulse">
           Loading your flipbook...
         </p>
-        <p className="text-sm text-gray-400">This may take a few seconds ⏳</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-y-10 items-center justify-center w-full min-h-screen bg-black relative overflow-hidden">
-      {windowSize.width < 640 && (
-        <div className="fixed inset-0 bg-black flex items-center justify-center z-10">
-          <HTMLFlipBook
-            width={windowSize.width * 0.95}
-            height={windowSize.height * 0.8}
-            size="stretch"
-            showCover={true}
-            usePortrait={true}
-            mobileScrollSupport={true}
-            ref={bookRef}
-            onFlip={(e) => setCurrentPage(e.data)}
-            className="shadow-md"
-          >
-            {pages.map((src, index) => (
-              <div key={index} className="w-full h-full">
-                <img
-                  src={src}
-                  alt={`Page ${index + 1}`}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            ))}
-          </HTMLFlipBook>
-        </div>
-      )}
-
-      {/* 💻 Desktop Version */}
-      <div className="hidden sm:flex justify-center items-center">
-        <HTMLFlipBook
-          width={600}
-          height={400}
-          size="fixed"
-          minWidth={600}
-          maxWidth={600}
-          minHeight={400}
-          maxHeight={400}
-          showCover={true}
-          usePortrait={false}
-          mobileScrollSupport={false}
-          onFlip={(e) => setCurrentPage(e.data)}
-          ref={bookRef}
-          className="shadow-xl"
-        >
-          {pages.map((src, index) => (
-            <div
-              key={index}
-              className={`w-full h-full ${
-                index === frontCover || index === backCover
-                  ? "border-4 border-yellow-500"
-                  : ""
-              }`}
-            >
-              <img
-                src={src}
-                alt={`Page ${index + 1}`}
-                className="w-full h-full object-contain"
-              />
-            </div>
-          ))}
-        </HTMLFlipBook>
-      </div>
+    <div className="fixed inset-0 bg-black z-10 flex items-center justify-center">
+      <HTMLFlipBook
+        width={window.innerWidth * 0.95}
+        height={window.innerHeight * 0.85}
+        size="stretch"
+        showCover={true}
+        usePortrait={true}
+        singlePage={true}
+        mobileScrollSupport={true}
+        ref={bookRef}
+        className="shadow-lg"
+      >
+        {pages.map((src, index) => (
+          <div key={index} className="w-full h-full">
+            <img
+              src={src}
+              alt={`Page ${index + 1}`}
+              className="w-full h-full object-contain"
+            />
+          </div>
+        ))}
+      </HTMLFlipBook>
     </div>
   );
 };
 
 export default Flipbookfun1;
+
+// const nextPage = () => {
+//   if (currentPage < pages.length - 1) {
+//     bookRef.current.pageFlip().flipNext();
+//   }
+// };
+
+// const prevPage = () => {
+//   if (currentPage > 0) {
+//     bookRef.current.pageFlip().flipPrev();
+//   }
+// };
+// <div className="flex flex-col gap-y-10 items-center justify-center w-full min-h-screen bg-red-900 relative overflow-hidden">
+//   {/* 💻 Desktop Version */}
+//   <div className="hidden sm:flex justify-center items-center">
+//     <HTMLFlipBook
+//       width={600}
+//       height={400}
+//       size="fixed"
+//       minWidth={600}
+//       maxWidth={600}
+//       minHeight={400}
+//       maxHeight={400}
+//       showCover={true}
+//       usePortrait={false}
+//       mobileScrollSupport={false}
+//       onFlip={(e) => setCurrentPage(e.data)}
+//       ref={bookRef}
+//       className="shadow-xl"
+//     >
+//       {pages.map((src, index) => (
+//         <div
+//           key={index}
+//           className={`w-full h-full ${
+//             index === frontCover || index === backCover
+//               ? "border-4 border-yellow-500"
+//               : ""
+//           }`}
+//         >
+//           <img
+//             src={src}
+//             alt={`Page ${index + 1}`}
+//             className="w-full h-full object-contain"
+//           />
+//         </div>
+//       ))}
+//     </HTMLFlipBook>
+//   </div>
+// </div>;
 
 {
   /* <div className="flex items-center justify-between w-full max-w-[800px] mt-4 px-4">
