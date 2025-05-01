@@ -45,8 +45,13 @@ const FlipBookScreen = () => {
         javaScriptEnabled
         domStorageEnabled
         allowsFullscreenVideo
-        scalesPageToFit={false}
-        style={{ width, height, backgroundColor: "#000" }}
+        scalesPageToFit={true}
+        style={{
+          width: width,
+          height: height,
+          backgroundColor: "#000",
+          overflow: "hidden", // Prevent overflow of content
+        }}
       />
     </View>
   );
