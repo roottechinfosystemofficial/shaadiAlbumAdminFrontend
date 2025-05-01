@@ -40,7 +40,7 @@ const splitImage = (src) => {
   });
 };
 
-const Flipbookfun = ({ images, frontCover, backCover }) => {
+const Flipbookfun1 = ({ images, frontCover, backCover }) => {
   const bookRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [pages, setPages] = useState([]);
@@ -185,7 +185,7 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
   );
 };
 
-export default Flipbookfun;
+export default Flipbookfun1;
 
 {
   /* <div className="flex items-center justify-between w-full max-w-[800px] mt-4 px-4">
