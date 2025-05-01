@@ -29,7 +29,7 @@ const PersonalFolderContent = () => {
       case "ImagesFlipbookpanel":
         return <ImagesFlipbookpanel />;
       default:
-        return null;
+        return <PhotosPanel />;
     }
   };
 

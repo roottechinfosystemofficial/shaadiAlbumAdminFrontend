@@ -8,7 +8,7 @@ import { useGetSingleFlipBook } from "../../Hooks/useGetSingleFlipBook";
 
 const FlipbookShow = () => {
   const { flipBookId, eventId } = useParams();
-  const { selectedFlipBook } = useSelector((state) => state.event);
+  const { currentFlipbook } = useSelector((state) => state.event);
   const { accessToken } = useSelector((state) => state.user);
   const [flipbookImages, setFlipbookImages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,9 +46,9 @@ const FlipbookShow = () => {
   }, [eventId, flipBookId]);
 
   const frontCover =
-    selectedFlipBook?.flipbookImages?.frontCoverImageIndex ?? null;
+    currentFlipbook?.flipbookImages?.frontCoverImageIndex ?? null;
   const backCover =
-    selectedFlipBook?.flipbookImages?.backCoverImageIndex ?? null;
+    currentFlipbook?.flipbookImages?.backCoverImageIndex ?? null;
 
   const handleNavigateBack = () => {
     navigate(`/personalfolder/${eventId || 1}`);

@@ -21,7 +21,7 @@ const EventlistPage = () => {
 
   const dispatch = useDispatch();
   const { accessToken } = useSelector((state) => state.user);
-  const { singleEvent } = useSelector((state) => state.event);
+  const { currentEvent } = useSelector((state) => state.event);
 
   const [editForm, setEditForm] = useState({
     eventName: "",
@@ -78,17 +78,17 @@ const EventlistPage = () => {
   useGetSingleEvent(useEventId);
 
   useEffect(() => {
-    if (singleEvent?._id === useEventId) {
-      setEditingEvent(singleEvent);
+    if (currentEvent?._id === useEventId) {
+      setEditingEvent(currentEvent);
       setEditForm({
-        eventName: singleEvent?.eventName || "",
-        eventDate: singleEvent?.eventDate?.substring(0, 10) || "",
-        deleteDate: singleEvent?.eventDeleteDate?.substring(0, 10) || "",
-        eventCode: singleEvent?.eventCode || "",
-        eventPassword: singleEvent?.eventPassword || "",
+        eventName: currentEvent?.eventName || "",
+        eventDate: currentEvent?.eventDate?.substring(0, 10) || "",
+        deleteDate: currentEvent?.eventDeleteDate?.substring(0, 10) || "",
+        eventCode: currentEvent?.eventCode || "",
+        eventPassword: currentEvent?.eventPassword || "",
       });
     }
-  }, [singleEvent, useEventId]);
+  }, [currentEvent, useEventId]);
 
   const handleEdit = (id) => {
     setUseEventId(id);

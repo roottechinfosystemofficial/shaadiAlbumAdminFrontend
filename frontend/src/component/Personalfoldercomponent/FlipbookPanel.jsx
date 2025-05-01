@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import toast from "../../utils/toast.js";
 import { setPersonalFolderContentTab } from "../../Redux/Slices/TabSlice.jsx";
 import { useGetSingleFlipBook } from "../../Hooks/useGetSingleFlipBook.js";
-import { setFlipBookId } from "../../Redux/Slices/EventSlice.jsx";
+import { setCurrentFlipbookId } from "../../Redux/Slices/EventSlice.jsx";
 
 function FlipbookPanel() {
   const [flipbooks, setFlipbooks] = useState([]);
@@ -92,12 +92,12 @@ function FlipbookPanel() {
   const imageOpenHandler = (id) => {
     console.log(id);
     setUseFlipBookId(id);
-    dispatch(setFlipBookId(id));
+    dispatch(setCurrentFlipbookId(id));
   };
 
   const flipBookOpenHandler = (id) => {
     navigate(`/flipbookUser/${eventId}/${id}`);
-    dispatch(setFlipBookId(id));
+    dispatch(setCurrentFlipbookId(id));
   };
   return (
     <div className="p-6">

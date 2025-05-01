@@ -12,7 +12,7 @@ const AddPhotosModal = ({
   isOpen,
   onClose,
   onUploadSuccess,
-  selectedSubEvent,
+  currentSubEvent,
 }) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -22,9 +22,9 @@ const AddPhotosModal = ({
   const [cancelTokens, setCancelTokens] = useState([]);
   const [cancelRequested, setCancelRequested] = useState(false);
 
-  const { singleEvent } = useSelector((state) => state.event);
+  const { currentEvent } = useSelector((state) => state.event);
   const { accessToken } = useSelector((state) => state.user);
-  const { refetchImageCount } = useGetEventImagesCount(singleEvent?._id);
+  const { refetchImageCount } = useGetEventImagesCount(currentEvent?._id);
   const dispatch = useDispatch();
 
   if (!isOpen) return null;
@@ -116,8 +116,8 @@ const AddPhotosModal = ({
             "POST",
             `${S3_API_END_POINT}/get-presigned-url`,
             {
-              eventId: singleEvent?._id,
-              subEventId: selectedSubEvent?._id,
+              eventId: currentEvent?._id,
+              subEventId: currentSubEvent?._id,
               files: [
                 {
                   fileName: compressedFile.name,

@@ -16,10 +16,10 @@ const authUserTransform = createTransform(
   { whitelist: ["user"] }
 );
 
-// 🗂 Persist only `singleEvent` from event slice
+// 🗂 Persist only `currentEvent` from event slice
 const singleEventTransform = createTransform(
   (inboundState) => ({
-    singleEvent: inboundState.singleEvent,
+    currentEvent: inboundState.currentEvent,
     flipBookId: inboundState.flipBookId, // ✅ Added this line
   }),
   (outboundState) => outboundState,

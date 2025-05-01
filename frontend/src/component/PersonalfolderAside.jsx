@@ -3,7 +3,7 @@ import boximg from "../assets/box1.png";
 import { EditIcon, Trash2, Settings2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { setSingleEvent } from "../Redux/Slices/EventSlice";
+import { setCurrentEvent } from "../Redux/Slices/EventSlice";
 import { editEvent } from "../utils/editEvents.util.js";
 import toast from "../utils/toast.js";
 import SubEventSection from "./SubEventSection.jsx";
@@ -11,9 +11,9 @@ import { useGetSingleEvent } from "../Hooks/useGetSingleEvent.js";
 
 const PersonalfolderAside = () => {
   const { eventId } = useParams();
-  useGetSingleEvent(eventId); // Assuming this hook updates the singleEvent state
+  useGetSingleEvent(eventId); // Assuming this hook updates the currentEvent state
 
-  const { singleEvent } = useSelector((state) => state.event);
+  const { currentEvent } = useSelector((state) => state.event);
 
   const navigate = useNavigate();
   const { accessToken } = useSelector((state) => state.user);
@@ -22,22 +22,22 @@ const PersonalfolderAside = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [description, setDescription] = useState("");
 
-  const eventDate = singleEvent?.eventDate
-    ? new Date(singleEvent.eventDate).toLocaleString("en-US", {
+  const eventDate = currentEvent?.eventDate
+    ? new Date(currentEvent.eventDate).toLocaleString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
       })
     : "No Date Provided";
 
-  const isPublished = singleEvent?.isPublished || false;
+  const isPublished = currentEvent?.isPublished || false;
 
-  // Set the description once singleEvent data is available
+  // Set the description once currentEvent data is available
   useEffect(() => {
-    if (singleEvent?.eventDescription) {
-      setDescription(singleEvent.eventDescription);
+    if (currentEvent?.eventDescription) {
+      setDescription(currentEvent.eventDescription);
     }
-  }, [singleEvent]);
+  }, [currentEvent]);
 
   const togglePublishStatus = async () => {
     const newStatus = !isPublished;
@@ -46,12 +46,12 @@ const PersonalfolderAside = () => {
     setIsLoading(true);
     try {
       const res = await editEvent(
-        singleEvent?._id,
+        currentEvent?._id,
         payload,
         dispatch,
         accessToken
       );
-      dispatch(setSingleEvent(res.data.data));
+      dispatch(setCurrentEvent(res.data.data));
       toast.success(
         `Event ${newStatus ? "published" : "unpublished"} successfully!`
       );
@@ -69,12 +69,12 @@ const PersonalfolderAside = () => {
     setIsLoading(true);
     try {
       const res = await editEvent(
-        singleEvent?._id,
+        currentEvent?._id,
         { eventDescription: description },
         dispatch,
         accessToken
       );
-      dispatch(setSingleEvent(res.data.data));
+      dispatch(setCurrentEvent(res.data.data));
       toast.success("Description updated successfully!");
       setDescription("");
     } catch (error) {
@@ -111,7 +111,7 @@ const PersonalfolderAside = () => {
 
       {/* Event Info */}
       <div className="space-y-1">
-        <h2 className="text-2xl font-bold">{singleEvent?.eventName}</h2>
+        <h2 className="text-2xl font-bold">{currentEvent?.eventName}</h2>
 
         <div className="flex justify-between text-sm text-gray-500">
           <p>{eventDate}</p>
@@ -161,7 +161,7 @@ const PersonalfolderAside = () => {
 
         <div className="flex justify-between text-sm text-gray-500 mt-2">
           <p>Total Images:</p>
-          <p>{singleEvent?.eventTotalImages}</p>
+          <p>{currentEvent?.eventTotalImages}</p>
         </div>
       </div>
 
@@ -205,18 +205,21 @@ const PersonalfolderAside = () => {
       </div>
 
       {/* ✅ Sub-Event Component */}
-      <SubEventSection singleEvent={singleEvent} setIsLoading={setIsLoading} />
+      <SubEventSection
+        currentEvent={currentEvent}
+        setIsLoading={setIsLoading}
+      />
 
       {/* Event Code and Buttons */}
       <div className="space-y-4 p-4 bg-white border border-slate rounded-xl shadow-sm pb-28 sm:pb-4">
         <div>
           <p className="text-xs text-gray-500">Event Code:</p>
           <div className="flex justify-between items-center">
-            <p className="font-semibold">{singleEvent?.eventCode}</p>
+            <p className="font-semibold">{currentEvent?.eventCode}</p>
             <button
               className="text-primary text-xs hover:underline"
               onClick={() => {
-                navigator.clipboard.writeText(singleEvent?.eventCode);
+                navigator.clipboard.writeText(currentEvent?.eventCode);
                 toast.success("Copied to clipboard!");
               }}
             >

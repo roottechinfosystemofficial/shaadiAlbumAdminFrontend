@@ -15,7 +15,7 @@ const PhotosPanel = () => {
   const [tokens, setTokens] = useState({ 1: null });
   const [hasNext, setHasNext] = useState(false);
   const { eventId } = useParams();
-  const { selectedSubEvent } = useSelector((state) => state.event);
+  const { currentSubEvent } = useSelector((state) => state.event);
   const [reloadKey, setReloadKey] = useState(0); // to force refetch
   const dispatch = useDispatch();
   const { accessToken } = useSelector((state) => state.user);
@@ -24,18 +24,18 @@ const PhotosPanel = () => {
   const pageSize = 100;
 
   useEffect(() => {
-    if (!eventId || !selectedSubEvent?._id) return;
+    if (!eventId || !currentSubEvent?._id) return;
 
     setPage(1);
     setTokens({ 1: null });
     setSelectedImages(new Set());
     setReloadKey((prev) => prev + 1); // trigger reload
-  }, [eventId, selectedSubEvent]);
+  }, [eventId, currentSubEvent]);
 
   useEffect(() => {
     const fetchImages = async () => {
       const continuationToken = tokens[page];
-      if (!eventId || !selectedSubEvent?._id) return;
+      if (!eventId || !currentSubEvent?._id) return;
 
       setIsLoading(true);
       try {
@@ -47,7 +47,7 @@ const PhotosPanel = () => {
             eventId,
             continuationToken,
             pageSize,
-            subEventId: selectedSubEvent._id,
+            subEventId: currentSubEvent._id,
           },
           accessToken,
           dispatch
@@ -76,7 +76,7 @@ const PhotosPanel = () => {
     };
 
     fetchImages();
-  }, [page, eventId, selectedSubEvent?._id, reloadKey]);
+  }, [page, eventId, currentSubEvent?._id, reloadKey]);
 
   const toggleSelect = (url) => {
     setSelectedImages((prev) => {
@@ -104,8 +104,8 @@ const PhotosPanel = () => {
     setSelectedImages(new Set());
     setReloadKey((prev) => prev + 1);
   };
-  const eventDate = selectedSubEvent?.createdAt
-    ? new Date(selectedSubEvent?.createdAt).toLocaleString("en-US", {
+  const eventDate = currentSubEvent?.createdAt
+    ? new Date(currentSubEvent?.createdAt).toLocaleString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
@@ -116,7 +116,7 @@ const PhotosPanel = () => {
     <div className="p-2 sm:p-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
         <div className="text-xl font-semibold flex flex-wrap items-center gap-4">
-          <p>{selectedSubEvent?.subEventName}</p>
+          <p>{currentSubEvent?.subEventName}</p>
           <p className="text-slate-dark text-sm">{eventDate}</p>
         </div>
 
@@ -226,7 +226,7 @@ const PhotosPanel = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onUploadSuccess={handleUploadSuccess}
-        selectedSubEvent={selectedSubEvent}
+        currentSubEvent={currentSubEvent}
       />
     </div>
   );

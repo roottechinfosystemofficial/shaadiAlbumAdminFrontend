@@ -3,8 +3,8 @@ import { useDispatch, useSelector } from "react-redux";
 import apiRequest from "../utils/apiRequest";
 import { EVENT_API_END_POINT } from "../constant";
 import {
-  setSelectedSubEvent,
-  setSingleEvent,
+  setCurrentSubEvent,
+  setCurrentEvent,
 } from "../Redux/Slices/EventSlice";
 
 export const useGetSingleEvent = (eventId) => {
@@ -18,11 +18,11 @@ export const useGetSingleEvent = (eventId) => {
 
       if (res.status === 200) {
         const event = res.data.data;
-        dispatch(setSingleEvent(event));
+        dispatch(setCurrentEvent(event));
 
         // ✅ Select the first subevent by default (if available)
         if (event?.subevents?.length > 0) {
-          dispatch(setSelectedSubEvent(event.subevents[0]));
+          dispatch(setCurrentSubEvent(event.subevents[0]));
         }
       }
     } catch (err) {

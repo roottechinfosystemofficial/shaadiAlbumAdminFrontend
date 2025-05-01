@@ -13,7 +13,7 @@ import apiRequest from "../../utils/apiRequest";
 import { S3_API_END_POINT } from "../../constant";
 import { useDispatch, useSelector } from "react-redux";
 
-const ClientPhotosView = ({ singleEvent }) => {
+const ClientPhotosView = ({ currentEvent }) => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const [fetchedImages, setFetchedImages] = useState([]);
@@ -80,10 +80,10 @@ const ClientPhotosView = ({ singleEvent }) => {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between pb-6 gap-4">
         <div>
           <h2 className="text-2xl font-bold">
-            {singleEvent?.eventName || "Event Name"}
+            {currentEvent?.eventName || "Event Name"}
           </h2>
           <p className="text-sm text-gray-500">
-            {singleEvent?.eventCode || "Event Code"}
+            {currentEvent?.eventCode || "Event Code"}
           </p>
         </div>
         <div className="flex flex-wrap gap-3 text-black">

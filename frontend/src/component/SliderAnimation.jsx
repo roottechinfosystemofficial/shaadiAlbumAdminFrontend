@@ -96,8 +96,8 @@ const SliderAnimation = () => {
   const [direction, setDirection] = useState(0);
   const [loading, setLoading] = useState(false); // State for loading
 
-  const { singleEvent } = useSelector((state) => state.event);
-  console.log(singleEvent);
+  const { currentEvent } = useSelector((state) => state.event);
+  console.log(currentEvent);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -171,7 +171,7 @@ const SliderAnimation = () => {
           ctx.drawImage(qrImg, qrLeft, qrTop, qrWidth, qrHeight);
 
           // Step 5: Draw the event name text
-          const eventName = singleEvent?.eventName || "Event Name";
+          const eventName = currentEvent?.eventName || "Event Name";
           console.log(eventName);
 
           const {

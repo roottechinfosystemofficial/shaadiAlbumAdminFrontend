@@ -4,16 +4,16 @@ import { EVENT_API_END_POINT } from "../constant";
 import apiRequest from "../utils/apiRequest";
 import { useDispatch, useSelector } from "react-redux";
 import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
-import { setSelectedSubEvent } from "../Redux/Slices/EventSlice";
+import { setCurrentSubEvent } from "../Redux/Slices/EventSlice";
 import toast from "../utils/toast";
 
-const SubEventSection = ({ singleEvent, setIsLoading }) => {
+const SubEventSection = ({ currentEvent, setIsLoading }) => {
   const [showInput, setShowInput] = useState(false);
   const [subEventName, setSubEventName] = useState("");
   const { accessToken } = useSelector((state) => state.user);
   const dispatch = useDispatch();
-  const { refetchEvent } = useGetSingleEvent(singleEvent?._id);
-  const { selectedSubEvent } = useSelector((state) => state.event);
+  const { refetchEvent } = useGetSingleEvent(currentEvent?._id);
+  const { currentSubEvent } = useSelector((state) => state.event);
 
   const handleCreateSubEvent = async () => {
     const cleanName = subEventName.trim();
@@ -25,7 +25,7 @@ const SubEventSection = ({ singleEvent, setIsLoading }) => {
     try {
       setIsLoading?.(true);
 
-      const endpoint = `${EVENT_API_END_POINT}/createSubEvent/${singleEvent?._id}`;
+      const endpoint = `${EVENT_API_END_POINT}/createSubEvent/${currentEvent?._id}`;
       const res = await apiRequest(
         "POST",
         endpoint,
@@ -49,11 +49,11 @@ const SubEventSection = ({ singleEvent, setIsLoading }) => {
   };
 
   const handleSubEvent = (sub) => {
-    dispatch(setSelectedSubEvent(sub));
+    dispatch(setCurrentSubEvent(sub));
   };
 
   // Determine if the sub-event is selected
-  const isSelected = (subEvent) => selectedSubEvent?._id === subEvent?._id;
+  const isSelected = (subEvent) => currentSubEvent?._id === subEvent?._id;
 
   // Log sub-event ID when trash button is clicked
   const handleDeleteSubEvent = (subEventId) => {
@@ -91,8 +91,8 @@ const SubEventSection = ({ singleEvent, setIsLoading }) => {
         </div>
       )}
 
-      {singleEvent?.subevents?.length > 0 ? (
-        singleEvent.subevents.map((sub, index) => (
+      {currentEvent?.subevents?.length > 0 ? (
+        currentEvent.subevents.map((sub, index) => (
           <div
             onClick={() => handleSubEvent(sub)}
             key={index}

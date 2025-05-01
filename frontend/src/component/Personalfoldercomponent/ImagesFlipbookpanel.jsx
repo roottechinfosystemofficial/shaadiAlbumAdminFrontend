@@ -14,21 +14,17 @@ const ImagesFlipbookpanel = () => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [flipbookImages, setFlipbookImages] = useState([]);
 
-  const { singleEvent, selectedFlipBook } = useSelector((state) => state.event);
+  const { currentEvent, currentFlipbook } = useSelector((state) => state.event);
   const { accessToken } = useSelector((state) => state.user);
-  const [frontCover, setFrontCover] = useState(
-    selectedFlipBook?.flipbookImages.frontCoverImageIndex
-  );
-  const [backCover, setBackCover] = useState(
-    selectedFlipBook?.flipbookImages?.backCoverImageIndex
-  );
+  const [frontCover, setFrontCover] = useState("");
+  const [backCover, setBackCover] = useState("");
 
   useEffect(() => {
-    if (selectedFlipBook) {
-      setFrontCover(selectedFlipBook?.flipbookImages?.frontCoverImageIndex);
-      setBackCover(selectedFlipBook?.flipbookImages?.backCoverImageIndex);
+    if (currentFlipbook) {
+      setFrontCover(currentFlipbook?.flipbookImages?.frontCoverImageIndex);
+      setBackCover(currentFlipbook?.flipbookImages?.backCoverImageIndex);
     }
-  }, [selectedFlipBook]);
+  }, [currentFlipbook]);
 
   const handleBackClick = () => {
     dispatch(setPersonalFolderContentTab("flipbook"));
@@ -83,8 +79,8 @@ const ImagesFlipbookpanel = () => {
         "POST",
         `${S3_API_END_POINT}/get-presigned-url`,
         {
-          eventId: singleEvent?._id,
-          flipbookId: selectedFlipBook?._id,
+          eventId: currentEvent?._id,
+          flipbookId: currentFlipbook?._id,
           usageType: "flipbook",
           files: filesMeta,
         },
@@ -124,14 +120,14 @@ const ImagesFlipbookpanel = () => {
   };
 
   const fetchFlipbookImages = async () => {
-    if (!singleEvent?._id || !selectedFlipBook?._id) return;
+    if (!currentEvent?._id || !currentFlipbook?._id) return;
     try {
       const res = await apiRequest(
         "POST",
         `${S3_API_END_POINT}/list-images`,
         {
-          eventId: singleEvent._id,
-          flipbookId: selectedFlipBook._id,
+          eventId: currentEvent._id,
+          flipbookId: currentFlipbook._id,
           usageType: "flipbook",
         },
         accessToken,
@@ -147,7 +143,7 @@ const ImagesFlipbookpanel = () => {
 
   useEffect(() => {
     fetchFlipbookImages();
-  }, [singleEvent?._id, selectedFlipBook?._id]);
+  }, [currentEvent?._id, currentFlipbook?._id]);
 
   const handleSetCover = async (index, type) => {
     const imageIndex = index;
@@ -159,7 +155,7 @@ const ImagesFlipbookpanel = () => {
         "POST",
         endpoint,
         {
-          flipbookId: selectedFlipBook._id,
+          flipbookId: currentFlipbook._id,
           imageIndex, // Pass the index instead of the image URL
           type,
         },
@@ -180,7 +176,7 @@ const ImagesFlipbookpanel = () => {
     <div className="p-4 md:p-6 lg:p-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <button
-          className="bg-slate-200 px-4 py-2 rounded hover:bg-slate-300 transition"
+          className="bg-slate px-4 py-2 rounded hover:bg-slate-dark transition"
           onClick={handleBackClick}
         >
           Back
