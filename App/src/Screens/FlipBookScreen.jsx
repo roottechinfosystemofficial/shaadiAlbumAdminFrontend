@@ -1,35 +1,52 @@
-import React, { useRef, useState } from "react";
-import { Platform, StatusBar, StyleSheet } from "react-native";
-import { View, ActivityIndicator } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  View,
+  Dimensions,
+  ActivityIndicator,
+  StyleSheet,
+  StatusBar,
+  Platform,
+} from "react-native";
 import { WebView } from "react-native-webview";
+import * as ScreenOrientation from "expo-screen-orientation";
 import { hp } from "../helpers/Common";
-
+const { width, height } = Dimensions.get("window");
 const FlipBookScreen = () => {
   const webviewRef = useRef(null);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    const lockOrientation = async () => {
+      await ScreenOrientation.lockAsync(
+        ScreenOrientation.OrientationLock.LANDSCAPE
+      );
+      StatusBar.setHidden(true); // Hide the status bar
+    };
+
+    lockOrientation();
+
+    return () => {
+      ScreenOrientation.unlockAsync();
+      StatusBar.setHidden(false); // Show it again on unmount
+    };
+  }, []);
+
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.container}>
       {loading && (
-        <ActivityIndicator
-          size="large"
-          color="#000"
-          style={{ position: "absolute", top: "50%", left: "50%" }}
-        />
+        <ActivityIndicator size="large" color="#000" style={styles.loader} />
       )}
       <WebView
         ref={webviewRef}
-        source={{ uri: "https://shaadialbumadminfrontend.onrender.com/login" }}
+        source={{
+          uri: "https://shaadialbumadminfrontend.onrender.com/flipbookUser/680b55e432fff6cc637292e7/68106258bba9ef2a98415856",
+        }}
         onLoadEnd={() => setLoading(false)}
         javaScriptEnabled={true}
         domStorageEnabled={true}
-        sharedCookiesEnabled={true} // Important if your site uses cookies
+        sharedCookiesEnabled={true}
         thirdPartyCookiesEnabled={true}
-        style={{
-          flex: 1,
-          marginTop:
-            Platform.OS === "ios" ? StatusBar.currentHeight || hp(7) : hp(3),
-        }}
+        style={{ width, height }} // 👈 key fix here
       />
     </View>
   );
@@ -37,180 +54,19 @@ const FlipBookScreen = () => {
 
 export default FlipBookScreen;
 
-const styles = StyleSheet.create({});
-
-// import React, { useRef, useState, useEffect } from "react";
-// import {
-//   Animated,
-//   Dimensions,
-//   Image,
-//   TouchableWithoutFeedback,
-//   View,
-//   StyleSheet,
-//   StatusBar,
-//   PanResponder,
-// } from "react-native";
-// import * as ScreenOrientation from "expo-screen-orientation";
-// import ScreenWrapper from "../Components/ScreenWrapper";
-
-// const { width, height } = Dimensions.get("window");
-
-// const images = [
-//   require("../../assets/albumbook/img1.jpg"),
-//   require("../../assets/albumbook/img2.jpg"),
-//   require("../../assets/albumbook/img8.jpg"),
-//   require("../../assets/albumbook/img14.jpg"),
-//   require("../../assets/albumbook/img20.jpg"),
-//   require("../../assets/albumbook/img26.jpg"),
-// ];
-
-// export default function FlipBookScreen() {
-//   const [currentIndex, setCurrentIndex] = useState(0);
-//   const rotateAnim = useRef(new Animated.Value(0)).current;
-//   const pan = useRef(new Animated.ValueXY()).current;
-
-//   // Lock screen orientation to landscape
-//   useEffect(() => {
-//     ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-//     return () => {
-//       ScreenOrientation.unlockAsync();
-//     };
-//   }, []);
-
-//   const flipPage = (direction) => {
-//     Animated.sequence([
-//       Animated.timing(rotateAnim, {
-//         toValue: direction === "next" ? 180 : -180,
-//         duration: 600,
-//         useNativeDriver: true,
-//       }),
-//       Animated.timing(rotateAnim, {
-//         toValue: 0,
-//         duration: 0,
-//         useNativeDriver: true,
-//       }),
-//     ]).start(() => {
-//       if (direction === "next" && currentIndex + 1 < images.length) {
-//         setCurrentIndex((prev) => prev + 1);
-//       } else if (direction === "prev" && currentIndex - 1 >= 0) {
-//         setCurrentIndex((prev) => prev - 1);
-//       }
-//     });
-//   };
-
-//   const rotateY = rotateAnim.interpolate({
-//     inputRange: [-180, 0, 180],
-//     outputRange: ["-180deg", "0deg", "180deg"],
-//   });
-
-//   const frontOpacity = rotateAnim.interpolate({
-//     inputRange: [-180, 0, 180],
-//     outputRange: [0, 1, 0],
-//   });
-
-//   const backOpacity = rotateAnim.interpolate({
-//     inputRange: [-180, 0, 180],
-//     outputRange: [0, 0, 1],
-//   });
-
-//   const panResponder = useRef(
-//     PanResponder.create({
-//       onStartShouldSetPanResponder: () => true,
-//       onMoveShouldSetPanResponder: () => true,
-//       onPanResponderRelease: (e, gestureState) => {
-//         // Swipe from left to right (previous image)
-//         if (gestureState.dx > 50 && currentIndex - 1 >= 0) {
-//           flipPage("prev");
-//         }
-//         // Swipe from right to left (next image)
-//         else if (gestureState.dx < -50 && currentIndex + 1 < images.length) {
-//           flipPage("next");
-//         }
-//       },
-//     })
-//   ).current;
-
-//   return (
-//     <ScreenWrapper bg="#000">
-//       {/* Wrap the content with ScreenWrapper */}
-//       <StatusBar hidden />
-//       <TouchableWithoutFeedback onPress={() => flipPage("next")}>
-//         <View style={styles.flipWrapper} {...panResponder.panHandlers}>
-//           <Animated.View
-//             style={[
-//               styles.page,
-//               {
-//                 width: width - 40, // Ensure full screen size
-//                 height: height - 40,
-//                 transform: [{ perspective: 2000 }, { rotateY }],
-//               },
-//             ]}
-//           >
-//             <Animated.Image
-//               source={images[currentIndex]}
-//               style={[styles.pageImage, { opacity: frontOpacity }]}
-//               resizeMode="contain"
-//             />
-//             {currentIndex + 1 < images.length && (
-//               <Animated.Image
-//                 source={images[currentIndex + 1]}
-//                 style={[
-//                   styles.pageImage,
-//                   styles.pageBack,
-//                   { opacity: backOpacity },
-//                 ]}
-//                 resizeMode="contain"
-//               />
-//             )}
-//             {currentIndex - 1 >= 0 && (
-//               <Animated.Image
-//                 source={images[currentIndex - 1]}
-//                 style={[
-//                   styles.pageImage,
-//                   styles.pageBack,
-//                   { opacity: backOpacity },
-//                 ]}
-//                 resizeMode="contain"
-//               />
-//             )}
-//           </Animated.View>
-//           <View style={styles.crease} />
-//         </View>
-//       </TouchableWithoutFeedback>
-//     </ScreenWrapper>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: "#000",
-//     justifyContent: "center",
-//     alignItems: "center",
-//   },
-//   flipWrapper: {
-//     justifyContent: "center",
-//     alignItems: "center",
-//   },
-//   page: {
-//     position: "relative",
-//     backfaceVisibility: "hidden",
-//   },
-//   pageImage: {
-//     width: "100%",
-//     height: "100%",
-//     position: "absolute",
-//   },
-//   pageBack: {
-//     transform: [{ rotateY: "180deg" }],
-//   },
-//   crease: {
-//     position: "absolute",
-//     left: "50%",
-//     top: 0,
-//     bottom: 0,
-//     width: 2,
-//     backgroundColor: "rgba(255, 255, 255, 0.2)",
-//     zIndex: 10,
-//   },
-// });
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  loader: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    zIndex: 10,
+  },
+  // webview: {
+  //   width: Dimensions.get("window").width,
+  //   height: Dimensions.get("window").height,
+  // },
+});
