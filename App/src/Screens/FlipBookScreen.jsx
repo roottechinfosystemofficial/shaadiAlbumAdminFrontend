@@ -1,7 +1,8 @@
 import React, { useRef, useState } from "react";
-import { StyleSheet } from "react-native";
+import { Platform, StatusBar, StyleSheet } from "react-native";
 import { View, ActivityIndicator } from "react-native";
 import { WebView } from "react-native-webview";
+import { hp } from "../helpers/Common";
 
 const FlipBookScreen = () => {
   const webviewRef = useRef(null);
@@ -24,7 +25,11 @@ const FlipBookScreen = () => {
         domStorageEnabled={true}
         sharedCookiesEnabled={true} // Important if your site uses cookies
         thirdPartyCookiesEnabled={true}
-        style={{ flex: 1 }}
+        style={{
+          flex: 1,
+          marginTop:
+            Platform.OS === "ios" ? StatusBar.currentHeight || hp(7) : hp(3),
+        }}
       />
     </View>
   );
