@@ -120,8 +120,8 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
           }}
         >
           <HTMLFlipBook
-            width={300}
-            height={200}
+            width={window.innerHeight}
+            height={window.innerWidth}
             size="fixed"
             showCover={true}
             usePortrait={false}
