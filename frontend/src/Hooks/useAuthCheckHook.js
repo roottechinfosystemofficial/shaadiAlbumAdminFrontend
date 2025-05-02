@@ -33,7 +33,7 @@ export const useAuthCheck = () => {
     };
 
     if (accessToken) {
-      checkAuth(); // 🔁 Always run check if token exists
+      checkAuth(); 
     }
   }, [accessToken, dispatch, navigate]);
 };

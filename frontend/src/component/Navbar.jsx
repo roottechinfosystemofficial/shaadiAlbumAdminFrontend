@@ -7,6 +7,7 @@ import { FaAngleDown, FaUser } from "react-icons/fa";
 import { BiMenu } from "react-icons/bi";
 import "../css/Navbar.css";
 import { useDispatch, useSelector } from "react-redux";
+import toast from "../utils/toast.js";
 
 import { logoutUser } from "../utils/logoutUser.js";
 
@@ -36,8 +37,14 @@ const Navbar = () => {
     setIsSettingsOpen(false);
   };
 
-  const logoutHandler = () => {
-    logoutUser({ accessToken, dispatch, navigate });
+  const logoutHandler = async () => {
+    try {
+      await logoutUser({ accessToken, dispatch, navigate });
+      toast.success("You have successfully logged out!");
+    } catch (error) {
+      toast.error("Logout failed. Please try again.");
+      console.error("Logout error:", error);
+    }
   };
 
   return (

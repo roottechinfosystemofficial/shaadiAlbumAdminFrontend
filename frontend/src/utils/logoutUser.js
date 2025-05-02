@@ -24,7 +24,6 @@ export const logoutUser = async ({ accessToken, dispatch, navigate }) => {
 
     if (res.status === 200) {
       handleFrontendLogout(dispatch, navigate);
-      toast.success("You have successfully logged out!");
     }
   } catch (error) {
     console.error("Logout failed:", error.message);
