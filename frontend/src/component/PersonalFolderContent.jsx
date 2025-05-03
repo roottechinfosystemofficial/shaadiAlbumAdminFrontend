@@ -1,17 +1,13 @@
 import React from "react";
 import FlipbookPanel from "./Personalfoldercomponent/FlipbookPanel";
 import PhotosPanel from "./Personalfoldercomponent/PhotosPanel";
-import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
-import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setPersonalFolderContentTab } from "../Redux/Slices/TabSlice";
 import ImagesFlipbookpanel from "./Personalfoldercomponent/ImagesFlipbookpanel";
 import FavouritePanel from "./FavouritePanel";
 
 const PersonalFolderContent = () => {
-  const { eventId } = useParams();
   const dispatch = useDispatch();
-  useGetSingleEvent(eventId);
   const { personalFolderContentTab } = useSelector((state) => state.tab);
 
   const renderContent = () => {

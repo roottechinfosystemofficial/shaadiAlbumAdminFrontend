@@ -42,7 +42,7 @@ const ClientForm = ({ onSubmit, onClose }) => {
         accessToken,
         dispatch
       );
-      
+
       if (res.status === 201) {
         Cookies.set("clientViewToken", res.data.token, { expires: 1 });
       }

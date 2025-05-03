@@ -12,8 +12,10 @@ const SubEventSection = ({ currentEvent, setIsLoading }) => {
   const [subEventName, setSubEventName] = useState("");
   const { accessToken } = useSelector((state) => state.user);
   const dispatch = useDispatch();
-  const { refetchEvent } = useGetSingleEvent(currentEvent?._id);
-  const { currentSubEvent } = useSelector((state) => state.event);
+  const { currentSubEvent, currentEventId } = useSelector(
+    (state) => state.event
+  );
+  const { refetchEvent } = useGetSingleEvent(currentEventId);
 
   const handleCreateSubEvent = async () => {
     const cleanName = subEventName.trim();

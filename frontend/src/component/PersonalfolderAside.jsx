@@ -7,11 +7,9 @@ import { setCurrentEvent } from "../Redux/Slices/EventSlice";
 import { editEvent } from "../utils/editEvents.util.js";
 import toast from "../utils/toast.js";
 import SubEventSection from "./SubEventSection.jsx";
-import { useGetSingleEvent } from "../Hooks/useGetSingleEvent.js";
 
 const PersonalfolderAside = () => {
   const { eventId } = useParams();
-  useGetSingleEvent(eventId); 
 
   const { currentEvent } = useSelector((state) => state.event);
 

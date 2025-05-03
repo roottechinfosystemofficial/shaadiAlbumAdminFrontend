@@ -32,11 +32,10 @@ const ClientPhotosView = () => {
   const handleSubEventClick = (id) => {
     setActiveSubEventId(id);
     dispatch(setCurrentSubEventId(id));
-    debouncedFetchImages();
   };
 
   const fetchImages = async () => {
-    if (isLoading || !hasMore) return;
+    if (isLoading || !hasMore || !activeSubEventId) return;
     setIsLoading(true);
 
     try {
@@ -72,6 +71,7 @@ const ClientPhotosView = () => {
     [activeSubEventId, nextToken]
   );
 
+  // Set initial subevent when event is loaded
   useEffect(() => {
     if (currentEvent?.subevents?.length > 0) {
       const firstId = currentEvent.subevents[0]._id;
@@ -82,8 +82,18 @@ const ClientPhotosView = () => {
     setNextToken(null);
     setHasMore(true);
     setShowImages(false);
-    debouncedFetchImages();
-  }, [eventId, currentEvent]);
+  }, [eventId, currentEvent, dispatch]);
+
+  // Fetch images when activeSubEventId is set
+  useEffect(() => {
+    if (activeSubEventId) {
+      setFetchedImages([]);
+      setNextToken(null);
+      setHasMore(true);
+      setShowImages(false);
+      debouncedFetchImages();
+    }
+  }, [activeSubEventId, debouncedFetchImages]);
 
   useEffect(() => {
     return () => debouncedFetchImages.cancel();

@@ -6,7 +6,6 @@ import EventCard from "../component/EventlistingComponent/EventCard";
 import EditEventModal from "../component/EventlistingComponent/EditEventModal";
 import EventModal from "../component/EventlistingComponent/EventModal";
 import apiRequest from "../utils/apiRequest";
-import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
 import toast from "../utils/toast.js";
 import { setCurrentEventId } from "../Redux/Slices/EventSlice.jsx";
 
@@ -76,7 +75,6 @@ const EventlistPage = () => {
   };
 
   // Fetch single event with custom hook
-  useGetSingleEvent(useEventId);
 
   useEffect(() => {
     if (currentEvent?._id === useEventId) {

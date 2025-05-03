@@ -14,28 +14,28 @@ const PhotosPanel = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tokens, setTokens] = useState({ 1: null });
   const [hasNext, setHasNext] = useState(false);
+  const { currentSubEvent, currentEventId } = useSelector(
+    (state) => state.event
+  );
   const { eventId } = useParams();
-  const { currentSubEvent } = useSelector((state) => state.event);
   const [reloadKey, setReloadKey] = useState(0); // to force refetch
   const dispatch = useDispatch();
   const { accessToken } = useSelector((state) => state.user);
-  const { personalFolderContentTab } = useSelector((state) => state.tab);
 
   const pageSize = 100;
 
   useEffect(() => {
-    if (!eventId || !currentSubEvent?._id) return;
+    if (!currentEventId || !currentSubEvent?._id) return;
 
     setPage(1);
     setTokens({ 1: null });
     setSelectedImages(new Set());
     setReloadKey((prev) => prev + 1); // trigger reload
-  }, [eventId, currentSubEvent]);
+  }, [currentEventId, currentSubEvent]);
 
   useEffect(() => {
     const fetchImages = async () => {
       const continuationToken = tokens[page];
-      if (!eventId || !currentSubEvent?._id) return;
 
       setIsLoading(true);
       try {

@@ -1,26 +1,22 @@
 import React, { useState, useEffect } from "react";
 import "../css/Clientview.css";
 import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
-import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
 import ClientForm from "../component/ClientForm";
 import apiRequest from "../utils/apiRequest";
 import { CLIENTVU_API_END_POINT } from "../constant";
 import Cookies from "js-cookie";
-import UnderClientView from "../component/ClientSideComponent/UnderClientView";
 import ClientPhotosView from "../component/ClientSideComponent/ClientPhotosView";
 
 const Clientview = () => {
   const { accessToken } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const { position } = useSelector((state) => state.coverImg);
-  const { eventId } = useParams();
+
   const [showForm, setShowForm] = useState(false);
   const [showFormAnimated, setShowFormAnimated] = useState(false);
   const [whichView, setWhichView] = useState("");
   const [animateUnderView, setAnimateUnderView] = useState(false);
 
-  useGetSingleEvent(eventId);
   const { currentEvent } = useSelector((state) => state.event);
 
   const getPositionClasses = () => {
@@ -38,18 +34,44 @@ const Clientview = () => {
     }
   };
 
-  const viewAllHandler = () => {
-    if (showForm) {
-      setShowFormAnimated(true);
-    } else {
-      setWhichView("main");
-      // Scroll to the UnderClientView component
-      setTimeout(() => {
-        const element = document.getElementById("under-client-view");
-        if (element) {
-          element.scrollIntoView({ behavior: "smooth" });
+  const scrollToPhotos = () => {
+    setTimeout(() => {
+      const element = document.getElementById("under-client-view");
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    }, 200);
+  };
+
+  const viewAllHandler = async () => {
+    const token = Cookies.get("clientViewToken");
+
+    if (token) {
+      try {
+        const endpoint = `${CLIENTVU_API_END_POINT}/verifyClientToken`;
+        const res = await apiRequest(
+          "POST",
+          endpoint,
+          { clientViewToken: token },
+          accessToken,
+          dispatch
+        );
+
+        if (res?.data?.showForm) {
+          setShowForm(true);
+          setTimeout(() => setShowFormAnimated(true), 50);
+        } else {
+          setWhichView("main");
+          scrollToPhotos();
         }
-      }, 200); // Delay to ensure the state is set before scrolling
+      } catch (err) {
+        console.log("Token invalid or error:", err);
+        setShowForm(true);
+        setTimeout(() => setShowFormAnimated(true), 50);
+      }
+    } else {
+      setShowForm(true);
+      setTimeout(() => setShowFormAnimated(true), 50);
     }
   };
 
@@ -61,38 +83,6 @@ const Clientview = () => {
       return () => clearTimeout(timer);
     }
   }, [whichView]);
-
-  useEffect(() => {
-    const token = Cookies.get("clientViewToken");
-
-    if (token) {
-      const verifyToken = async () => {
-        try {
-          const endpoint = `${CLIENTVU_API_END_POINT}/verifyClientToken`;
-          const res = await apiRequest(
-            "POST",
-            endpoint,
-            { clientViewToken: token },
-            accessToken,
-            dispatch
-          );
-
-          if (res?.data?.showForm) {
-            setShowForm(true);
-          } else {
-            setShowForm(false);
-          }
-        } catch (err) {
-          console.log("Token invalid or error:", err);
-          setShowForm(true);
-        }
-      };
-
-      verifyToken();
-    } else {
-      setShowForm(true);
-    }
-  }, [accessToken, dispatch, eventId]);
 
   return (
     <>
@@ -120,17 +110,23 @@ const Clientview = () => {
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-start justify-center overflow-hidden">
           <div
-            className={`transition-all duration-500 transform ${
-              showFormAnimated
-                ? "translate-y-0 opacity-100"
-                : "-translate-y-10 opacity-0"
+            className={`transition-transform duration-500 ease-in-out transform mt-10 w-full max-w-md ${
+              showFormAnimated ? "translate-y-0" : "-translate-y-full"
             }`}
           >
             <ClientForm
-              onSubmit={() => setShowForm(false)}
-              onClose={() => setShowForm(false)}
+              onSubmit={() => {
+                setShowForm(false);
+                setShowFormAnimated(false);
+                setWhichView("main");
+                scrollToPhotos();
+              }}
+              onClose={() => {
+                setShowForm(false);
+                setShowFormAnimated(false);
+              }}
             />
           </div>
         </div>
