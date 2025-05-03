@@ -1,16 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../css/Clientview.css";
-import ClientPhotosView from "../component/ClientSideComponent/ClientPhotosView";
-import { useSelector } from "react-redux";
-import UnderClientView from "../component/ClientSideComponent/UnderClientView";
+import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
+import ClientForm from "../component/ClientForm";
+import apiRequest from "../utils/apiRequest";
+import { CLIENTVU_API_END_POINT } from "../constant";
+import Cookies from "js-cookie";
+import UnderClientView from "../component/ClientSideComponent/UnderClientView";
+import ClientPhotosView from "../component/ClientSideComponent/ClientPhotosView";
 
 const Clientview = () => {
+  const { accessToken } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
   const { position } = useSelector((state) => state.coverImg);
-  const [whichView, setWhichView] = useState("");
-  console.log(whichView);
   const { eventId } = useParams();
+  const [showForm, setShowForm] = useState(false);
+  const [showFormAnimated, setShowFormAnimated] = useState(false);
+  const [whichView, setWhichView] = useState("");
+  const [animateUnderView, setAnimateUnderView] = useState(false);
+
   useGetSingleEvent(eventId);
   const { currentEvent } = useSelector((state) => state.event);
 
@@ -29,6 +38,62 @@ const Clientview = () => {
     }
   };
 
+  const viewAllHandler = () => {
+    if (showForm) {
+      setShowFormAnimated(true);
+    } else {
+      setWhichView("main");
+      // Scroll to the UnderClientView component
+      setTimeout(() => {
+        const element = document.getElementById("under-client-view");
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 200); // Delay to ensure the state is set before scrolling
+    }
+  };
+
+  useEffect(() => {
+    if (whichView === "main") {
+      const timer = setTimeout(() => {
+        setAnimateUnderView(true);
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [whichView]);
+
+  useEffect(() => {
+    const token = Cookies.get("clientViewToken");
+
+    if (token) {
+      const verifyToken = async () => {
+        try {
+          const endpoint = `${CLIENTVU_API_END_POINT}/verifyClientToken`;
+          const res = await apiRequest(
+            "POST",
+            endpoint,
+            { clientViewToken: token },
+            accessToken,
+            dispatch
+          );
+
+          if (res?.data?.showForm) {
+            setShowForm(true);
+          } else {
+            setShowForm(false);
+          }
+        } catch (err) {
+          console.log("Token invalid or error:", err);
+          setShowForm(true);
+        }
+      };
+
+      verifyToken();
+    } else {
+      setShowForm(true);
+    }
+  }, [accessToken, dispatch, eventId]);
+
   return (
     <>
       <div className="pics__header overflow-hidden relative md:h-[100vh] h-[50vh] bg-gray-800">
@@ -40,26 +105,48 @@ const Clientview = () => {
               {currentEvent?.eventName}
             </p>
             <div className="flex flex-wrap gap-4 md:gap-10">
-              <button className="border-2 border-white py-1 px-3 md:px-4 rounded-md text-sm md:text-base">
-                View Mine
-              </button>
-              <button className="border-2 border-white py-1 px-3 md:px-4 rounded-md text-sm md:text-base">
+              <button
+                onClick={viewAllHandler}
+                className="border-2 border-white py-1 px-3 md:px-4 rounded-md text-sm md:text-base"
+              >
                 View All
               </button>
               <button className="border-2 border-white py-1 px-3 md:px-4 rounded-md text-sm md:text-base">
-                Upload
+                Face Scan
               </button>
             </div>
           </div>
         </div>
       </div>
-      {whichView === "photos" ? (
-        <ClientPhotosView
-          setWhichView={setWhichView}
-          currentEvent={currentEvent}
-        />
-      ) : (
-        <UnderClientView setWhichView={setWhichView} />
+
+      {showForm && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center">
+          <div
+            className={`transition-all duration-500 transform ${
+              showFormAnimated
+                ? "translate-y-0 opacity-100"
+                : "-translate-y-10 opacity-0"
+            }`}
+          >
+            <ClientForm
+              onSubmit={() => setShowForm(false)}
+              onClose={() => setShowForm(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {!showForm && whichView === "main" && (
+        <div
+          id="under-client-view"
+          className={`transition-all duration-700 ease-out transform ${
+            animateUnderView
+              ? "translate-y-0 opacity-100"
+              : "-translate-y-10 opacity-0"
+          }`}
+        >
+          <ClientPhotosView setWhichView={setWhichView} />
+        </div>
       )}
     </>
   );

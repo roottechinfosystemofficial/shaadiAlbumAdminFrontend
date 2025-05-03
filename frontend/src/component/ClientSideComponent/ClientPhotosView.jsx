@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ScanFace,
@@ -12,8 +11,10 @@ import {
 import apiRequest from "../../utils/apiRequest";
 import { S3_API_END_POINT } from "../../constant";
 import { useDispatch, useSelector } from "react-redux";
+import { setCurrentSubEventId } from "../../Redux/Slices/EventSlice";
+import { debounce } from "lodash";
 
-const ClientPhotosView = ({ currentEvent }) => {
+const ClientPhotosView = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const [fetchedImages, setFetchedImages] = useState([]);
@@ -21,13 +22,21 @@ const ClientPhotosView = ({ currentEvent }) => {
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showImages, setShowImages] = useState(false);
-  const dispatch = useDispatch();
   const { accessToken } = useSelector((state) => state.user);
+  const { currentEvent } = useSelector((state) => state.event);
+  const [activeSubEventId, setActiveSubEventId] = useState(null);
+  const dispatch = useDispatch();
+
   const goBack = () => navigate(-1);
+
+  const handleSubEventClick = (id) => {
+    setActiveSubEventId(id);
+    dispatch(setCurrentSubEventId(id));
+    debouncedFetchImages();
+  };
 
   const fetchImages = async () => {
     if (isLoading || !hasMore) return;
-
     setIsLoading(true);
 
     try {
@@ -38,35 +47,47 @@ const ClientPhotosView = ({ currentEvent }) => {
         {
           eventId,
           continuationToken: nextToken,
+          subEventId: activeSubEventId,
         },
         accessToken,
         dispatch
       );
 
-      console.log(res);
-
-      // setFetchedImages((prev) => [...prev, ...data.images]);
-      // setNextToken(data.nextToken);
-      // setHasMore(!!data.nextToken);
-
-      // Simulate 3s skeleton delay
-      setTimeout(() => {
-        setIsLoading(false);
+      if (res.status === 200) {
+        const newImages = res.data.images || [];
+        setFetchedImages((prev) => [...prev, ...newImages]);
+        setNextToken(res.data.nextContinuationToken || null);
+        setHasMore(!!res.data.nextContinuationToken);
         setShowImages(true);
-      }, 3000);
+      }
     } catch (err) {
       console.error("Error fetching images:", err);
+    } finally {
       setIsLoading(false);
     }
   };
 
+  const debouncedFetchImages = useMemo(
+    () => debounce(fetchImages, 500),
+    [activeSubEventId, nextToken]
+  );
+
   useEffect(() => {
+    if (currentEvent?.subevents?.length > 0) {
+      const firstId = currentEvent.subevents[0]._id;
+      setActiveSubEventId(firstId);
+      dispatch(setCurrentSubEventId(firstId));
+    }
     setFetchedImages([]);
     setNextToken(null);
     setHasMore(true);
     setShowImages(false);
-    // fetchImages();
-  }, [eventId]);
+    debouncedFetchImages();
+  }, [eventId, currentEvent]);
+
+  useEffect(() => {
+    return () => debouncedFetchImages.cancel();
+  }, [debouncedFetchImages]);
 
   return (
     <div className="container mx-auto p-4 pb-24 relative">
@@ -105,37 +126,58 @@ const ClientPhotosView = ({ currentEvent }) => {
         </div>
       </div>
 
-      {/* Skeleton loading overlay */}
-      {isLoading && (
-        <div className="absolute inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-10">
-          <div className="text-white text-xl">
-            Loading images... Please wait.
+      {/* Subevent List */}
+      <div className="flex overflow-x-auto pb-6 gap-4">
+        {currentEvent?.subevents?.map((subevent, index) => (
+          <div
+            key={index}
+            onClick={() => handleSubEventClick(subevent?._id)}
+            className={`flex-shrink-0 w-32 p-2 rounded-md shadow-lg cursor-pointer transition-all duration-200 ${
+              activeSubEventId === subevent?._id
+                ? "bg-primary text-white"
+                : "bg-gray-300 text-black"
+            } hover:bg-gray-400`}
+          >
+            <h3 className="text-sm font-semibold text-center">
+              {subevent?.subEventName}
+            </h3>
           </div>
+        ))}
+      </div>
+
+      {/* Image Grid */}
+      {showImages ? (
+        fetchedImages.length > 0 ? (
+          <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 px-2 mt-4">
+            {fetchedImages.map((img, idx) => (
+              <div
+                key={idx}
+                className="break-inside-avoid rounded-xl overflow-hidden shadow hover:shadow-xl transition-all bg-white"
+              >
+                <img
+                  src={img}
+                  alt={`Event Img ${idx + 1}`}
+                  className="w-full h-[300px] object-contain"
+                  loading="lazy"
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center text-gray-500 mt-8">
+            No images found for this sub-event.
+          </p>
+        )
+      ) : (
+        <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 px-2 mt-4">
+          {Array.from({ length: 10 }).map((_, idx) => (
+            <div
+              key={idx}
+              className="h-64 bg-gray-300 rounded-xl animate-pulse shadow break-inside-avoid"
+            ></div>
+          ))}
         </div>
       )}
-
-      {/* Image Masonry or Skeletons */}
-      <div
-        className={`columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 mt-6 ${
-          isLoading ? "blur-3xl" : ""
-        }`}
-      >
-        {!showImages
-          ? Array.from({ length: 10 }).map((_, index) => (
-              <div
-                key={index}
-                className="mb-4 w-full h-64 bg-gray-300 animate-pulse rounded shadow"
-              />
-            ))
-          : fetchedImages.map((image, index) => (
-              <img
-                key={index}
-                src={image}
-                className="mb-4 object-cover w-full rounded shadow"
-                alt={`Event Image ${index + 1}`}
-              />
-            ))}
-      </div>
 
       {/* Load More Button */}
       {hasMore && !isLoading && showImages && (
