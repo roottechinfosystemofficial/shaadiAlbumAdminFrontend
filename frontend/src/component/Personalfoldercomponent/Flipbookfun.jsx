@@ -41,24 +41,34 @@ const splitImage = (src) => {
 };
 
 const Flipbookfun = ({ images, frontCover, backCover }) => {
+  console.log({ images, frontCover, backCover });
+
   const bookRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [pages, setPages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isLandscape, setIsLandscape] = useState(false);
+  const [flipSize, setFlipSize] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
-    const handleOrientationChange = () => {
-      setIsLandscape(window.innerWidth > window.innerHeight);
+    const updateFlipSize = () => {
+      if (window.innerWidth > window.innerHeight) {
+        // Landscape
+        setFlipSize({
+          width: window.innerWidth,
+          height: window.innerHeight,
+        });
+      } else {
+        // Portrait fallback
+        setFlipSize({
+          width: window.innerHeight,
+          height: window.innerWidth,
+        });
+      }
     };
 
-    // Initialize on mount and listen for orientation changes
-    handleOrientationChange();
-    window.addEventListener("resize", handleOrientationChange);
-
-    return () => {
-      window.removeEventListener("resize", handleOrientationChange);
-    };
+    updateFlipSize();
+    window.addEventListener("resize", updateFlipSize);
+    return () => window.removeEventListener("resize", updateFlipSize);
   }, []);
 
   useEffect(() => {
@@ -120,160 +130,65 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
 
   return (
     <div className="flex flex-col gap-y-10 items-center justify-center w-full min-h-screen bg-black relative overflow-hidden">
-      {/* 📱 Mobile Portrait Version */}
-      <div
-        className={`absolute top-0 left-0 w-full h-full flex items-center justify-center sm:hidden ${
-          isLandscape ? "hidden" : ""
-        }`}
-      >
-        <div
-          className="absolute top-0 left-0"
-          style={{
-            width: "100%",
-            height: "100%",
-            overflow: "hidden",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: "black",
-            touchAction: "none",
-            padding: "10px",
-            boxSizing: "border-box",
-          }}
+      {/* 📱 Mobile Version */}
+      <div className="sm:hidden absolute inset-0 flex items-center justify-center">
+        <HTMLFlipBook
+          width={flipSize.width}
+          height={flipSize.height}
+          size="stretch"
+          showCover={true}
+          usePortrait={false}
+          mobileScrollSupport={true}
+          ref={bookRef}
+          onFlip={(e) => setCurrentPage(e.data)}
+          className="shadow-md"
         >
-          <div
-            style={{
-              width: "80vh",
-              height: "80vw",
-              maxWidth: "90%",
-              maxHeight: "90%",
-            }}
-          >
-            <HTMLFlipBook
-              width={window.innerHeight}
-              height={window.innerWidth}
-              size="stretch"
-              showCover={true}
-              usePortrait={true}
-              mobileScrollSupport={true}
-              ref={bookRef}
-              onFlip={(e) => setCurrentPage(e.data)}
-              className="shadow-md"
-            >
-              {pages.map((src, index) => (
-                <div key={index} className="w-full h-full">
-                  <img
-                    src={src}
-                    alt={`Page ${index + 1}`}
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-              ))}
-            </HTMLFlipBook>
-          </div>
-        </div>
-      </div>
-
-      {/* 📱 Mobile Landscape Version */}
-      <div
-        className={`absolute top-0 left-0 w-full h-full flex items-center justify-center sm:hidden ${
-          !isLandscape ? "hidden" : ""
-        }`}
-      >
-        <div
-          className="absolute top-0 left-0"
-          style={{
-            width: "100%",
-            height: "100%",
-            overflow: "hidden",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: "black",
-            touchAction: "none",
-            padding: "10px",
-            boxSizing: "border-box",
-          }}
-        >
-          <div
-            style={{
-              width: "80vh",
-              height: "80vw",
-              maxWidth: "90%",
-              maxHeight: "90%",
-            }}
-          >
-            <HTMLFlipBook
-              width={window.innerHeight}
-              height={window.innerWidth}
-              size="stretch"
-              showCover={true}
-              usePortrait={false}
-              mobileScrollSupport={true}
-              ref={bookRef}
-              onFlip={(e) => setCurrentPage(e.data)}
-              className="shadow-md"
-            >
-              {pages.map((src, index) => (
-                <div key={index} className="w-full h-full">
-                  <img
-                    src={src}
-                    alt={`Page ${index + 1}`}
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-              ))}
-            </HTMLFlipBook>
-          </div>
-        </div>
+          {pages.map((src, index) => (
+            <div key={index} className="w-full h-full">
+              <img
+                src={src}
+                alt={`Page ${index + 1}`}
+                className="w-full h-full object-contain"
+              />
+            </div>
+          ))}
+        </HTMLFlipBook>
       </div>
 
       {/* 💻 Desktop Version */}
-      <div
-        className="flex justify-center items-center w-full h-full"
-        style={{
-          padding: "10px",
-          boxSizing: "border-box",
-          backgroundColor: "black",
-        }}
-      >
-        <div
-          style={{
-            width: "80vw", // 80% of screen width
-            height: "80vh", // 80% of screen height
-            maxWidth: 1200,
-            maxHeight: 800,
-          }}
+      <div className="hidden sm:flex justify-center items-center">
+        <HTMLFlipBook
+          width={600}
+          height={400}
+          size="fixed"
+          minWidth={600}
+          maxWidth={600}
+          minHeight={400}
+          maxHeight={400}
+          showCover={true}
+          usePortrait={false}
+          mobileScrollSupport={false}
+          onFlip={(e) => setCurrentPage(e.data)}
+          ref={bookRef}
+          className="shadow-xl"
         >
-          <HTMLFlipBook
-            width={window.innerWidth * 0.8}
-            height={window.innerHeight * 0.8}
-            size="stretch"
-            showCover={true}
-            usePortrait={false}
-            mobileScrollSupport={true}
-            onFlip={(e) => setCurrentPage(e.data)}
-            ref={bookRef}
-            className="shadow-xl"
-          >
-            {pages.map((src, index) => (
-              <div
-                key={index}
-                className={`w-full h-full ${
-                  index === frontCover || index === backCover
-                    ? "border-4 border-yellow-500"
-                    : ""
-                }`}
-              >
-                <img
-                  src={src}
-                  alt={`Page ${index + 1}`}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            ))}
-          </HTMLFlipBook>
-        </div>
+          {pages.map((src, index) => (
+            <div
+              key={index}
+              className={`w-full h-full ${
+                index === frontCover || index === backCover
+                  ? "border-4 border-yellow-500"
+                  : ""
+              }`}
+            >
+              <img
+                src={src}
+                alt={`Page ${index + 1}`}
+                className="w-full h-full object-contain"
+              />
+            </div>
+          ))}
+        </HTMLFlipBook>
       </div>
 
       <div className="flex items-center justify-between w-full max-w-[800px] mt-4 px-4">
