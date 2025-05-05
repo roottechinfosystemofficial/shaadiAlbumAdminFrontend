@@ -230,41 +230,50 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
 
       {/* 💻 Desktop Version */}
       <div
-        className="hidden sm:flex justify-center items-center"
-        style={{ padding: "10px", boxSizing: "border-box" }}
+        className="flex justify-center items-center w-full h-full"
+        style={{
+          padding: "10px",
+          boxSizing: "border-box",
+          backgroundColor: "black",
+        }}
       >
-        <HTMLFlipBook
-          width={600}
-          height={400}
-          size="fixed"
-          minWidth={600}
-          maxWidth={600}
-          minHeight={400}
-          maxHeight={400}
-          showCover={true}
-          usePortrait={false}
-          mobileScrollSupport={false}
-          onFlip={(e) => setCurrentPage(e.data)}
-          ref={bookRef}
-          className="shadow-xl"
+        <div
+          style={{
+            width: "80vw", // 80% of screen width
+            height: "80vh", // 80% of screen height
+            maxWidth: 1200,
+            maxHeight: 800,
+          }}
         >
-          {pages.map((src, index) => (
-            <div
-              key={index}
-              className={`w-full h-full ${
-                index === frontCover || index === backCover
-                  ? "border-4 border-yellow-500"
-                  : ""
-              }`}
-            >
-              <img
-                src={src}
-                alt={`Page ${index + 1}`}
-                className="w-full h-full object-contain"
-              />
-            </div>
-          ))}
-        </HTMLFlipBook>
+          <HTMLFlipBook
+            width={window.innerWidth * 0.8}
+            height={window.innerHeight * 0.8}
+            size="stretch"
+            showCover={true}
+            usePortrait={false}
+            mobileScrollSupport={true}
+            onFlip={(e) => setCurrentPage(e.data)}
+            ref={bookRef}
+            className="shadow-xl"
+          >
+            {pages.map((src, index) => (
+              <div
+                key={index}
+                className={`w-full h-full ${
+                  index === frontCover || index === backCover
+                    ? "border-4 border-yellow-500"
+                    : ""
+                }`}
+              >
+                <img
+                  src={src}
+                  alt={`Page ${index + 1}`}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            ))}
+          </HTMLFlipBook>
+        </div>
       </div>
 
       <div className="flex items-center justify-between w-full max-w-[800px] mt-4 px-4">
