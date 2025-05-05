@@ -109,21 +109,25 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen w-full bg-black relative">
+    <div className="w-screen h-screen bg-black relative overflow-hidden">
       <HTMLFlipBook
         width={isMobile ? window.innerWidth : 600}
         height={isMobile ? window.innerHeight : 400}
-        size={isMobile ? "stretch" : "fixed"}
-        minWidth={isMobile ? 300 : 600}
+        size="stretch"
+        minWidth={isMobile ? 1 : 600}
         maxWidth={isMobile ? window.innerWidth : 600}
-        minHeight={isMobile ? 200 : 400}
+        minHeight={isMobile ? 1 : 400}
         maxHeight={isMobile ? window.innerHeight : 400}
+        style={{
+          width: "100%",
+          height: "100%",
+        }}
+        className="w-full h-full shadow-lg"
         showCover={true}
         usePortrait={false}
-        mobileScrollSupport={isMobile}
+        mobileScrollSupport={true}
         ref={bookRef}
         onFlip={(e) => setCurrentPage(e.data)}
-        className="shadow-lg"
       >
         {pages.map((src, index) => (
           <div
@@ -137,7 +141,7 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
             <img
               src={src}
               alt={`Page ${index + 1}`}
-              className="w-full h-full object-contain"
+              className="w-full h-full object-cover"
             />
           </div>
         ))}
