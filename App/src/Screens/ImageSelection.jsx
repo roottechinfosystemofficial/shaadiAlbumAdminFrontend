@@ -33,7 +33,7 @@ const ImageSelection = () => {
     if (text.length === 8) {
       try {
         const response = await fetch(
-          "http://192.168.1.101:5000/api/v1/app-event/findEventByEventPin",
+          "http://192.168.213.31:5000/api/v1/app-event/findEventByEventPin",
           {
             method: "POST",
             headers: {

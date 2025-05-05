@@ -34,7 +34,7 @@ const EditProfile = () => {
   const handleReset = async () => {
     try {
       const res = await fetch(
-        "http://192.168.1.101:5000/api/v1/app-user/update-profile",
+        "http://192.168.213.31:5000/api/v1/app-user/update-profile",
         {
           method: "PUT",
           headers: {

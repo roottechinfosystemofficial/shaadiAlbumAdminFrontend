@@ -63,7 +63,7 @@ const Login = () => {
     try {
       setLoading(true);
       const response = await fetch(
-        "http://192.168.1.101:5000/api/v1/app-user/login",
+        "http://192.168.213.31:5000/api/v1/app-user/login",
         {
           method: "POST",
           headers: {
