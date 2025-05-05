@@ -114,10 +114,10 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
         width={isMobile ? window.innerWidth : 600}
         height={isMobile ? window.innerHeight : 400}
         size={isMobile ? "stretch" : "fixed"}
-        minWidth={600}
-        maxWidth={600}
-        minHeight={400}
-        maxHeight={400}
+        minWidth={isMobile ? 300 : 600}
+        maxWidth={isMobile ? window.innerWidth : 600}
+        minHeight={isMobile ? 200 : 400}
+        maxHeight={isMobile ? window.innerHeight : 400}
         showCover={true}
         usePortrait={false}
         mobileScrollSupport={isMobile}
@@ -129,7 +129,7 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
           <div
             key={index}
             className={`w-full h-full ${
-              index === frontCover || index === backCover
+              index === 0 || index === pages.length - 1
                 ? "border-4 border-yellow-500"
                 : ""
             }`}
