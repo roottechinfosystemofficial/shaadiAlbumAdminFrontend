@@ -106,31 +106,44 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
   }
 
   return (
-    <div className="flex flex-col gap-y-1 items-center justify-center w-full min-h-screen bg-black relative overflow-hidden">
+    <div className="flex flex-col gap-y-10 items-center justify-center w-full min-h-screen bg-black relative overflow-hidden">
       {/* 📱 Mobile Version */}
-      {/* 📱 Mobile Version */}
-      <div className="sm:hidden fixed top-0 left-0 w-full h-full flex items-center justify-center">
-        <HTMLFlipBook
-          width={window.innerWidth}
-          height={window.innerHeight}
-          size="stretch"
-          showCover={true}
-          usePortrait={false}
-          mobileScrollSupport={true}
-          ref={bookRef}
-          onFlip={(e) => setCurrentPage(e.data)}
-          className="shadow-md"
+      <div className="sm:hidden absolute top-0 left-0 w-full h-full flex items-center justify-center">
+        <div
+          className="absolute top-0 left-0"
+          style={{
+            width: "100%",
+            height: "100%",
+            overflow: "hidden",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "black",
+            touchAction: "none",
+          }}
         >
-          {pages.map((src, index) => (
-            <div key={index} className="w-full h-full">
-              <img
-                src={src}
-                alt={`Page ${index + 1}`}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          ))}
-        </HTMLFlipBook>
+          <HTMLFlipBook
+            width={window.innerHeight}
+            height={window.innerWidth}
+            size="stretch"
+            showCover={true}
+            usePortrait={false}
+            mobileScrollSupport={true}
+            ref={bookRef}
+            onFlip={(e) => setCurrentPage(e.data)}
+            className="shadow-md"
+          >
+            {pages.map((src, index) => (
+              <div key={index} className="w-full h-full">
+                <img
+                  src={src}
+                  alt={`Page ${index + 1}`}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            ))}
+          </HTMLFlipBook>
+        </div>
       </div>
 
       {/* 💻 Desktop Version */}
