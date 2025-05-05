@@ -152,9 +152,9 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
           width={window.innerHeight}
           // height={"100%"}
           size="fixed"
-          minWidth={600}
+          minWidth={399}
           maxWidth={600}
-          minHeight={400}
+          minHeight={266}
           maxHeight={400}
           showCover={true}
           usePortrait={false}
