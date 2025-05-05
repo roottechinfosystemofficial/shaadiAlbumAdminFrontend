@@ -120,6 +120,8 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
             justifyContent: "center",
             backgroundColor: "black",
             touchAction: "none",
+            padding: "10px",
+            boxSizing: "border-box",
           }}
         >
           <HTMLFlipBook
@@ -147,7 +149,10 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
       </div>
 
       {/* 💻 Desktop Version */}
-      <div className="hidden sm:flex justify-center items-center">
+      <div
+        className="hidden sm:flex justify-center items-center"
+        style={{ padding: "10px", boxSizing: "border-box" }}
+      >
         <HTMLFlipBook
           width={600}
           height={400}
