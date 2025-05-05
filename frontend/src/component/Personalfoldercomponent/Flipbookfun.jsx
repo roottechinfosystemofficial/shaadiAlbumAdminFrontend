@@ -126,8 +126,8 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
         >
           <div
             style={{
-              width: "80vh", // 80% of the viewport height (because it's landscape)
-              height: "80vw", // flip dimensions since landscape
+              width: "80vh",
+              height: "80vw",
               maxWidth: "90%",
               maxHeight: "90%",
             }}
@@ -163,8 +163,8 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
         style={{ padding: "10px", boxSizing: "border-box" }}
       >
         <HTMLFlipBook
-          width={600}
-          height={400}
+          width={400}
+          height={200}
           size="fixed"
           minWidth={600}
           maxWidth={600}
