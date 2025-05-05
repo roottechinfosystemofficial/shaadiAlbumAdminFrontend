@@ -124,27 +124,36 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
             boxSizing: "border-box",
           }}
         >
-          <HTMLFlipBook
-            width={window.innerHeight}
-            height={window.innerWidth}
-            size="stretch"
-            showCover={true}
-            usePortrait={false}
-            mobileScrollSupport={true}
-            ref={bookRef}
-            onFlip={(e) => setCurrentPage(e.data)}
-            className="shadow-md"
+          <div
+            style={{
+              width: "80vh", // 80% of the viewport height (because it's landscape)
+              height: "80vw", // flip dimensions since landscape
+              maxWidth: "90%",
+              maxHeight: "90%",
+            }}
           >
-            {pages.map((src, index) => (
-              <div key={index} className="w-full h-full">
-                <img
-                  src={src}
-                  alt={`Page ${index + 1}`}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            ))}
-          </HTMLFlipBook>
+            <HTMLFlipBook
+              width={window.innerHeight}
+              height={window.innerWidth}
+              size="stretch"
+              showCover={true}
+              usePortrait={false}
+              mobileScrollSupport={true}
+              ref={bookRef}
+              onFlip={(e) => setCurrentPage(e.data)}
+              className="shadow-md"
+            >
+              {pages.map((src, index) => (
+                <div key={index} className="w-full h-full">
+                  <img
+                    src={src}
+                    alt={`Page ${index + 1}`}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              ))}
+            </HTMLFlipBook>
+          </div>
         </div>
       </div>
 
