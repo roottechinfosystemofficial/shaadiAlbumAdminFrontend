@@ -12,14 +12,14 @@ const splitImage = (src) => {
       const height = img.height;
 
       const canvasLeft = document.createElement("canvas");
-      canvasLeft.width = width / 2;
-      canvasLeft.height = height;
+      const canvasRight = document.createElement("canvas");
+
+      canvasLeft.width = canvasRight.width = width / 2;
+      canvasLeft.height = canvasRight.height = height;
+
       const ctxLeft = canvasLeft.getContext("2d");
       ctxLeft.drawImage(img, 0, 0, width / 2, height, 0, 0, width / 2, height);
 
-      const canvasRight = document.createElement("canvas");
-      canvasRight.width = width / 2;
-      canvasRight.height = height;
       const ctxRight = canvasRight.getContext("2d");
       ctxRight.drawImage(
         img,
@@ -41,61 +41,42 @@ const splitImage = (src) => {
 };
 
 const Flipbookfun = ({ images, frontCover, backCover }) => {
-  console.log({ images, frontCover, backCover });
-
   const bookRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [pages, setPages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [flipSize, setFlipSize] = useState({ width: 0, height: 0 });
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const updateFlipSize = () => {
-      if (window.innerWidth > window.innerHeight) {
-        // Landscape
-        setFlipSize({
-          width: window.innerWidth,
-          height: window.innerHeight,
-        });
-      } else {
-        // Portrait fallback
-        setFlipSize({
-          width: window.innerHeight,
-          height: window.innerWidth,
-        });
-      }
-    };
-
-    updateFlipSize();
-    window.addEventListener("resize", updateFlipSize);
-    return () => window.removeEventListener("resize", updateFlipSize);
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   useEffect(() => {
     const preparePages = async () => {
       if (!images || images.length === 0) return;
-
       setLoading(true);
 
-      const processed = [images[frontCover]]; // Use passed front cover
-      const middleImages = images.filter(
-        (_, i) => i !== frontCover && i !== backCover
-      );
-
-      const splitImagesBatch = async (imgSources) => {
-        const promises = imgSources.map((src) => splitImage(src));
-        const results = await Promise.allSettled(promises);
-        return results
-          .filter((res) => res.status === "fulfilled")
-          .flatMap((res) => res.value);
-      };
-
       try {
-        const splitPages = await splitImagesBatch(middleImages);
-        processed.push(...splitPages, images[backCover]); // Use passed back cover
+        const processed = [images[frontCover]];
+        const middleImages = images.filter(
+          (_, i) => i !== frontCover && i !== backCover
+        );
+
+        const splitResults = await Promise.allSettled(
+          middleImages.map((src) => splitImage(src))
+        );
+
+        const splitPages = splitResults
+          .filter((r) => r.status === "fulfilled")
+          .flatMap((r) => r.value);
+
+        processed.push(...splitPages, images[backCover]);
         setPages(processed);
       } catch (err) {
-        console.error("Error processing images:", err);
+        console.error("Image processing failed", err);
       } finally {
         setLoading(false);
       }
@@ -105,13 +86,13 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
   }, [images, frontCover, backCover]);
 
   const nextPage = () => {
-    if (currentPage < pages.length - 1) {
+    if (bookRef.current) {
       bookRef.current.pageFlip().flipNext();
     }
   };
 
   const prevPage = () => {
-    if (currentPage > 0) {
+    if (bookRef.current) {
       bookRef.current.pageFlip().flipPrev();
     }
   };
@@ -120,90 +101,61 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white space-y-6">
         <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin" />
-        <p className="text-2xl font-semibold animate-pulse tracking-wide">
-          Loading your flipbook...
+        <p className="text-2xl font-semibold animate-pulse">
+          Loading Flipbook...
         </p>
-        <p className="text-sm text-gray-400">This may take a few seconds ⏳</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-y-10 items-center justify-center w-full min-h-screen bg-black relative overflow-hidden">
-      {/* 📱 Mobile Version */}
-      <div className="sm:hidden absolute inset-0 flex items-center justify-center">
-        <HTMLFlipBook
-          width={flipSize.width}
-          height={flipSize.height}
-          size="stretch"
-          showCover={true}
-          usePortrait={false}
-          mobileScrollSupport={true}
-          ref={bookRef}
-          onFlip={(e) => setCurrentPage(e.data)}
-          className="shadow-md"
-        >
-          {pages.map((src, index) => (
-            <div key={index} className="w-full h-full">
-              <img
-                src={src}
-                alt={`Page ${index + 1}`}
-                className="w-full h-full object-contain"
-              />
-            </div>
-          ))}
-        </HTMLFlipBook>
-      </div>
+    <div className="flex flex-col items-center justify-center min-h-screen w-full bg-black relative">
+      <HTMLFlipBook
+        width={isMobile ? window.innerWidth : 600}
+        height={isMobile ? window.innerHeight : 400}
+        size={isMobile ? "stretch" : "fixed"}
+        minWidth={600}
+        maxWidth={600}
+        minHeight={400}
+        maxHeight={400}
+        showCover={true}
+        usePortrait={false}
+        mobileScrollSupport={isMobile}
+        ref={bookRef}
+        onFlip={(e) => setCurrentPage(e.data)}
+        className="shadow-lg"
+      >
+        {pages.map((src, index) => (
+          <div
+            key={index}
+            className={`w-full h-full ${
+              index === frontCover || index === backCover
+                ? "border-4 border-yellow-500"
+                : ""
+            }`}
+          >
+            <img
+              src={src}
+              alt={`Page ${index + 1}`}
+              className="w-full h-full object-contain"
+            />
+          </div>
+        ))}
+      </HTMLFlipBook>
 
-      {/* 💻 Desktop Version */}
-      <div className="hidden sm:flex justify-center items-center">
-        <HTMLFlipBook
-          width={600}
-          height={400}
-          size="fixed"
-          minWidth={600}
-          maxWidth={600}
-          minHeight={400}
-          maxHeight={400}
-          showCover={true}
-          usePortrait={false}
-          mobileScrollSupport={false}
-          onFlip={(e) => setCurrentPage(e.data)}
-          ref={bookRef}
-          className="shadow-xl"
-        >
-          {pages.map((src, index) => (
-            <div
-              key={index}
-              className={`w-full h-full ${
-                index === frontCover || index === backCover
-                  ? "border-4 border-yellow-500"
-                  : ""
-              }`}
-            >
-              <img
-                src={src}
-                alt={`Page ${index + 1}`}
-                className="w-full h-full object-contain"
-              />
-            </div>
-          ))}
-        </HTMLFlipBook>
-      </div>
-
-      <div className="flex items-center justify-between w-full max-w-[800px] mt-4 px-4">
+      <div className="flex items-center justify-between w-full max-w-[800px] mt-6 px-4 z-10">
         <button
           onClick={prevPage}
-          className="p-3 rounded-full bg-white text-gray-900 hover:bg-gray-300 transition-transform transform hover:scale-110"
+          className="p-3 rounded-full bg-white text-black hover:bg-gray-300 transition-transform transform hover:scale-110"
         >
           <ArrowLeft />
         </button>
-        <span className="text-white font-semibold text-lg tracking-wide">
+        <span className="text-white text-lg font-semibold">
           Page {currentPage + 1} / {pages.length}
         </span>
         <button
           onClick={nextPage}
-          className="p-3 rounded-full bg-white text-gray-900 hover:bg-gray-300 transition-transform transform hover:scale-110"
+          className="p-3 rounded-full bg-white text-black hover:bg-gray-300 transition-transform transform hover:scale-110"
         >
           <ArrowRight />
         </button>
