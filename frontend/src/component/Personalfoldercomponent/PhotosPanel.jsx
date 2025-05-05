@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { S3_API_END_POINT } from "../../constant";
 import apiRequest from "../../utils/apiRequest";
+import { Loader } from "../Loader";
 
 const PhotosPanel = () => {
   const [images, setImages] = useState([]);
@@ -18,7 +19,7 @@ const PhotosPanel = () => {
     (state) => state.event
   );
   const { eventId } = useParams();
-  const [reloadKey, setReloadKey] = useState(0); // to force refetch
+  const [reloadKey, setReloadKey] = useState(0);
   const dispatch = useDispatch();
   const { accessToken } = useSelector((state) => state.user);
 
@@ -30,13 +31,12 @@ const PhotosPanel = () => {
     setPage(1);
     setTokens({ 1: null });
     setSelectedImages(new Set());
-    setReloadKey((prev) => prev + 1); // trigger reload
+    setReloadKey((prev) => prev + 1);
   }, [currentEventId, currentSubEvent]);
 
   useEffect(() => {
     const fetchImages = async () => {
       const continuationToken = tokens[page];
-
       setIsLoading(true);
       try {
         const endpoint = `${S3_API_END_POINT}/list-images`;
@@ -52,7 +52,6 @@ const PhotosPanel = () => {
           accessToken,
           dispatch
         );
-        console.log(res);
 
         if (res.status === 200) {
           const data = res.data.images || [];
@@ -98,14 +97,14 @@ const PhotosPanel = () => {
     images.length > 0 && selectedImages.size === images.length;
 
   const handleUploadSuccess = () => {
-    // Trigger a refresh of images after upload
     setPage(1);
     setTokens({ 1: null });
     setSelectedImages(new Set());
     setReloadKey((prev) => prev + 1);
   };
+
   const eventDate = currentSubEvent?.createdAt
-    ? new Date(currentSubEvent?.createdAt).toLocaleString("en-US", {
+    ? new Date(currentSubEvent.createdAt).toLocaleString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
@@ -199,6 +198,7 @@ const PhotosPanel = () => {
         </div>
       )}
 
+      {/* Images Grid */}
       <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {images.map((url, index) => (
           <MemoizedImageCard
@@ -211,16 +211,16 @@ const PhotosPanel = () => {
         ))}
       </div>
 
-      {isLoading && (
-        <div className="flex justify-center mt-6 text-gray-400 animate-pulse">
-          <p>Loading images...</p>
-        </div>
-      )}
-      {!isLoading && images.length === 0 && (
+      {/* Loading or No Images */}
+      {isLoading ? (
+        <Loader message="Images are on their way, please wait..." />
+      ) : images.length === 0 ? (
         <div className="text-center text-gray-500 mt-10">
-          <p className="text-lg font-medium">No photos available.</p>
+          <p className="text-lg font-medium text-gray-600">
+            No photos uploaded yet. Click "+ Add Photos" to get started!
+          </p>
         </div>
-      )}
+      ) : null}
 
       <AddPhotosModal
         isOpen={isModalOpen}
@@ -232,53 +232,51 @@ const PhotosPanel = () => {
   );
 };
 
-const ImageCard = ({ src, alt, selected, onToggleSelect }) => {
-  return (
-    <div
-      className={`relative overflow-hidden rounded-lg shadow group ${
-        selected ? "ring-2 ring-primary" : ""
-      }`}
-    >
-      <img
-        src={src}
-        alt={alt}
-        loading="lazy"
-        className="w-full h-64 object-contain transition-transform duration-200 ease-in-out group-hover:scale-105"
-      />
-      <div className="absolute top-2 left-2">
-        <label className="inline-flex items-center cursor-pointer bg-transparent bg-opacity-75 p-1 rounded shadow">
-          <input
-            type="checkbox"
-            checked={selected}
-            onChange={onToggleSelect}
-            className="sr-only"
-          />
-          <div
-            className={`w-4 h-4 rounded border-2 flex items-center justify-center transition ${
-              selected
-                ? "bg-primary border-primary"
-                : "bg-check border-slate-dark"
-            }`}
-          >
-            {selected && (
-              <svg
-                className="w-3 h-3 text-white"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M16.707 5.293a1 1 0 010 1.414l-8.25 8.25a1 1 0 01-1.414 0l-4.25-4.25a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            )}
-          </div>
-        </label>
-      </div>
+const ImageCard = ({ src, alt, selected, onToggleSelect }) => (
+  <div
+    className={`relative overflow-hidden rounded-lg shadow group ${
+      selected ? "ring-2 ring-primary" : ""
+    }`}
+  >
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      className="w-full h-64 object-contain transition-transform duration-200 ease-in-out group-hover:scale-105"
+    />
+    <div className="absolute top-2 left-2">
+      <label className="inline-flex items-center cursor-pointer bg-transparent bg-opacity-75 p-1 rounded shadow">
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggleSelect}
+          className="sr-only"
+        />
+        <div
+          className={`w-4 h-4 rounded border-2 flex items-center justify-center transition ${
+            selected
+              ? "bg-primary border-primary"
+              : "bg-check border-slate-dark"
+          }`}
+        >
+          {selected && (
+            <svg
+              className="w-3 h-3 text-white"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8.25 8.25a1 1 0 01-1.414 0l-4.25-4.25a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+          )}
+        </div>
+      </label>
     </div>
-  );
-};
+  </div>
+);
 
 const MemoizedImageCard = memo(ImageCard);
 export default PhotosPanel;

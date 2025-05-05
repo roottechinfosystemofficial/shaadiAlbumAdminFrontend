@@ -1,5 +1,9 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { setCurrentSubEventId } from "../../Redux/Slices/EventSlice";
+import apiRequest from "../../utils/apiRequest";
+import { S3_API_END_POINT } from "../../constant";
 import {
   ScanFace,
   Heart,
@@ -8,24 +12,20 @@ import {
   Share2,
   ArrowDownToLineIcon,
 } from "lucide-react";
-import apiRequest from "../../utils/apiRequest";
-import { S3_API_END_POINT } from "../../constant";
-import { useDispatch, useSelector } from "react-redux";
-import { setCurrentSubEventId } from "../../Redux/Slices/EventSlice";
-import { debounce } from "lodash";
 
 const ClientPhotosView = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
   const [fetchedImages, setFetchedImages] = useState([]);
   const [nextToken, setNextToken] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [showImages, setShowImages] = useState(false);
+  const [activeSubEventId, setActiveSubEventId] = useState(null);
+
   const { accessToken } = useSelector((state) => state.user);
   const { currentEvent } = useSelector((state) => state.event);
-  const [activeSubEventId, setActiveSubEventId] = useState(null);
-  const dispatch = useDispatch();
 
   const goBack = () => navigate(-1);
 
@@ -34,6 +34,7 @@ const ClientPhotosView = () => {
     dispatch(setCurrentSubEventId(id));
   };
 
+  // Function to fetch images
   const fetchImages = async () => {
     if (isLoading || !hasMore || !activeSubEventId) return;
     setIsLoading(true);
@@ -55,9 +56,8 @@ const ClientPhotosView = () => {
       if (res.status === 200) {
         const newImages = res.data.images || [];
         setFetchedImages((prev) => [...prev, ...newImages]);
-        setNextToken(res.data.nextContinuationToken || null);
-        setHasMore(!!res.data.nextContinuationToken);
-        setShowImages(true);
+        setNextToken(res.data.nextToken || null); // Ensure you're correctly setting the nextToken
+        setHasMore(!!res.data.nextToken); // Only set to true if nextToken is available
       }
     } catch (err) {
       console.error("Error fetching images:", err);
@@ -66,11 +66,6 @@ const ClientPhotosView = () => {
     }
   };
 
-  const debouncedFetchImages = useMemo(
-    () => debounce(fetchImages, 500),
-    [activeSubEventId, nextToken]
-  );
-
   // Set initial subevent when event is loaded
   useEffect(() => {
     if (currentEvent?.subevents?.length > 0) {
@@ -78,26 +73,34 @@ const ClientPhotosView = () => {
       setActiveSubEventId(firstId);
       dispatch(setCurrentSubEventId(firstId));
     }
-    setFetchedImages([]);
-    setNextToken(null);
-    setHasMore(true);
-    setShowImages(false);
   }, [eventId, currentEvent, dispatch]);
 
-  // Fetch images when activeSubEventId is set
+  // Fetch images when activeSubEventId changes
   useEffect(() => {
     if (activeSubEventId) {
       setFetchedImages([]);
       setNextToken(null);
       setHasMore(true);
-      setShowImages(false);
-      debouncedFetchImages();
+      fetchImages();
     }
-  }, [activeSubEventId, debouncedFetchImages]);
+  }, [activeSubEventId]);
 
+  // Infinite Scroll - Load images when user reaches the bottom of the page
   useEffect(() => {
-    return () => debouncedFetchImages.cancel();
-  }, [debouncedFetchImages]);
+    const handleScroll = () => {
+      const scrollPosition =
+        window.innerHeight + document.documentElement.scrollTop;
+      const bottom = document.documentElement.offsetHeight;
+
+      if (scrollPosition >= bottom - 100 && !isLoading && hasMore) {
+        fetchImages();
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isLoading, hasMore]);
 
   return (
     <div className="container mx-auto p-4 pb-24 relative">
@@ -108,6 +111,7 @@ const ClientPhotosView = () => {
         <span className="text-black">&larr; Back</span>
       </button>
 
+      {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between pb-6 gap-4">
         <div>
           <h2 className="text-2xl font-bold">
@@ -156,48 +160,27 @@ const ClientPhotosView = () => {
       </div>
 
       {/* Image Grid */}
-      {showImages ? (
-        fetchedImages.length > 0 ? (
-          <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 px-2 mt-4">
-            {fetchedImages.map((img, idx) => (
-              <div
-                key={idx}
-                className="break-inside-avoid rounded-xl overflow-hidden shadow hover:shadow-xl transition-all bg-white"
-              >
-                <img
-                  src={img}
-                  alt={`Event Img ${idx + 1}`}
-                  className="w-full h-[300px] object-contain"
-                  loading="lazy"
-                />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-gray-500 mt-8">
-            No images found for this sub-event.
-          </p>
-        )
+      {isLoading && !fetchedImages.length ? (
+        <p className="text-center text-gray-600 mt-12">Loading images...</p>
+      ) : fetchedImages.length === 0 ? (
+        <p className="text-center text-gray-500 mt-12">
+          No images found for this sub-event.
+        </p>
       ) : (
         <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 px-2 mt-4">
-          {Array.from({ length: 10 }).map((_, idx) => (
+          {fetchedImages.map((img, idx) => (
             <div
               key={idx}
-              className="h-64 bg-gray-300 rounded-xl animate-pulse shadow break-inside-avoid"
-            ></div>
+              className="break-inside-avoid rounded-xl overflow-hidden shadow hover:shadow-xl transition-all bg-white"
+            >
+              <img
+                src={img}
+                alt={`Event Img ${idx + 1}`}
+                className="w-full h-[300px] object-contain"
+                loading="lazy"
+              />
+            </div>
           ))}
-        </div>
-      )}
-
-      {/* Load More Button */}
-      {hasMore && !isLoading && showImages && (
-        <div className="mt-8 text-center">
-          <button
-            onClick={fetchImages}
-            className="px-6 py-3 bg-primary text-white rounded-lg shadow hover:bg-primary-dark transition"
-          >
-            Load More
-          </button>
         </div>
       )}
     </div>

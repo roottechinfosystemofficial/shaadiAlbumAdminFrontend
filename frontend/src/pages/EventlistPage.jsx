@@ -17,7 +17,8 @@ const EventlistPage = () => {
   const [events, setEvents] = useState([]);
   const [useEventId, setUseEventId] = useState();
   const [openEditModel, setOpenEditModel] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
 
   const dispatch = useDispatch();
   const { accessToken } = useSelector((state) => state.user);
@@ -53,28 +54,30 @@ const EventlistPage = () => {
 
   const handleAddEvent = async (e) => {
     e.preventDefault();
-    const eventDetails = { eventName, eventDate };
+    setCreating(true);
     try {
       const endpoint = `${EVENT_API_END_POINT}/createEvent`;
       const res = await apiRequest(
         "POST",
         endpoint,
-        eventDetails,
+        { eventName, eventDate },
         accessToken,
         dispatch
       );
       if (res?.status === 200) {
         toast.success("Event added successfully!");
-        getAllEventsOfUser();
+        await getAllEventsOfUser();
+        setShowModal(false);
+        setEventName("");
+        setEventDate("");
       }
     } catch (error) {
       toast.error("Error adding event.");
       console.error("Error adding event:", error);
+    } finally {
+      setCreating(false);
     }
-    setShowModal(false);
   };
-
-  // Fetch single event with custom hook
 
   useEffect(() => {
     if (currentEvent?._id === useEventId) {
@@ -96,10 +99,12 @@ const EventlistPage = () => {
 
   const handleDelete = (id) => {
     toast.info(`Delete event with id: ${id}`);
+    // Implement actual delete logic here if needed
   };
 
   return (
     <div className="max-w-6xl mx-auto mt-10 px-4">
+      {/* Header */}
       <div className="flex flex-col md:flex-row items-center justify-between">
         <p className="text-3xl text-center md:text-left">Event List</p>
         <div className="flex flex-col sm:flex-row items-center gap-3 mt-4 md:mt-0 w-full sm:w-auto">
@@ -119,6 +124,7 @@ const EventlistPage = () => {
 
       <hr className="border-t-1 border-gray-300 mt-3 mb-6" />
 
+      {/* Content States */}
       {loading ? (
         <div className="text-center py-10">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2" />
@@ -141,9 +147,9 @@ const EventlistPage = () => {
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {events?.map((event) => (
+          {events.map((event) => (
             <EventCard
-              key={event?._id}
+              key={event._id}
               event={event}
               onEdit={handleEdit}
               onDelete={handleDelete}
@@ -162,6 +168,7 @@ const EventlistPage = () => {
           setEventDate={setEventDate}
           handleAddEvent={handleAddEvent}
           setShowModal={setShowModal}
+          loading={creating}
         />
       )}
 

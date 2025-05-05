@@ -98,6 +98,7 @@ const EditEventModal = ({
           </button>
         </div>
         <form onSubmit={handleEditSubmit}>
+          {/* Event Name */}
           <label className="block text-gray-700 font-medium mb-1">
             Event Name *
           </label>
@@ -106,8 +107,10 @@ const EditEventModal = ({
             value={editForm?.eventName || ""}
             onChange={(e) => handleEditFormChange("eventName", e.target.value)}
             className="w-full border p-2 rounded-md mb-3"
+            required
           />
 
+          {/* Event Date */}
           <label className="block text-gray-700 font-medium mb-1">
             Event Date
           </label>
@@ -118,6 +121,7 @@ const EditEventModal = ({
             className="w-full border p-2 rounded-md mb-3"
           />
 
+          {/* Event Delete Date */}
           <label className="block text-gray-700 font-medium mb-1">
             Event Delete Date
           </label>
@@ -129,6 +133,7 @@ const EditEventModal = ({
             className="w-full border p-2 rounded-md mb-3"
           />
 
+          {/* Change Event ID */}
           <div className="flex items-center mb-2 gap-2">
             <input
               type="checkbox"
@@ -165,6 +170,7 @@ const EditEventModal = ({
             </>
           )}
 
+          {/* Change Event Password */}
           <div className="flex items-center mb-2 gap-2">
             <input
               type="checkbox"

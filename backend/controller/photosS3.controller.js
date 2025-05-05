@@ -28,7 +28,6 @@ const s3Client = new S3Client({
 
 export const getPresignedUrl = async (req, res) => {
   const { files, eventId, subEventId, usageType, flipbookId } = req.body;
-  console.log(req.body);
 
   // Validate inputs
   if (!files || !Array.isArray(files) || !eventId) {
@@ -117,7 +116,7 @@ export const getPresignedUrl = async (req, res) => {
 export const getEventImages = async (req, res) => {
   const { eventId, continuationToken, usageType, subEventId, flipbookId } =
     req.body;
-  const pageSize = 2;
+  const pageSize = 20;
 
   // Validate required parameters
   if (!eventId) {
@@ -171,6 +170,7 @@ export const getEventImages = async (req, res) => {
         return getSignedUrl(s3Client, getCommand);
       })
     );
+    console.log(imageUrls.length);
 
     res.status(200).json({
       images: imageUrls,

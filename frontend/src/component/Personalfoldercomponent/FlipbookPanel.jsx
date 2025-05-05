@@ -8,18 +8,21 @@ import toast from "../../utils/toast.js";
 import { setPersonalFolderContentTab } from "../../Redux/Slices/TabSlice.jsx";
 import { useGetSingleFlipBook } from "../../Hooks/useGetSingleFlipBook.js";
 import { setCurrentFlipbookId } from "../../Redux/Slices/EventSlice.jsx";
+import { Loader } from "../Loader.jsx";
 
 function FlipbookPanel() {
   const [flipbooks, setFlipbooks] = useState([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [formData, setFormData] = useState({ flipBookName: "" });
   const [useFlipBookId, setUseFlipBookId] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   const dispatch = useDispatch();
   const { accessToken } = useSelector((state) => state.user);
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { refetchFlipBook } = useGetSingleFlipBook(useFlipBookId);
+
   useEffect(() => {
     if (useFlipBookId) {
       refetchFlipBook();
@@ -27,8 +30,8 @@ function FlipbookPanel() {
     }
   }, [useFlipBookId]);
 
-  // Fetch all flipbooks for event
   const getAllFlipBookByEvent = async () => {
+    setIsLoading(true);
     try {
       const endpoint = `${FLIPBOOK_API_END_POINT}/getAllFlipBookByEvent/${eventId}`;
       const res = await apiRequest("GET", endpoint, {}, accessToken, dispatch);
@@ -36,7 +39,9 @@ function FlipbookPanel() {
         setFlipbooks(res?.data?.data || []);
       }
     } catch (error) {
-      console.log(error);
+      toast.error("Failed to load flipbooks");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -44,7 +49,6 @@ function FlipbookPanel() {
     getAllFlipBookByEvent();
   }, [eventId]);
 
-  // Input change handler
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
     setFormData((prev) => ({
@@ -53,13 +57,11 @@ function FlipbookPanel() {
     }));
   };
 
-  // Open modal
   const handleAddFlipbookClick = () => {
     setFormData({ flipBookName: "" });
     setIsAddModalOpen(true);
   };
 
-  // Submit form to create flipbook
   const handleAddFormSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -76,21 +78,18 @@ function FlipbookPanel() {
         await getAllFlipBookByEvent();
       }
     } catch (error) {
-      console.log(error);
       toast.error("Failed to create flipbook");
     } finally {
       setIsAddModalOpen(false);
     }
   };
 
-  // Delete from local list only (assumes backend call is handled elsewhere)
   const handleDeleteClick = (flipbookId) => {
     setFlipbooks((prev) => prev.filter((fb) => fb?._id !== flipbookId));
+    toast.success("Flipbook deleted from list");
   };
 
-  // On flipbook click
   const imageOpenHandler = (id) => {
-    console.log(id);
     setUseFlipBookId(id);
     dispatch(setCurrentFlipbookId(id));
   };
@@ -99,6 +98,7 @@ function FlipbookPanel() {
     navigate(`/flipbookUser/${eventId}/${id}`);
     dispatch(setCurrentFlipbookId(id));
   };
+
   return (
     <div className="p-6">
       {/* Header */}
@@ -113,61 +113,70 @@ function FlipbookPanel() {
         </button>
       </div>
 
-      {/* Flipbook Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {flipbooks?.map((flipbook) => (
-          <div
-            key={flipbook?._id}
-            className="bg-white shadow-lg rounded-xl p-4 flex flex-col items-start relative"
-          >
-            <button
-              onClick={() => handleDeleteClick(flipbook?._id)}
-              className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
+      {/* Content */}
+      {isLoading ? (
+        <Loader message="Loading flipbooks. This won’t take long..." />
+      ) : flipbooks.length === 0 ? (
+        <div className="text-center text-gray-400 mt-10">
+          <p className="text-lg font-medium">No flipbooks found.</p>
+          <p className="text-sm text-gray-500">
+            Click "Add Flipbook" to create one.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {flipbooks.map((flipbook) => (
+            <div
+              key={flipbook?._id}
+              className="bg-white shadow-lg rounded-xl p-4 flex flex-col items-start relative"
             >
-              <Trash className="h-4 w-4" />
-            </button>
-
-            <div className="text-lg font-semibold mb-2">
-              {flipbook?.flipBookName || "Unnamed Flipbook"}
-            </div>
-
-            <p className="text-sm text-gray-500 mb-2">
-              Event Code: {flipbook?.eventId?.eventCode || "N/A"}
-            </p>
-
-            <p className="text-sm text-gray-500 mb-2">
-              Total Images: {/* Placeholder for images count */}N/A
-            </p>
-
-            <p className="text-sm text-gray-500 mb-4">
-              Created:{" "}
-              {flipbook?.createdAt
-                ? new Date(flipbook.createdAt).toLocaleDateString()
-                : "Unknown"}
-            </p>
-
-            <div className="flex justify-between gap-3 mt-auto w-full">
               <button
-                onClick={() => flipBookOpenHandler(flipbook?._id)}
-                className="p-3 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center text-xs sm:text-sm w-full sm:w-[50%] gap-2"
+                onClick={() => handleDeleteClick(flipbook?._id)}
+                className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
               >
-                <Image className="h-3 w-3" />
-                <span>Open</span>
+                <Trash className="h-4 w-4" />
               </button>
 
-              <button
-                onClick={() => imageOpenHandler(flipbook?._id)}
-                className="p-3 bg-yellow-500 text-white rounded hover:bg-yellow-600 flex items-center justify-center text-xs sm:text-sm w-full sm:w-[50%] gap-2"
-              >
-                <Image className="h-3 w-3" />
-                <span>Images</span>
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+              <div className="text-lg font-semibold mb-2">
+                {flipbook?.flipBookName || "Unnamed Flipbook"}
+              </div>
 
-      {/* Add Flipbook Modal */}
+              <p className="text-sm text-gray-500 mb-2">
+                Event Code: {flipbook?.eventId?.eventCode || "N/A"}
+              </p>
+
+              <p className="text-sm text-gray-500 mb-2">Total Images: N/A</p>
+
+              <p className="text-sm text-gray-500 mb-4">
+                Created:{" "}
+                {flipbook?.createdAt
+                  ? new Date(flipbook.createdAt).toLocaleDateString()
+                  : "Unknown"}
+              </p>
+
+              <div className="flex justify-between gap-3 mt-auto w-full">
+                <button
+                  onClick={() => flipBookOpenHandler(flipbook?._id)}
+                  className="p-3 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center text-xs sm:text-sm w-full sm:w-[50%] gap-2"
+                >
+                  <Image className="h-3 w-3" />
+                  <span>Open</span>
+                </button>
+
+                <button
+                  onClick={() => imageOpenHandler(flipbook?._id)}
+                  className="p-3 bg-yellow-500 text-white rounded hover:bg-yellow-600 flex items-center justify-center text-xs sm:text-sm w-full sm:w-[50%] gap-2"
+                >
+                  <Image className="h-3 w-3" />
+                  <span>Images</span>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-lg sm:max-w-md">

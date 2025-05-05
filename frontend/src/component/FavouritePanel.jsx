@@ -1,9 +1,21 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-
+import toast from "../utils/toast.js";
+import Loader from "../component/Loader.jsx";
 const FavouritePanel = () => {
   const { currentSubEvent } = useSelector((state) => state.event);
   const selectedImages = currentSubEvent?.clientSelectedImages || [];
+
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (selectedImages.length === 0) {
+      setIsLoading(false); // Stop loading once images are fetched
+      toast.info("No images selected.");
+    } else {
+      setIsLoading(false); // Simulate loading when images are fetched
+    }
+  }, [selectedImages]);
 
   return (
     <>
@@ -13,20 +25,39 @@ const FavouritePanel = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-        {selectedImages.map((image, index) => (
-          <div
-            key={image._id || index}
-            className="border rounded-xl overflow-hidden shadow hover:scale-105 transition-transform"
-          >
-            <img
-              src={image.thumbnailUrl}
-              alt={`Selected ${index}`}
-              className="w-full h-48 object-cover"
-            />
-          </div>
-        ))}
-      </div>
+      {/* Display loading state */}
+      {isLoading ? (
+        <div className="flex justify-center items-center py-4">
+          <Loader message="Loading your favorite images..." />
+        </div>
+      ) : (
+        <div>
+          {/* No images available state */}
+          {selectedImages.length === 0 ? (
+            <div className="text-center text-gray-500 py-10">
+              <p>
+                No images available. Please select images to add to favorites.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {selectedImages.map((image, index) => (
+                <div
+                  key={image._id || index}
+                  className="relative border rounded-xl overflow-hidden shadow-lg hover:scale-105 transform transition-all duration-300"
+                >
+                  <img
+                    src={image.thumbnailUrl}
+                    alt={`Selected ${index}`}
+                    className="w-full h-48 object-cover"
+                  />
+                  {/* Optionally add hover actions like remove */}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </>
   );
 };

@@ -7,12 +7,11 @@ import { setCurrentEvent } from "../Redux/Slices/EventSlice";
 import { editEvent } from "../utils/editEvents.util.js";
 import toast from "../utils/toast.js";
 import SubEventSection from "./SubEventSection.jsx";
+import Loader from "../component/Loader.jsx";
 
 const PersonalfolderAside = () => {
   const { eventId } = useParams();
-
   const { currentEvent } = useSelector((state) => state.event);
-
   const navigate = useNavigate();
   const { accessToken } = useSelector((state) => state.user);
   const dispatch = useDispatch();
@@ -88,7 +87,7 @@ const PersonalfolderAside = () => {
       {/* Loading Overlay */}
       {isLoading && (
         <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-50 rounded-lg">
-          <div className="w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <Loader message="Loading images..." />
         </div>
       )}
 
@@ -148,7 +147,7 @@ const PersonalfolderAside = () => {
             } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             {isLoading ? (
-              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+              <Loader message="Publishing your content..." />
             ) : isPublished ? (
               "Unpublish"
             ) : (

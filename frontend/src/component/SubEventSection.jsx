@@ -4,7 +4,10 @@ import { EVENT_API_END_POINT } from "../constant";
 import apiRequest from "../utils/apiRequest";
 import { useDispatch, useSelector } from "react-redux";
 import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
-import { setCurrentSubEvent } from "../Redux/Slices/EventSlice";
+import {
+  setCurrentSubEvent,
+  setCurrentSubEventId,
+} from "../Redux/Slices/EventSlice";
 import toast from "../utils/toast";
 
 const SubEventSection = ({ currentEvent, setIsLoading }) => {
@@ -52,6 +55,7 @@ const SubEventSection = ({ currentEvent, setIsLoading }) => {
 
   const handleSubEvent = (sub) => {
     dispatch(setCurrentSubEvent(sub));
+    dispatch(setCurrentSubEventId(sub._id));
   };
 
   // Determine if the sub-event is selected

@@ -1,45 +1,47 @@
 import React, { useEffect, useState } from "react";
-
+import { useDispatch, useSelector } from "react-redux";
 import ViewUserModal from "../component/UsersComponent/ViewUserModal";
 import EditUserModal from "../component/UsersComponent/EditUserModal";
 import AddUserModal from "../component/UsersComponent/AddUserModal";
 import UserTable from "../component/UsersComponent/UsersTable";
 import apiRequest from "../utils/apiRequest";
 import { CLIENTVU_API_END_POINT } from "../constant";
-import { useDispatch, useSelector } from "react-redux";
+import { Loader } from "../component/Loader"; // Assuming you have a Loader component
+import toast from "../utils/toast";
 
 const Users = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [newClientViewUser, setNewClientViewUser] = useState([]);
+  const [isLoading, setIsLoading] = useState(true); // Added loading state
   const { accessToken } = useSelector((state) => state.user);
   const dispatch = useDispatch();
-  const [newClientViewUser, setNewClientViewUser] = useState([]);
+
   const fetchClientViewUsers = async () => {
     try {
       const endpoint = `${CLIENTVU_API_END_POINT}/getAllClientViewUsers`;
       const res = await apiRequest("GET", endpoint, {}, accessToken, dispatch);
-      console.log(res);
       if (res.status === 200) {
         setNewClientViewUser(res.data.data);
+        setIsLoading(false); // Stop loading once data is fetched
       }
     } catch (error) {
       console.log(error);
+      setIsLoading(false); // Stop loading in case of error
+      toast.error("Failed to fetch users.");
     }
   };
 
   useEffect(() => {
     fetchClientViewUsers();
-  }, []);
-  console.log(newClientViewUser);
+  }, [accessToken]);
 
   return (
     <div className="p-5 font-sans">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-black text-xl font-semibold">
-          NewClientViewUser List
-        </h2>
+        <h2 className="text-black text-xl font-semibold">Users List</h2>
 
         <div className="flex gap-2">
           <button
@@ -57,17 +59,24 @@ const Users = () => {
         </div>
       </div>
 
-      <UserTable
-        newClientViewUser={newClientViewUser}
-        onView={(user) => {
-          setSelectedUser(user);
-          setShowViewModal(true);
-        }}
-        onEdit={(user) => {
-          setSelectedUser(user);
-          setShowEditModal(true);
-        }}
-      />
+      {/* Display Loading Spinner if Data is Fetching */}
+      {isLoading ? (
+        <div className="flex justify-center items-center py-10">
+          <Loader message="Almost there! Loading user details..." />
+        </div>
+      ) : (
+        <UserTable
+          newClientViewUser={newClientViewUser}
+          onView={(user) => {
+            setSelectedUser(user);
+            setShowViewModal(true);
+          }}
+          onEdit={(user) => {
+            setSelectedUser(user);
+            setShowEditModal(true);
+          }}
+        />
+      )}
 
       {showAddModal && <AddUserModal onClose={() => setShowAddModal(false)} />}
       {showViewModal && selectedUser && (
