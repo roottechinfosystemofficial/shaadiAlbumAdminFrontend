@@ -234,8 +234,8 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
         style={{ padding: "10px", boxSizing: "border-box" }}
       >
         <HTMLFlipBook
-          width={400}
-          height={200}
+          width={600}
+          height={400}
           size="fixed"
           minWidth={600}
           maxWidth={600}
