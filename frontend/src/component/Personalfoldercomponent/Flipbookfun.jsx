@@ -41,12 +41,25 @@ const splitImage = (src) => {
 };
 
 const Flipbookfun = ({ images, frontCover, backCover }) => {
-  console.log({ images, frontCover, backCover });
-
   const bookRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [pages, setPages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isLandscape, setIsLandscape] = useState(false);
+
+  useEffect(() => {
+    const handleOrientationChange = () => {
+      setIsLandscape(window.innerWidth > window.innerHeight);
+    };
+
+    // Initialize on mount and listen for orientation changes
+    handleOrientationChange();
+    window.addEventListener("resize", handleOrientationChange);
+
+    return () => {
+      window.removeEventListener("resize", handleOrientationChange);
+    };
+  }, []);
 
   useEffect(() => {
     const preparePages = async () => {
@@ -107,8 +120,12 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
 
   return (
     <div className="flex flex-col gap-y-10 items-center justify-center w-full min-h-screen bg-black relative overflow-hidden">
-      {/* 📱 Mobile Version */}
-      <div className="sm:hidden absolute top-0 left-0 w-full h-full flex items-center justify-center">
+      {/* 📱 Mobile Portrait Version */}
+      <div
+        className={`absolute top-0 left-0 w-full h-full flex items-center justify-center sm:hidden ${
+          isLandscape ? "hidden" : ""
+        }`}
+      >
         <div
           className="absolute top-0 left-0"
           style={{
@@ -137,7 +154,7 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
               height={window.innerWidth}
               size="stretch"
               showCover={true}
-              usePortrait={false}
+              usePortrait={true}
               mobileScrollSupport={true}
               ref={bookRef}
               onFlip={(e) => setCurrentPage(e.data)}
@@ -156,6 +173,8 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
           </div>
         </div>
       </div>
+
+      {/* 📱 Mobile Landscape Version */}
       <div
         className={`absolute top-0 left-0 w-full h-full flex items-center justify-center sm:hidden ${
           !isLandscape ? "hidden" : ""
@@ -208,14 +227,15 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
           </div>
         </div>
       </div>
+
       {/* 💻 Desktop Version */}
       <div
         className="hidden sm:flex justify-center items-center"
         style={{ padding: "10px", boxSizing: "border-box" }}
       >
         <HTMLFlipBook
-          width={600}
-          height={400}
+          width={400}
+          height={200}
           size="fixed"
           minWidth={600}
           maxWidth={600}
