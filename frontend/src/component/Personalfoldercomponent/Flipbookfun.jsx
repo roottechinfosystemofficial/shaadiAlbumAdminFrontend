@@ -149,12 +149,12 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
       {/* 💻 Desktop Version */}
       <div className="hidden sm:flex justify-center items-center">
         <HTMLFlipBook
-          width={window.innerWidth}
-          height={window.innerHeight}
+          width={window.innerHeight}
+          height={"100%"}
           size="fixed"
-          minWidth={399}
+          minWidth={600}
           maxWidth={600}
-          minHeight={266}
+          minHeight={400}
           maxHeight={400}
           showCover={true}
           usePortrait={false}
