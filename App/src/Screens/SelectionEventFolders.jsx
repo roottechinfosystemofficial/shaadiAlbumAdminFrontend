@@ -43,7 +43,7 @@ const SelectionEventFolders = () => {
     <ScreenWrapper bg="white">
       <StatusBar
         barStyle={"dark-content"} // icon/text color
-        backgroundColor={Platform.OS === "android" ? "#000" : "transparent"}
+        backgroundColor={"transparent"}
         translucent
       />
       <View style={styles.container}>
