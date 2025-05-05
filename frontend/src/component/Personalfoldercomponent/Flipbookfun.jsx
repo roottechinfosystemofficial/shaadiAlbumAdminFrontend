@@ -156,15 +156,66 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
           </div>
         </div>
       </div>
-
+      <div
+        className={`absolute top-0 left-0 w-full h-full flex items-center justify-center sm:hidden ${
+          !isLandscape ? "hidden" : ""
+        }`}
+      >
+        <div
+          className="absolute top-0 left-0"
+          style={{
+            width: "100%",
+            height: "100%",
+            overflow: "hidden",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "black",
+            touchAction: "none",
+            padding: "10px",
+            boxSizing: "border-box",
+          }}
+        >
+          <div
+            style={{
+              width: "80vh",
+              height: "80vw",
+              maxWidth: "90%",
+              maxHeight: "90%",
+            }}
+          >
+            <HTMLFlipBook
+              width={window.innerHeight}
+              height={window.innerWidth}
+              size="stretch"
+              showCover={true}
+              usePortrait={false}
+              mobileScrollSupport={true}
+              ref={bookRef}
+              onFlip={(e) => setCurrentPage(e.data)}
+              className="shadow-md"
+            >
+              {pages.map((src, index) => (
+                <div key={index} className="w-full h-full">
+                  <img
+                    src={src}
+                    alt={`Page ${index + 1}`}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              ))}
+            </HTMLFlipBook>
+          </div>
+        </div>
+      </div>
       {/* 💻 Desktop Version */}
       <div
         className="hidden sm:flex justify-center items-center"
         style={{ padding: "10px", boxSizing: "border-box" }}
       >
         <HTMLFlipBook
-          width={400}
-          height={200}
+          width={600}
+          height={400}
           size="fixed"
           minWidth={600}
           maxWidth={600}
