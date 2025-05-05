@@ -136,7 +136,8 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 18,
-    fontWeight: "bold",
+    // fontWeight: "bold",
+    color: theme.colours.primary,
     marginTop: 10,
   },
   email: {

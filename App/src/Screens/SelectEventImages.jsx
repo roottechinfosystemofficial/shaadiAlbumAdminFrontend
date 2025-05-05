@@ -189,7 +189,7 @@ const SeletEventImages = () => {
 
     try {
       const response = await fetch(
-        `http://192.168.1.101:5000/api/v1/list-app-images?eventId=${id}&page=${pageToFetch}&subEventId=${subId}`
+        `http://192.168.213.31:5000/api/v1/list-app-images?eventId=${id}&page=${pageToFetch}&subEventId=${subId}`
       );
 
       const responseText = await response.text();
@@ -247,7 +247,7 @@ const SeletEventImages = () => {
   const fetchClientSelectedImages = async () => {
     try {
       const response = await fetch(
-        "http://192.168.1.101:5000/api/v1/app-event/client-selected",
+        "http://192.168.213.31:5000/api/v1/app-event/client-selected",
         {
           method: "POST",
           headers: {
@@ -351,7 +351,7 @@ const SeletEventImages = () => {
 
               // Send to backend
               const response = await fetch(
-                "http://192.168.1.101:5000/api/v1/app-event/final-submit",
+                "http://192.168.213.31:5000/api/v1/app-event/final-submit",
                 {
                   method: "POST",
                   headers: {

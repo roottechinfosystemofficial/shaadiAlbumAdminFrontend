@@ -106,7 +106,7 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
   }
 
   return (
-    <div className="flex flex-col gap-y-10 items-center justify-center w-full min-h-screen bg-black relative overflow-hidden">
+    <div className="flex flex-col gap-y-1 items-center justify-center w-full min-h-screen bg-black relative overflow-hidden">
       {/* 📱 Mobile Version */}
       <div className="sm:hidden absolute top-0 left-0 w-full h-full flex items-center justify-center">
         <div
