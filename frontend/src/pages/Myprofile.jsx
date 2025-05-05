@@ -6,7 +6,7 @@ import Profile from "../component/MyprofileComponenet/Profile";
 import Plan from "../component/MyprofileComponenet/Plan";
 
 const MyProfile = () => {
-  const [activeSection, setActiveSection] = useState("domain");
+  const [activeSection, setActiveSection] = useState("profile");
 
   const handleBack = () => {
     window.history.back();
@@ -55,10 +55,10 @@ const MyProfile = () => {
 
       {/* Dynamic Section Content */}
       <div className="w-full rounded-xl shadow bg-white p-4 sm:p-6 border border-slate-dark">
+        {activeSection === "profile" && <Profile />}
         {activeSection === "domain" && <Domain />}
         {activeSection === "business" && <Business />}
         {activeSection === "social" && <Social />}
-        {activeSection === "profile" && <Profile />}
         {activeSection === "plan" && <Plan />}
       </div>
     </div>

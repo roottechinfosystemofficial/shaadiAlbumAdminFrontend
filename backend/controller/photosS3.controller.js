@@ -64,7 +64,7 @@ export const getPresignedUrl = async (req, res) => {
           usageType === "flipbook" ? "flipbookimages" : "eventimages";
         const middleId = usageType === "flipbook" ? flipbookId : subEventId;
 
-        const uniqueKey = `${folder}/${eventId}/${middleId}/Orignal/${timestamp}_${index}_${baseName}${fileExt}`;
+        const uniqueKey = `${folder}/${eventId}/${middleId}/Original/${timestamp}_${index}_${baseName}${fileExt}`;
 
         const command = new PutObjectCommand({
           Bucket: process.env.BUCKET_NAME,
@@ -139,7 +139,7 @@ export const getEventImages = async (req, res) => {
     const prefix =
       usageType === "flipbook"
         ? `flipbookimages/${eventId}/${flipbookId}/`
-        : `eventimages/${eventId}/${subEventId}/Orignal`;
+        : `eventimages/${eventId}/${subEventId}/Original`;
 
     let allContents = [];
     let nextToken = continuationToken || undefined;

@@ -1,4 +1,3 @@
-import MyprofilePass from "./MyprofilePass";
 import MeProfile from "./MeProfile";
 import { useSelector } from "react-redux";
 

@@ -14,11 +14,9 @@ const userSchema = new mongoose.Schema(
       enum: ["STUDIO_ADMIN", "SUPER_ADMIN", "USER"],
       default: "STUDIO_ADMIN",
     },
-    country: { type: String, default: null },
+
     coverImage: { type: String, default: null },
-    about: { type: String, default: null },
-    city: { type: String, default: null },
-    zipcode: { type: String, default: null },
+
     logo: { type: String, default: null },
     portfolioImages: { type: [String], default: [] }, // Array of image URLs
     refreshToken: { type: String, default: null },
