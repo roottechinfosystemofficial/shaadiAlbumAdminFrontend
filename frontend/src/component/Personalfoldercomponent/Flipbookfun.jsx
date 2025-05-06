@@ -150,11 +150,11 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
       <div className="hidden sm:flex justify-center items-center">
         <HTMLFlipBook
           width={400}
-          height={200}
+          height={266}
           size="fixed"
-          minWidth={600}
+          minWidth={400}
           maxWidth={600}
-          minHeight={400}
+          minHeight={266}
           maxHeight={400}
           showCover={true}
           usePortrait={false}
