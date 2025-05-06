@@ -41,6 +41,8 @@ const splitImage = (src) => {
 };
 
 const Flipbookfun = ({ images, frontCover, backCover }) => {
+  console.log({ images, frontCover, backCover });
+
   const bookRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [pages, setPages] = useState([]);
@@ -147,12 +149,12 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
       {/* 💻 Desktop Version */}
       <div className="hidden sm:flex justify-center items-center">
         <HTMLFlipBook
-          width={"100%"}
-          height={"100%"}
+          width={400}
+          height={200}
           size="fixed"
-          minWidth={399}
+          minWidth={600}
           maxWidth={600}
-          minHeight={266}
+          minHeight={400}
           maxHeight={400}
           showCover={true}
           usePortrait={false}
@@ -180,7 +182,7 @@ const Flipbookfun = ({ images, frontCover, backCover }) => {
         </HTMLFlipBook>
       </div>
 
-      <div className="flex items-center justify-between w-full max-w-[800px] mt-4 px-4 z-10">
+      <div className="flex items-center justify-between w-full max-w-[800px] mt-4 px-4">
         <button
           onClick={prevPage}
           className="p-3 rounded-full bg-white text-gray-900 hover:bg-gray-300 transition-transform transform hover:scale-110"
