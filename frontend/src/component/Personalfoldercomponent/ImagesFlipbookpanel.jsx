@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setPersonalFolderContentTab } from "../../Redux/Slices/TabSlice";
 import apiRequest from "../../utils/apiRequest";
 import { FLIPBOOK_API_END_POINT, S3_API_END_POINT } from "../../constant";
+import { Loader } from "../Loader";
 
 const MAX_FILES = 200;
 const MAX_FILE_SIZE_MB = 10;
@@ -13,6 +14,7 @@ const ImagesFlipbookpanel = () => {
   const [errorMsg, setErrorMsg] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [flipbookImages, setFlipbookImages] = useState([]);
+  const [loadingImages, setLoadingImages] = useState(true);
 
   const { currentEvent, currentFlipbook } = useSelector((state) => state.event);
   const { accessToken } = useSelector((state) => state.user);
@@ -121,7 +123,9 @@ const ImagesFlipbookpanel = () => {
 
   const fetchFlipbookImages = async () => {
     if (!currentEvent?._id || !currentFlipbook?._id) return;
+
     try {
+      setLoadingImages(true);
       const res = await apiRequest(
         "POST",
         `${S3_API_END_POINT}/list-flipBookimages`,
@@ -133,13 +137,14 @@ const ImagesFlipbookpanel = () => {
         accessToken,
         dispatch
       );
-      console.log(res);
 
       if (res.status === 200) {
         setFlipbookImages(res.data.images || []);
       }
     } catch (err) {
       console.error("Image load error:", err);
+    } finally {
+      setLoadingImages(false);
     }
   };
 
@@ -148,23 +153,19 @@ const ImagesFlipbookpanel = () => {
   }, [currentEvent?._id, currentFlipbook?._id]);
 
   const handleSetCover = async (index, type) => {
-    const imageIndex = index;
-
     try {
       const endpoint = `${FLIPBOOK_API_END_POINT}/setFrontBackCoverImg`;
-
       const res = await apiRequest(
         "POST",
         endpoint,
         {
           flipbookId: currentFlipbook._id,
-          imageIndex, // Pass the index instead of the image URL
+          imageIndex: index,
           type,
         },
         accessToken,
         dispatch
       );
-      console.log(res);
       if (res.status === 200) {
         if (type === "front") setFrontCover(index);
         else if (type === "back") setBackCover(index);
@@ -178,13 +179,13 @@ const ImagesFlipbookpanel = () => {
     <div className="p-4 md:p-6 lg:p-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <button
-          className="bg-slate px-4 py-2 rounded hover:bg-slate-dark transition"
+          className="bg-slate px-4 py-2 rounded hover:bg-slate-dark"
           onClick={handleBackClick}
         >
           Back
         </button>
         <button
-          className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark transition"
+          className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark"
           onClick={handleAddImagesClick}
         >
           Add Images
@@ -200,7 +201,6 @@ const ImagesFlipbookpanel = () => {
             <button
               onClick={handleClose}
               className="text-gray-500 hover:text-red-500 font-bold text-xl"
-              title="Close"
             >
               &times;
             </button>
@@ -260,13 +260,13 @@ const ImagesFlipbookpanel = () => {
           <div className="mt-4 flex justify-end gap-3">
             <button
               onClick={handleClose}
-              className="bg-slate-200 px-4 py-2 rounded hover:bg-slate-300 transition"
+              className="bg-slate-200 px-4 py-2 rounded hover:bg-slate-300"
             >
               Cancel
             </button>
             <button
               onClick={handleUpload}
-              className="bg-primary-dark text-white px-4 py-2 rounded hover:bg-primary transition disabled:opacity-50"
+              className="bg-primary-dark text-white px-4 py-2 rounded hover:bg-primary"
               disabled={selectedFiles.length === 0}
             >
               Upload
@@ -275,9 +275,15 @@ const ImagesFlipbookpanel = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {flipbookImages && flipbookImages.length > 0 ? (
-          flipbookImages.map((img, index) => (
+      {loadingImages ? (
+        <Loader message="Images are on their way, please wait..." />
+      ) : flipbookImages.length === 0 ? (
+        <p className="text-center mt-10 text-slate-500">
+          No images available. Please upload images to your flipbook.
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {flipbookImages.map((img, index) => (
             <div
               key={index}
               className={`relative border-2 rounded-lg overflow-hidden shadow-lg group ${
@@ -287,23 +293,23 @@ const ImagesFlipbookpanel = () => {
               }`}
             >
               <img
-                src={img || "placeholder-image-url"} // Placeholder if URL is not available
+                src={img || "https://via.placeholder.com/150"}
                 alt={`Flipbook image ${index + 1}`}
                 className="w-full h-60 object-contain"
               />
-              <div className="absolute top-0 right-0 flex justify-between items-center ">
-                <div className="relative">
-                  <button className="text-sm px-5 py-1 bg-white">
+              <div className="absolute top-0 right-0">
+                <div className="relative group">
+                  <button className="text-sm px-3 py-1 bg-white border">
                     {frontCover === index
                       ? "Front Cover"
                       : backCover === index
                       ? "Back Cover"
                       : "Choose Cover"}
                   </button>
-                  <div className="absolute top-full left-0 w-full bg-white border hidden group-hover:block">
+                  <div className="absolute top-full left-0 w-full bg-white border hidden group-hover:block z-10">
                     <button
                       onClick={() => handleSetCover(index, "front")}
-                      className="w-full text-sm text-left px-4 py-2 hover:bg-slate"
+                      className="w-full text-sm text-left px-4 py-2 hover:bg-slate-100"
                     >
                       {frontCover === index
                         ? "Front Cover"
@@ -311,7 +317,7 @@ const ImagesFlipbookpanel = () => {
                     </button>
                     <button
                       onClick={() => handleSetCover(index, "back")}
-                      className="w-full text-sm text-left px-4 py-2 hover:bg-slate"
+                      className="w-full text-sm text-left px-4 py-2 hover:bg-slate-100"
                     >
                       {backCover === index ? "Back Cover" : "Set as Back Cover"}
                     </button>
@@ -319,13 +325,9 @@ const ImagesFlipbookpanel = () => {
                 </div>
               </div>
             </div>
-          ))
-        ) : (
-          <div className="col-span-full text-center text-gray-500">
-            No images available. Please upload images to your flipbook.
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
