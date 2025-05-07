@@ -44,14 +44,16 @@ const AddPhotosModal = ({
     try {
       setUploadStatuses((prev) => ({ ...prev, [index]: "Preparing..." }));
       for (let p = 5; p <= 50; p += 5) {
-        await new Promise((res) => setTimeout(res, 50));
+        await new Promise((res) => setTimeout(res, 20));
         setUploadProgresses((prev) => ({ ...prev, [index]: p }));
       }
+
       const compressed = await imageCompression(file, {
         maxSizeMB: 1,
         maxWidthOrHeight: 1920,
         useWebWorker: true,
       });
+
       return compressed;
     } catch (err) {
       console.error("Compression failed:", err);
@@ -63,6 +65,7 @@ const AddPhotosModal = ({
   const uploadFile = async (url, file, index, cancelToken) => {
     try {
       setUploadStatuses((prev) => ({ ...prev, [index]: "Uploading..." }));
+
       await axios.put(url, file, {
         headers: { "Content-Type": file.type },
         onUploadProgress: (e) => {
@@ -72,6 +75,7 @@ const AddPhotosModal = ({
         },
         cancelToken: cancelToken.token,
       });
+
       setUploadStatuses((prev) => ({ ...prev, [index]: "Completed ✅" }));
       setUploadProgresses((prev) => ({ ...prev, [index]: 100 }));
       setUploadedCount((prev) => prev + 1);
@@ -92,7 +96,7 @@ const AddPhotosModal = ({
 
     setUploading(true);
     setUploadedCount(0);
-    setCancelRequested(false); // Reset cancellation
+    setCancelRequested(false);
     toast.loading("Uploading images...");
 
     try {
@@ -109,8 +113,8 @@ const AddPhotosModal = ({
           const cancelToken = axios.CancelToken.source();
           setCancelTokens((prev) => [...prev, cancelToken]);
 
-          const compressedFile = await compressFile(file, globalIndex);
-          if (!compressedFile || cancelRequested) return;
+          const compressed = await compressFile(file, globalIndex);
+          if (!compressed || cancelRequested) return;
 
           const urlResponse = await apiRequest(
             "POST",
@@ -120,9 +124,9 @@ const AddPhotosModal = ({
               subEventId: currentSubEvent?._id,
               files: [
                 {
-                  fileName: compressedFile.name,
-                  fileType: compressedFile.type,
-                  fileSize: compressedFile.size,
+                  fileName: compressed.name,
+                  fileType: compressed.type,
+                  fileSize: compressed.size,
                 },
               ],
             },
@@ -132,7 +136,7 @@ const AddPhotosModal = ({
 
           const url = urlResponse?.data?.urls?.[0]?.url;
           if (url && !cancelRequested) {
-            await uploadFile(url, compressedFile, globalIndex, cancelToken);
+            await uploadFile(url, compressed, globalIndex, cancelToken);
           }
         };
 
@@ -267,45 +271,29 @@ const AddPhotosModal = ({
                             ? "bg-red-500 w-full"
                             : "bg-primary"
                         }`}
-                        style={{
-                          width: `${uploadProgresses[index] || 5}%`,
-                        }}
+                        style={{ width: `${uploadProgresses[index] || 5}%` }}
                       ></div>
                     </div>
                   )}
-                  {uploading && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      {uploadStatuses[index] || "Queued..."}
-                    </p>
+                  {uploadStatuses[index] && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      {uploadStatuses[index]}
+                    </div>
                   )}
                 </div>
               ))}
             </div>
+            <button
+              onClick={() => processInPipeline(selectedFiles)}
+              className="bg-primary text-white py-2 rounded-lg hover:bg-primary-dark transition"
+              disabled={uploading}
+            >
+              {uploading
+                ? `Uploading (${uploadedCount}/${selectedFiles.length})`
+                : "Start Upload"}
+            </button>
           </>
         )}
-
-        {uploading && selectedFiles.length > 0 && (
-          <p className="text-sm text-gray-600 text-right">
-            Uploaded {uploadedCount} of {selectedFiles.length} images
-          </p>
-        )}
-
-        <div className="flex justify-between items-center gap-4">
-          <button
-            onClick={handleClose}
-            className="w-full sm:w-auto border border-gray-300 text-gray-700 px-6 py-2 rounded-lg"
-            disabled={!uploading && selectedFiles.length === 0}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => processInPipeline(selectedFiles)}
-            className="w-full sm:w-auto bg-primary text-white px-6 py-2 rounded-lg disabled:opacity-50"
-            disabled={uploading || selectedFiles.length === 0}
-          >
-            {uploading ? "Uploading..." : "Start Upload"}
-          </button>
-        </div>
       </div>
     </div>
   );

@@ -52,7 +52,10 @@ export const getPresignedUrl = async (req, res) => {
 
   try {
     const urlPromises = files.map(async (file, index) => {
-      const { fileName, fileType } = file;
+      const { fileName, fileType, path } = file;
+
+      // Check if this file is a thumbnail or not by checking the path or fileName
+      const isThumbnail = path && path.includes("thumbnails");
 
       try {
         const fileExt = fileName.includes(".")
@@ -60,12 +63,18 @@ export const getPresignedUrl = async (req, res) => {
           : ".jpg";
         const baseName = fileName.substring(0, fileName.lastIndexOf("."));
 
+        // Define the folder for storage based on whether it's a flipbook or event
         const folder =
           usageType === "flipbook" ? "flipbookimages" : "eventimages";
         const middleId = usageType === "flipbook" ? flipbookId : subEventId;
 
-        const uniqueKey = `${folder}/${eventId}/${middleId}/Orignal/${timestamp}_${index}_${baseName}${fileExt}`;
+        // Determine whether the file is a thumbnail or not and assign appropriate folder
+        const storageFolder = isThumbnail ? "Thumbnails" : "Original";
 
+        // Construct the unique key for storage using the same base name for both
+        const uniqueKey = `${folder}/${eventId}/${middleId}/${storageFolder}/${timestamp}_${baseName}${fileExt}`;
+
+        // Generate the presigned URL for this file
         const command = new PutObjectCommand({
           Bucket: process.env.BUCKET_NAME,
           Key: uniqueKey,
@@ -84,8 +93,10 @@ export const getPresignedUrl = async (req, res) => {
       }
     });
 
+    // Wait for all promises to resolve
     const results = await Promise.all(urlPromises);
 
+    // Process the results and separate failed files
     results.forEach((result) => {
       if (result.url) {
         signedUrls.push(result);
@@ -94,6 +105,7 @@ export const getPresignedUrl = async (req, res) => {
       }
     });
 
+    // If no URLs were successfully generated, return an error
     if (signedUrls.length === 0) {
       return res.status(500).json({
         error: "Failed to generate any signed URLs",
@@ -101,6 +113,7 @@ export const getPresignedUrl = async (req, res) => {
       });
     }
 
+    // Return the successfully generated URLs
     return res.status(200).json({
       urls: signedUrls,
       failedFiles,
@@ -113,74 +126,110 @@ export const getPresignedUrl = async (req, res) => {
   }
 };
 
-export const getEventImages = async (req, res) => {
-  const { eventId, continuationToken, usageType, subEventId, flipbookId } =
-    req.body;
-  const pageSize = 20;
+// export const getEventImages = async (req, res) => {
+//   const { eventId, continuationToken, usageType, subEventId, flipbookId } =
+//     req.body;
+//   const pageSize = 20;
 
-  // Validate required parameters
-  if (!eventId) {
-    return res.status(400).json({ error: "Missing eventId" });
-  }
+//   // Validate required parameters
+//   if (!eventId) {
+//     return res.status(400).json({ error: "Missing eventId" });
+//   }
 
-  if (usageType === "flipbook" && !flipbookId) {
-    return res
-      .status(400)
-      .json({ error: "Missing flipbookId for flipbook usage" });
-  }
+//   if (usageType === "flipbook" && !flipbookId) {
+//     return res
+//       .status(400)
+//       .json({ error: "Missing flipbookId for flipbook usage" });
+//   }
 
-  if (usageType !== "flipbook" && !subEventId) {
-    return res
-      .status(400)
-      .json({ error: "Missing subEventId for event usage" });
-  }
+//   if (usageType !== "flipbook" && !subEventId) {
+//     return res
+//       .status(400)
+//       .json({ error: "Missing subEventId for event usage" });
+//   }
 
-  try {
-    const prefix =
-      usageType === "flipbook"
-        ? `flipbookimages/${eventId}/${flipbookId}/`
-        : `eventimages/${eventId}/${subEventId}/Orignal`;
+//   try {
+//     let prefix = "";
 
-    let allContents = [];
-    let nextToken = continuationToken || undefined;
+//     // For flipbook images, we fetch images from the flipbook folder
+//     if (usageType === "flipbook") {
+//       prefix = `flipbookimages/${eventId}/${flipbookId}/`;
+//     } else {
+//       // For event images, we will explicitly fetch images from both 'Original' and 'Thumbnails' folders
+//       prefix = `eventimages/${eventId}/${subEventId}/`;
+//     }
 
-    do {
-      const listCommand = new ListObjectsV2Command({
-        Bucket: process.env.BUCKET_NAME,
-        Prefix: prefix,
-        MaxKeys: usageType === "flipbook" ? 1000 : pageSize,
-        ContinuationToken: nextToken,
-      });
+//     let allContents = [];
+//     let nextToken = continuationToken || undefined;
 
-      const response = await s3Client.send(listCommand);
-      allContents.push(...(response.Contents || []));
+//     // Loop to fetch images in chunks if more images exist
+//     do {
+//       const listCommand = new ListObjectsV2Command({
+//         Bucket: process.env.BUCKET_NAME,
+//         Prefix: prefix,
+//         MaxKeys: pageSize, // limit to 20 per request
+//         ContinuationToken: nextToken,
+//       });
 
-      nextToken = response.NextContinuationToken;
+//       const response = await s3Client.send(listCommand);
+//       allContents.push(...(response.Contents || []));
+//       nextToken = response.NextContinuationToken;
+//     } while (nextToken); // Continue fetching if there's more data
 
-      // Stop if not flipbook (i.e. paginated call)
-      if (usageType !== "flipbook") break;
-    } while (nextToken);
+//     // Fetch signed URLs and classify images into Original and Thumbnails
+//     const imageUrls = await Promise.all(
+//       allContents.map(async (item) => {
+//         const parts = item.Key.split("/");
+//         const filename = parts[parts.length - 1];
+//         const folder = parts[parts.length - 2]; // Folder name will be either 'Original' or 'Thumbnails'
 
-    const imageUrls = await Promise.all(
-      allContents.map(async (item) => {
-        const getCommand = new GetObjectCommand({
-          Bucket: process.env.BUCKET_NAME,
-          Key: item.Key,
-        });
-        return getSignedUrl(s3Client, getCommand);
-      })
-    );
-    console.log(imageUrls.length);
+//         // Check if the image is from the 'Original' or 'Thumbnails' folder
+//         if (folder === "Original" || folder === "Thumbnails") {
+//           const getCommand = new GetObjectCommand({
+//             Bucket: process.env.BUCKET_NAME,
+//             Key: item.Key,
+//           });
 
-    res.status(200).json({
-      images: imageUrls,
-      nextToken: usageType === "flipbook" ? null : nextToken || null,
-    });
-  } catch (err) {
-    console.error("Error fetching images:", err);
-    res.status(500).json({ error: "Could not retrieve images" });
-  }
-};
+//           const url = await getSignedUrl(s3Client, getCommand);
+//           return { url, key: item.Key, filename, folder };
+//         }
+//         return null;
+//       })
+//     );
+//     // console.log(imageUrls.length);
+
+//     // Filter out null values in case some files are not categorized under 'Original' or 'Thumbnails'
+//     const validImageUrls = imageUrls.filter((img) => img !== null);
+//     console.log(validImageUrls.length);
+
+//     // Separate images into original and thumbnails
+//     const originalImagesMap = {};
+//     const thumbnailImagesMap = {};
+
+//     validImageUrls.forEach((img) => {
+//       if (img.folder === "Original") {
+//         originalImagesMap[img.filename] = img.url;
+//       } else if (img.folder === "Thumbnails") {
+//         thumbnailImagesMap[img.filename] = img.url;
+//       }
+//     });
+
+//     // Combine original and thumbnail URLs by filename
+//     const matchedImages = Object.keys(thumbnailImagesMap).map((filename) => ({
+//       filename,
+//       thumbnailUrl: thumbnailImagesMap[filename],
+//       originalUrl: originalImagesMap[filename] || thumbnailImagesMap[filename], // fallback if original missing
+//     }));
+
+//     res.status(200).json({
+//       images: matchedImages,
+//       nextToken: nextToken || null, // provide the next token if there's more data
+//     });
+//   } catch (err) {
+//     console.error("Error fetching images:", err);
+//     res.status(500).json({ error: "Could not retrieve images" });
+//   }
+// };
 
 export const getAppEventImages = async (req, res) => {
   const { eventId, page = 1, subEventId } = req.query;
@@ -340,56 +389,125 @@ export const getEventImageCount = async (req, res) => {
   }
 };
 
-// export const getPresignedUrl = async (req, res) => {
-//   try {
-//     const { files } = req.body; // array of { key, type }
-//     console.log(files);
+export const getEventImages = async (req, res) => {
+  const { eventId, subEventId, continuationToken } = req.body;
 
-//     if (!files || !Array.isArray(files)) {
-//       return res.status(400).json({ message: "Invalid files array" });
-//     }
+  if (!eventId || !subEventId) {
+    return res.status(400).json({ error: "Missing eventId or subEventId" });
+  }
 
-//     const urls = await Promise.all(
-//       files.map(async ({ key }) => {
-//         const command = new PutObjectCommand({
-//           Bucket: process.env.BUCKET_NAME,
-//           Key: key,
-//           ContentType: "image/jpeg",
-//         });
+  try {
+    const basePrefix = `eventimages/${eventId}/${subEventId}/`;
+    const pageSize = 20;
 
-//         const url = await getSignedUrl(s3Client, command, { expiresIn: 300 }); // 5 mins
-//         return { key, url };
-//       })
-//     );
+    const fetchFolderItems = async (folder) => {
+      const prefix = `${basePrefix}${folder}/`;
+      const listCommand = new ListObjectsV2Command({
+        Bucket: process.env.BUCKET_NAME,
+        Prefix: prefix,
+        MaxKeys: pageSize,
+        ContinuationToken: continuationToken || undefined,
+      });
 
-//     res.status(200).json({ urls });
-//   } catch (error) {
-//     console.error("Presigned URL Error:", error);
-//     res.status(500).json({ message: "Error generating presigned URLs" });
-//   }
-// };
+      const response = await s3Client.send(listCommand);
 
-// export const getEventImages = async (req, res) => {
-//   try {
-//     const { eventId } = req.params;
+      const items = await Promise.all(
+        (response.Contents || []).map(async (item) => {
+          const filename = item.Key.split("/").pop(); // last part
+          const getCommand = new GetObjectCommand({
+            Bucket: process.env.BUCKET_NAME,
+            Key: item.Key,
+          });
+          const url = await getSignedUrl(s3Client, getCommand);
+          return { filename, url };
+        })
+      );
 
-//     const images = await ImageModel.find({ eventId });
+      return { items, nextToken: response.NextContinuationToken || null };
+    };
 
-//     const signedUrls = await Promise.all(
-//       images.map(async (img) => {
-//         const command = new GetObjectCommand({
-//           Bucket: process.env.BUCKET_NAME,
-//           Key: img.thumbnailImageKey,
-//         });
+    const [originalData, thumbData] = await Promise.all([
+      fetchFolderItems("Original"),
+      fetchFolderItems("Thumbs"),
+    ]);
 
-//         const url = await getSignedUrl(s3Client, command);
-//         return url;
-//       })
-//     );
+    const originalMap = {};
+    originalData.items.forEach((img) => {
+      originalMap[img.filename.toLowerCase()] = img.url;
+    });
 
-//     res.status(200).json({ urls: signedUrls });
-//   } catch (error) {
-//     console.error("Failed to get images", error);
-//     res.status(500).json({ message: "Failed to get images" });
-//   }
-// };
+    const thumbMap = {};
+    thumbData.items.forEach((img) => {
+      thumbMap[img.filename.toLowerCase()] = img.url;
+    });
+
+    const allFilenames = new Set([
+      ...Object.keys(originalMap),
+      ...Object.keys(thumbMap),
+    ]);
+
+    const merged = Array.from(allFilenames)
+      .filter((f) => originalMap[f] && thumbMap[f])
+      .map((f) => ({
+        filename: f,
+        originalUrl: originalMap[f],
+        thumbnailUrl: thumbMap[f],
+      }));
+
+    return res.status(200).json({
+      images: merged,
+      nextToken: originalData.nextToken || thumbData.nextToken || null,
+    });
+  } catch (err) {
+    console.error("Error fetching event images:", err);
+    res.status(500).json({ error: "Could not retrieve event images" });
+  }
+};
+
+export const getFlipbookImages = async (req, res) => {
+  const { eventId, flipbookId } = req.body;
+
+  if (!eventId || !flipbookId) {
+    return res.status(400).json({ error: "Missing eventId or flipbookId" });
+  }
+
+  try {
+    const prefix = `flipbookimages/${eventId}/${flipbookId}/`;
+    const allImages = [];
+    let continuationToken = undefined;
+
+    do {
+      const listCommand = new ListObjectsV2Command({
+        Bucket: process.env.BUCKET_NAME,
+        Prefix: prefix,
+        MaxKeys: 1000,
+        ContinuationToken: continuationToken,
+      });
+
+      const response = await s3Client.send(listCommand);
+
+      const imageUrls = await Promise.all(
+        (response.Contents || []).map(async (item) => {
+          const getCommand = new GetObjectCommand({
+            Bucket: process.env.BUCKET_NAME,
+            Key: item.Key,
+          });
+          const url = await getSignedUrl(s3Client, getCommand);
+          return url;
+        })
+      );
+
+      allImages.push(...imageUrls);
+      continuationToken = response.IsTruncated
+        ? response.NextContinuationToken
+        : undefined;
+    } while (continuationToken);
+
+    return res.status(200).json({
+      images: allImages,
+    });
+  } catch (err) {
+    console.error("Error fetching flipbook images:", err);
+    res.status(500).json({ error: "Could not retrieve flipbook images" });
+  }
+};

@@ -11,6 +11,7 @@ import {
   ShoppingCart,
   Share2,
   ArrowDownToLineIcon,
+  X,
 } from "lucide-react";
 
 const ClientPhotosView = () => {
@@ -23,6 +24,7 @@ const ClientPhotosView = () => {
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [activeSubEventId, setActiveSubEventId] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   const { accessToken } = useSelector((state) => state.user);
   const { currentEvent } = useSelector((state) => state.event);
@@ -34,7 +36,6 @@ const ClientPhotosView = () => {
     dispatch(setCurrentSubEventId(id));
   };
 
-  // Function to fetch images
   const fetchImages = async () => {
     if (isLoading || !hasMore || !activeSubEventId) return;
     setIsLoading(true);
@@ -56,8 +57,8 @@ const ClientPhotosView = () => {
       if (res.status === 200) {
         const newImages = res.data.images || [];
         setFetchedImages((prev) => [...prev, ...newImages]);
-        setNextToken(res.data.nextToken || null); // Ensure you're correctly setting the nextToken
-        setHasMore(!!res.data.nextToken); // Only set to true if nextToken is available
+        setNextToken(res.data.nextToken || null);
+        setHasMore(!!res.data.nextToken);
       }
     } catch (err) {
       console.error("Error fetching images:", err);
@@ -66,7 +67,6 @@ const ClientPhotosView = () => {
     }
   };
 
-  // Set initial subevent when event is loaded
   useEffect(() => {
     if (currentEvent?.subevents?.length > 0) {
       const firstId = currentEvent.subevents[0]._id;
@@ -75,7 +75,6 @@ const ClientPhotosView = () => {
     }
   }, [eventId, currentEvent, dispatch]);
 
-  // Fetch images when activeSubEventId changes
   useEffect(() => {
     if (activeSubEventId) {
       setFetchedImages([]);
@@ -85,7 +84,6 @@ const ClientPhotosView = () => {
     }
   }, [activeSubEventId]);
 
-  // Infinite Scroll - Load images when user reaches the bottom of the page
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition =
@@ -98,7 +96,6 @@ const ClientPhotosView = () => {
     };
 
     window.addEventListener("scroll", handleScroll);
-
     return () => window.removeEventListener("scroll", handleScroll);
   }, [isLoading, hasMore]);
 
@@ -111,7 +108,6 @@ const ClientPhotosView = () => {
         <span className="text-black">&larr; Back</span>
       </button>
 
-      {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between pb-6 gap-4">
         <div>
           <h2 className="text-2xl font-bold">
@@ -140,7 +136,6 @@ const ClientPhotosView = () => {
         </div>
       </div>
 
-      {/* Subevent List */}
       <div className="flex overflow-x-auto pb-6 gap-4">
         {currentEvent?.subevents?.map((subevent, index) => (
           <div
@@ -159,7 +154,6 @@ const ClientPhotosView = () => {
         ))}
       </div>
 
-      {/* Image Grid */}
       {isLoading && !fetchedImages.length ? (
         <p className="text-center text-gray-600 mt-12">Loading images...</p>
       ) : fetchedImages.length === 0 ? (
@@ -171,16 +165,41 @@ const ClientPhotosView = () => {
           {fetchedImages.map((img, idx) => (
             <div
               key={idx}
-              className="break-inside-avoid rounded-xl overflow-hidden shadow hover:shadow-xl transition-all bg-white"
+              className="break-inside-avoid rounded-xl overflow-hidden shadow hover:shadow-xl transition-all bg-white cursor-pointer"
+              onClick={() => setSelectedImage(img.originalUrl)}
             >
               <img
-                src={img}
+                src={img.thumbnailUrl}
                 alt={`Event Img ${idx + 1}`}
                 className="w-full h-[300px] object-contain"
                 loading="lazy"
               />
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Image Modal */}
+      {selectedImage && (
+        <div className="fixed inset-0 z-50 bg-black/80 overflow-auto">
+          <div className="min-h-screen flex items-center justify-center p-10">
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-2 right-2 bg-white p-2 rounded-full shadow hover:bg-gray-100 z-50"
+            >
+              <X className="w-5 h-5 text-black" />
+            </button>
+            <img
+              src={selectedImage}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src =
+                  "https://via.placeholder.com/800x600?text=Image+Not+Found";
+              }}
+              alt="Full View"
+              className="w-full max-h-[85vh] object-contain rounded-lg shadow-lg z-40"
+            />
+          </div>
         </div>
       )}
     </div>

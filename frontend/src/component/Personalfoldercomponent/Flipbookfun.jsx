@@ -41,7 +41,7 @@ const splitImage = (src) => {
 };
 
 const Flipbookfun = ({ images, frontCover, backCover }) => {
-  console.log({ images, frontCover, backCover });
+  // console.log({ images, frontCover, backCover });
 
   const bookRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(0);

@@ -4,6 +4,8 @@ import toast from "../utils/toast.js";
 import Loader from "../component/Loader.jsx";
 const FavouritePanel = () => {
   const { currentSubEvent } = useSelector((state) => state.event);
+  console.log(currentSubEvent?.clientSelectedImages);
+
   const selectedImages = currentSubEvent?.clientSelectedImages || [];
 
   const [isLoading, setIsLoading] = useState(true);
@@ -11,7 +13,6 @@ const FavouritePanel = () => {
   useEffect(() => {
     if (selectedImages.length === 0) {
       setIsLoading(false); // Stop loading once images are fetched
-      toast.info("No images selected.");
     } else {
       setIsLoading(false); // Simulate loading when images are fetched
     }
@@ -49,7 +50,7 @@ const FavouritePanel = () => {
                   <img
                     src={image.thumbnailUrl}
                     alt={`Selected ${index}`}
-                    className="w-full h-48 object-cover"
+                    className="w-full h-96 object-cover"
                   />
                   {/* Optionally add hover actions like remove */}
                 </div>

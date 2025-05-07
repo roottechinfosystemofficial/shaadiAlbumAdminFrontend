@@ -124,7 +124,7 @@ const ImagesFlipbookpanel = () => {
     try {
       const res = await apiRequest(
         "POST",
-        `${S3_API_END_POINT}/list-images`,
+        `${S3_API_END_POINT}/list-flipBookimages`,
         {
           eventId: currentEvent._id,
           flipbookId: currentFlipbook._id,
@@ -133,6 +133,8 @@ const ImagesFlipbookpanel = () => {
         accessToken,
         dispatch
       );
+      console.log(res);
+
       if (res.status === 200) {
         setFlipbookImages(res.data.images || []);
       }
@@ -274,49 +276,55 @@ const ImagesFlipbookpanel = () => {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {flipbookImages.map((img, index) => (
-          <div
-            key={index}
-            className={`relative border-2 rounded-lg overflow-hidden shadow-lg group ${
-              frontCover === index || backCover === index
-                ? "border-primary-dark"
-                : "border-slate"
-            }`}
-          >
-            <img
-              src={img}
-              alt={`Flipbook image ${index + 1}`}
-              className="w-full h-60 object-contain"
-            />
-            <div className="absolute top-0 right-0 flex justify-between items-center ">
-              <div className="relative">
-                <button className="text-sm px-5 py-1 bg-white">
-                  {frontCover === index
-                    ? "Front Cover"
-                    : backCover === index
-                    ? "Back Cover"
-                    : "Choose Cover"}
-                </button>
-                <div className="absolute top-full left-0 w-full bg-white border hidden group-hover:block">
-                  <button
-                    onClick={() => handleSetCover(index, "front")}
-                    className="w-full text-sm text-left px-4 py-2 hover:bg-slate"
-                  >
+        {flipbookImages && flipbookImages.length > 0 ? (
+          flipbookImages.map((img, index) => (
+            <div
+              key={index}
+              className={`relative border-2 rounded-lg overflow-hidden shadow-lg group ${
+                frontCover === index || backCover === index
+                  ? "border-primary-dark"
+                  : "border-slate"
+              }`}
+            >
+              <img
+                src={img || "placeholder-image-url"} // Placeholder if URL is not available
+                alt={`Flipbook image ${index + 1}`}
+                className="w-full h-60 object-contain"
+              />
+              <div className="absolute top-0 right-0 flex justify-between items-center ">
+                <div className="relative">
+                  <button className="text-sm px-5 py-1 bg-white">
                     {frontCover === index
                       ? "Front Cover"
-                      : "Set as Front Cover"}
+                      : backCover === index
+                      ? "Back Cover"
+                      : "Choose Cover"}
                   </button>
-                  <button
-                    onClick={() => handleSetCover(index, "back")}
-                    className="w-full text-sm text-left px-4 py-2 hover:bg-slate"
-                  >
-                    {backCover === index ? "Back Cover" : "Set as Back Cover"}
-                  </button>
+                  <div className="absolute top-full left-0 w-full bg-white border hidden group-hover:block">
+                    <button
+                      onClick={() => handleSetCover(index, "front")}
+                      className="w-full text-sm text-left px-4 py-2 hover:bg-slate"
+                    >
+                      {frontCover === index
+                        ? "Front Cover"
+                        : "Set as Front Cover"}
+                    </button>
+                    <button
+                      onClick={() => handleSetCover(index, "back")}
+                      className="w-full text-sm text-left px-4 py-2 hover:bg-slate"
+                    >
+                      {backCover === index ? "Back Cover" : "Set as Back Cover"}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
+          ))
+        ) : (
+          <div className="col-span-full text-center text-gray-500">
+            No images available. Please upload images to your flipbook.
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

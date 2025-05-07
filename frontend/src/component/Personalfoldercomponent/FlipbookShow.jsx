@@ -21,7 +21,7 @@ const FlipbookShow = () => {
     try {
       const res = await apiRequest(
         "POST",
-        `${S3_API_END_POINT}/list-images`,
+        `${S3_API_END_POINT}/list-flipBookimages`,
         {
           eventId,
           flipbookId: flipBookId,
@@ -30,6 +30,7 @@ const FlipbookShow = () => {
         accessToken,
         dispatch
       );
+      console.log(res.data.images);
 
       if (res.status === 200) {
         setFlipbookImages(res.data.images || []);

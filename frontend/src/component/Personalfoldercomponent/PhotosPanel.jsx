@@ -52,12 +52,13 @@ const PhotosPanel = () => {
           accessToken,
           dispatch
         );
+        console.log(res);
 
         if (res.status === 200) {
           const data = res.data.images || [];
           const nextToken = res.data.nextToken;
 
-          setImages(data);
+          setImages((prev) => (page === 1 ? data : [...prev, ...data]));
           setHasNext(!!nextToken);
 
           if (nextToken) {
@@ -203,7 +204,7 @@ const PhotosPanel = () => {
         {images.map((url, index) => (
           <MemoizedImageCard
             key={url + index}
-            src={url}
+            src={url?.thumbnailUrl} // Assuming these URLs are already the thumbnail URLs
             alt={`Image ${index + 1}`}
             selected={selectedImages.has(url)}
             onToggleSelect={() => toggleSelect(url)}
@@ -239,7 +240,7 @@ const ImageCard = ({ src, alt, selected, onToggleSelect }) => (
     }`}
   >
     <img
-      src={src}
+      src={src} // Use the thumbnail image URL here
       alt={alt}
       loading="lazy"
       className="w-full h-64 object-contain transition-transform duration-200 ease-in-out group-hover:scale-105"
