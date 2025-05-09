@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setCurrentSubEventId } from "../../Redux/Slices/EventSlice";
@@ -25,9 +25,18 @@ const ClientPhotosView = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeSubEventId, setActiveSubEventId] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [nextTokenOriginal, setNextTokenOriginal] = useState(null);
+  const [nextTokenThumbs, setNextTokenThumbs] = useState(null);
+
+  const nextTokenOriginalRef = useRef(null);
+  const nextTokenThumbsRef = useRef(null);
 
   const { accessToken } = useSelector((state) => state.user);
   const { currentEvent } = useSelector((state) => state.event);
+
+  const isLoadingRef = useRef(false);
+  const hasMoreRef = useRef(true);
+  const nextTokenRef = useRef(null);
 
   const goBack = () => navigate(-1);
 
@@ -37,33 +46,59 @@ const ClientPhotosView = () => {
   };
 
   const fetchImages = async () => {
-    if (isLoading || !hasMore || !activeSubEventId) return;
+    if (isLoadingRef.current || !hasMoreRef.current || !activeSubEventId)
+      return;
+
     setIsLoading(true);
+    isLoadingRef.current = true;
 
     try {
       const endpoint = `${S3_API_END_POINT}/list-images`;
+
+      const continuationTokenOriginal = nextTokenOriginalRef.current || "";
+      const continuationTokenThumbs = nextTokenThumbsRef.current || "";
+
       const res = await apiRequest(
         "POST",
         endpoint,
         {
           eventId,
-          continuationToken: nextToken,
           subEventId: activeSubEventId,
+          continuationTokenOriginal,
+          continuationTokenThumbs,
         },
         accessToken,
         dispatch
       );
+      console.log("Fetched Images:", res);
 
       if (res.status === 200) {
         const newImages = res.data.images || [];
+
+        // Append new images
         setFetchedImages((prev) => [...prev, ...newImages]);
-        setNextToken(res.data.nextToken || null);
-        setHasMore(!!res.data.nextToken);
+
+        // Handle next tokens separately
+        const newTokenOriginal = res.data.nextTokenOriginal || null;
+        const newTokenThumbs = res.data.nextTokenThumbs || null;
+
+        if (newTokenOriginal || newTokenThumbs) {
+          setNextTokenOriginal(newTokenOriginal);
+          setNextTokenThumbs(newTokenThumbs);
+          nextTokenOriginalRef.current = newTokenOriginal;
+          nextTokenThumbsRef.current = newTokenThumbs;
+          setHasMore(true);
+          hasMoreRef.current = true;
+        } else {
+          setHasMore(false);
+          hasMoreRef.current = false;
+        }
       }
     } catch (err) {
       console.error("Error fetching images:", err);
     } finally {
       setIsLoading(false);
+      isLoadingRef.current = false;
     }
   };
 
@@ -74,12 +109,15 @@ const ClientPhotosView = () => {
       dispatch(setCurrentSubEventId(firstId));
     }
   }, [eventId, currentEvent, dispatch]);
-
   useEffect(() => {
     if (activeSubEventId) {
-      setFetchedImages([]);
-      setNextToken(null);
+      setFetchedImages([]); // Clear previous
+      setNextTokenOriginal(null);
+      setNextTokenThumbs(null);
+      nextTokenOriginalRef.current = null;
+      nextTokenThumbsRef.current = null;
       setHasMore(true);
+      hasMoreRef.current = true;
       fetchImages();
     }
   }, [activeSubEventId]);
@@ -161,7 +199,7 @@ const ClientPhotosView = () => {
           No images found for this sub-event.
         </p>
       ) : (
-        <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 px-2 mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 px-2 mt-4">
           {fetchedImages.map((img, idx) => (
             <div
               key={idx}
