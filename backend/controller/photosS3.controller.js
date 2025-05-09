@@ -390,7 +390,12 @@ export const getEventImageCount = async (req, res) => {
 };
 
 export const getEventImages = async (req, res) => {
-  const { eventId, subEventId, continuationToken } = req.body;
+  const {
+    eventId,
+    subEventId,
+    continuationTokenOriginal,
+    continuationTokenThumbs,
+  } = req.body;
 
   if (!eventId || !subEventId) {
     return res.status(400).json({ error: "Missing eventId or subEventId" });
@@ -400,20 +405,20 @@ export const getEventImages = async (req, res) => {
     const basePrefix = `eventimages/${eventId}/${subEventId}/`;
     const pageSize = 20;
 
-    const fetchFolderItems = async (folder) => {
+    const fetchFolderItems = async (folder, token) => {
       const prefix = `${basePrefix}${folder}/`;
       const listCommand = new ListObjectsV2Command({
         Bucket: process.env.BUCKET_NAME,
         Prefix: prefix,
         MaxKeys: pageSize,
-        ContinuationToken: continuationToken || undefined,
+        ContinuationToken: token || undefined,
       });
 
       const response = await s3Client.send(listCommand);
 
       const items = await Promise.all(
         (response.Contents || []).map(async (item) => {
-          const filename = item.Key.split("/").pop(); // last part
+          const filename = item.Key.split("/").pop();
           const getCommand = new GetObjectCommand({
             Bucket: process.env.BUCKET_NAME,
             Key: item.Key,
@@ -427,8 +432,8 @@ export const getEventImages = async (req, res) => {
     };
 
     const [originalData, thumbData] = await Promise.all([
-      fetchFolderItems("Original"),
-      fetchFolderItems("Thumbs"),
+      fetchFolderItems("Original", continuationTokenOriginal),
+      fetchFolderItems("Thumbs", continuationTokenThumbs),
     ]);
 
     const originalMap = {};
@@ -456,7 +461,8 @@ export const getEventImages = async (req, res) => {
 
     return res.status(200).json({
       images: merged,
-      nextToken: originalData.nextToken || thumbData.nextToken || null,
+      nextTokenOriginal: originalData.nextToken,
+      nextTokenThumbs: thumbData.nextToken,
     });
   } catch (err) {
     console.error("Error fetching event images:", err);

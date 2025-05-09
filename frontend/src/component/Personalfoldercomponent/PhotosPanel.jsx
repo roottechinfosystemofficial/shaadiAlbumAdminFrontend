@@ -1,7 +1,7 @@
 import React, { useState, useEffect, memo } from "react";
 import AddPhotosModal from "./AddPhotosModal";
 import { useParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { S3_API_END_POINT } from "../../constant";
 import apiRequest from "../../utils/apiRequest";
@@ -13,7 +13,7 @@ const PhotosPanel = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedImages, setSelectedImages] = useState(new Set());
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [tokens, setTokens] = useState({ 1: null });
+  const [tokens, setTokens] = useState({ 1: { original: null, thumbs: null } });
   const [hasNext, setHasNext] = useState(false);
   const { currentSubEvent, currentEventId } = useSelector(
     (state) => state.event
@@ -23,20 +23,22 @@ const PhotosPanel = () => {
   const dispatch = useDispatch();
   const { accessToken } = useSelector((state) => state.user);
 
-  const pageSize = 100;
+  const pageSize = 25;
 
   useEffect(() => {
     if (!currentEventId || !currentSubEvent?._id) return;
 
     setPage(1);
-    setTokens({ 1: null });
+    setTokens({ 1: { original: null, thumbs: null } });
     setSelectedImages(new Set());
     setReloadKey((prev) => prev + 1);
   }, [currentEventId, currentSubEvent]);
 
   useEffect(() => {
     const fetchImages = async () => {
-      const continuationToken = tokens[page];
+      const tokenData = tokens[page] || { original: null, thumbs: null };
+      const { original, thumbs } = tokenData;
+
       setIsLoading(true);
       try {
         const endpoint = `${S3_API_END_POINT}/list-images`;
@@ -45,7 +47,8 @@ const PhotosPanel = () => {
           endpoint,
           {
             eventId,
-            continuationToken,
+            continuationTokenOriginal: original,
+            continuationTokenThumbs: thumbs,
             pageSize,
             subEventId: currentSubEvent._id,
           },
@@ -54,14 +57,26 @@ const PhotosPanel = () => {
         );
         console.log(res);
 
+        console.log({
+          page,
+          tokenData,
+          receivedImages: res.data.images?.length,
+          nextOriginal: res.data.nextTokenOriginal,
+          nextThumbs: res.data.nextTokenThumbs,
+        });
+
         if (res.status === 200) {
           const data = res.data.images || [];
-          const nextToken = res.data.nextToken;
+          const nextToken = {
+            original: res.data.nextTokenOriginal,
+            thumbs: res.data.nextTokenThumbs,
+          };
 
-          setImages((prev) => (page === 1 ? data : [...prev, ...data]));
-          setHasNext(!!nextToken);
+          setImages(data);
 
-          if (nextToken) {
+          setHasNext(!!(nextToken.original || nextToken.thumbs));
+
+          if (nextToken.original || nextToken.thumbs) {
             setTokens((prev) => ({
               ...prev,
               [page + 1]: nextToken,
@@ -75,13 +90,32 @@ const PhotosPanel = () => {
       }
     };
 
-    fetchImages();
+    if (eventId && currentSubEvent?._id) {
+      fetchImages();
+    }
   }, [page, eventId, currentSubEvent?._id, reloadKey]);
 
-  const toggleSelect = (url) => {
+  const triggerRefresh = () => {
+    setPage(1);
+    setTokens({ 1: { original: null, thumbs: null } });
+    setSelectedImages(new Set());
+    setReloadKey((prev) => prev + 1);
+  };
+
+  const toggleSelect = (img) => {
     setSelectedImages((prev) => {
       const updated = new Set(prev);
-      updated.has(url) ? updated.delete(url) : updated.add(url);
+      const key = img.originalUrl;
+      const alreadySelected = [...prev].some(
+        (item) => item.originalUrl === key
+      );
+      if (alreadySelected) {
+        updated.forEach((item) => {
+          if (item.originalUrl === key) updated.delete(item);
+        });
+      } else {
+        updated.add(img);
+      }
       return updated;
     });
   };
@@ -98,10 +132,7 @@ const PhotosPanel = () => {
     images.length > 0 && selectedImages.size === images.length;
 
   const handleUploadSuccess = () => {
-    setPage(1);
-    setTokens({ 1: null });
-    setSelectedImages(new Set());
-    setReloadKey((prev) => prev + 1);
+    triggerRefresh();
   };
 
   const eventDate = currentSubEvent?.createdAt
@@ -120,12 +151,22 @@ const PhotosPanel = () => {
           <p className="text-slate-dark text-sm">{eventDate}</p>
         </div>
 
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-primary hover:bg-primary-dark text-white text-sm font-medium px-4 py-2 rounded-md shadow transition"
-        >
-          + Add Photos
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={triggerRefresh}
+            className="p-2 rounded-full bg-slate hover:bg-slate-dark text-gray-600 hover:text-white transition"
+            title="Refresh"
+          >
+            <RefreshCw className="w-5 h-5" />
+          </button>
+
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-primary hover:bg-primary-dark text-white text-sm font-medium px-4 py-2 rounded-md shadow transition"
+          >
+            + Add Photos
+          </button>
+        </div>
       </div>
 
       {images.length > 0 && (
@@ -167,12 +208,11 @@ const PhotosPanel = () => {
             <button
               onClick={() => setPage((prev) => Math.max(1, prev - 1))}
               disabled={page === 1 || isLoading}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition shadow-sm
-                ${
-                  page === 1 || isLoading
-                    ? "bg-slate text-gray-400 cursor-not-allowed"
-                    : "bg-primary hover:bg-primary-dark text-white"
-                }`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition shadow-sm ${
+                page === 1 || isLoading
+                  ? "bg-slate text-gray-400 cursor-not-allowed"
+                  : "bg-primary hover:bg-primary-dark text-white"
+              }`}
             >
               <ChevronLeft className="w-4 h-4" />
               Previous
@@ -185,12 +225,11 @@ const PhotosPanel = () => {
             <button
               onClick={() => setPage((prev) => prev + 1)}
               disabled={!hasNext || isLoading}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition shadow-sm
-                ${
-                  !hasNext || isLoading
-                    ? "bg-slate text-gray-400 cursor-not-allowed"
-                    : "bg-primary hover:bg-primary-dark text-white"
-                }`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition shadow-sm ${
+                !hasNext || isLoading
+                  ? "bg-slate text-gray-400 cursor-not-allowed"
+                  : "bg-primary hover:bg-primary-dark text-white"
+              }`}
             >
               Next
               <ChevronRight className="w-4 h-4" />
@@ -199,20 +238,20 @@ const PhotosPanel = () => {
         </div>
       )}
 
-      {/* Images Grid */}
       <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {images.map((url, index) => (
+        {images.map((img, index) => (
           <MemoizedImageCard
-            key={url + index}
-            src={url?.thumbnailUrl} // Assuming these URLs are already the thumbnail URLs
+            key={img.originalUrl + index}
+            src={img.thumbnailUrl}
             alt={`Image ${index + 1}`}
-            selected={selectedImages.has(url)}
-            onToggleSelect={() => toggleSelect(url)}
+            selected={[...selectedImages].some(
+              (i) => i.originalUrl === img.originalUrl
+            )}
+            onToggleSelect={() => toggleSelect(img)}
           />
         ))}
       </div>
 
-      {/* Loading or No Images */}
       {isLoading ? (
         <Loader message="Images are on their way, please wait..." />
       ) : images.length === 0 ? (
@@ -240,7 +279,7 @@ const ImageCard = ({ src, alt, selected, onToggleSelect }) => (
     }`}
   >
     <img
-      src={src} // Use the thumbnail image URL here
+      src={src}
       alt={alt}
       loading="lazy"
       className="w-full h-64 object-contain transition-transform duration-200 ease-in-out group-hover:scale-105"

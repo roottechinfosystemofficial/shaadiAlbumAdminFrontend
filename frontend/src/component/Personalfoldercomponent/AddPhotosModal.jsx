@@ -21,6 +21,7 @@ const AddPhotosModal = ({
   const [uploadedCount, setUploadedCount] = useState(0);
   const [cancelTokens, setCancelTokens] = useState([]);
   const [cancelRequested, setCancelRequested] = useState(false);
+  const [showRefreshButton, setShowRefreshButton] = useState(false); // New state for refresh button
 
   const { currentEvent } = useSelector((state) => state.event);
   const { accessToken } = useSelector((state) => state.user);
@@ -116,27 +117,41 @@ const AddPhotosModal = ({
           const compressed = await compressFile(file, globalIndex);
           if (!compressed || cancelRequested) return;
 
-          const urlResponse = await apiRequest(
-            "POST",
-            `${S3_API_END_POINT}/get-presigned-url`,
-            {
-              eventId: currentEvent?._id,
-              subEventId: currentSubEvent?._id,
-              files: [
-                {
-                  fileName: compressed.name,
-                  fileType: compressed.type,
-                  fileSize: compressed.size,
-                },
-              ],
-            },
-            accessToken,
-            dispatch
-          );
+          try {
+            const urlResponse = await apiRequest(
+              "POST",
+              `${S3_API_END_POINT}/get-presigned-url`,
+              {
+                eventId: currentEvent?._id,
+                subEventId: currentSubEvent?._id,
+                files: [
+                  {
+                    fileName: compressed.name,
+                    fileType: compressed.type,
+                    fileSize: compressed.size,
+                  },
+                ],
+              },
+              accessToken,
+              dispatch
+            );
 
-          const url = urlResponse?.data?.urls?.[0]?.url;
-          if (url && !cancelRequested) {
-            await uploadFile(url, compressed, globalIndex, cancelToken);
+            const url = urlResponse?.data?.urls?.[0]?.url;
+            if (url && !cancelRequested) {
+              await uploadFile(url, compressed, globalIndex, cancelToken);
+            } else {
+              setUploadStatuses((prev) => ({
+                ...prev,
+                [globalIndex]: "URL Error ❌",
+              }));
+              setUploadProgresses((prev) => ({ ...prev, [globalIndex]: -1 }));
+            }
+          } catch (err) {
+            setUploadStatuses((prev) => ({
+              ...prev,
+              [globalIndex]: "URL Fetch Failed ❌",
+            }));
+            setUploadProgresses((prev) => ({ ...prev, [globalIndex]: -1 }));
           }
         };
 
@@ -149,11 +164,11 @@ const AddPhotosModal = ({
             activeUploads.length < MAX_CONCURRENT_UPLOADS &&
             uploadQueue.length > 0
           ) {
-            const uploadPromise = startUpload(uploadQueue.shift());
-            activeUploads.push(uploadPromise);
-            uploadPromise.finally(() => {
-              const index = activeUploads.indexOf(uploadPromise);
-              if (index !== -1) activeUploads.splice(index, 1);
+            const promise = startUpload(uploadQueue.shift());
+            activeUploads.push(promise);
+            promise.finally(() => {
+              const idx = activeUploads.indexOf(promise);
+              if (idx !== -1) activeUploads.splice(idx, 1);
             });
           }
 
@@ -164,10 +179,9 @@ const AddPhotosModal = ({
       }
 
       if (!cancelRequested) {
-        await refetchImageCount();
         toast.dismiss();
         toast.success("Images uploaded ✅");
-        onUploadSuccess?.();
+        onUploadSuccess?.(); // Trigger this to notify the parent to refresh images manually
         handleClose();
       }
     } catch (err) {
@@ -179,6 +193,11 @@ const AddPhotosModal = ({
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleRefreshImages = () => {
+    refetchImageCount();
+    setShowRefreshButton(false); // Hide the refresh button after the refresh
   };
 
   const handleClose = () => {
@@ -202,8 +221,8 @@ const AddPhotosModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-      <div className="bg-white rounded-xl px-6 py-10 w-[95%] max-w-2xl shadow-2xl relative animate-fadeIn flex flex-col gap-4">
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center overflow-x-hidden">
+      <div className="bg-white rounded-xl px-6 py-10 w-[95%] max-w-2xl shadow-2xl relative animate-fadeIn flex flex-col gap-4 overflow-x-hidden">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Upload Photos</h2>
           <button
@@ -247,11 +266,11 @@ const AddPhotosModal = ({
               Selected {selectedFiles.length} files (
               {getTotalSize(selectedFiles)})
             </div>
-            <div className="mb-4 max-h-64 overflow-y-auto border rounded p-2 bg-gray-50">
+            <div className="mb-4 max-h-64 overflow-y-auto overflow-x-hidden border rounded p-2 bg-gray-50">
               {selectedFiles.map((file, index) => (
-                <div key={index} className="mb-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm truncate max-w-xs">
+                <div key={index} className="mb-2 w-full">
+                  <div className="flex justify-between items-center gap-2 overflow-hidden">
+                    <span className="text-sm break-all truncate max-w-[80%]">
                       {file.name}
                     </span>
                     {!uploading && (
@@ -285,7 +304,7 @@ const AddPhotosModal = ({
             </div>
             <button
               onClick={() => processInPipeline(selectedFiles)}
-              className="bg-primary text-white py-2 rounded-lg hover:bg-primary-dark transition"
+              className="bg-primary text-white py-2 rounded-lg hover:bg-primary-dark transition w-full"
               disabled={uploading}
             >
               {uploading
@@ -293,6 +312,16 @@ const AddPhotosModal = ({
                 : "Start Upload"}
             </button>
           </>
+        )}
+
+        {/* Add the Refresh button */}
+        {showRefreshButton && (
+          <button
+            onClick={handleRefreshImages}
+            className="bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 mt-4 w-full"
+          >
+            Refresh Images
+          </button>
         )}
       </div>
     </div>
