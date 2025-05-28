@@ -133,7 +133,7 @@ const SliderAnimation = () => {
     try {
       const currentImage = imagesWithoutQR[current]; // Get the real image (without fake QR)
       // const qrData = "https://www.google.co.in"; // Always generate this QR
-      const qrData = `http://localhost:5173/${currentEvent._id}/clientview`;
+      const qrData = `https://studio.shaadialbum.in/${currentEvent._id}/clientview`;
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.src = currentImage;
