@@ -39,7 +39,7 @@ const SubEventSection = ({ currentEvent, setIsLoading }) => {
         dispatch
       );
 
-      if (res.status === 201) {
+      if (accessToken && res.status === 201) {
         await refetchEvent();
         setSubEventName("");
         setShowInput(false);

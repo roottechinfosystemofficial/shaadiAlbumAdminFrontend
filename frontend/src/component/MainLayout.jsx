@@ -12,20 +12,26 @@ const MainLayout = () => {
   const { currentFlipbookId, currentEventId } = useSelector(
     (state) => state.event
   );
+  const { accessToken } = useSelector((state) => state.user);
   const { refetchFlipBook } = useGetSingleFlipBook(currentFlipbookId);
   const { refetchEvent } = useGetSingleEvent(currentEventId);
 
   useEffect(() => {
+    if (!accessToken) return;
+
     if (currentFlipbookId) {
       refetchFlipBook();
     }
-  }, [currentFlipbookId]);
+  }, [accessToken, currentFlipbookId]);
 
   useEffect(() => {
+    if (!accessToken) return;
+
     if (currentEventId) {
       refetchEvent();
     }
-  }, [currentEventId]);
+  }, [accessToken, currentEventId]);
+
   useEffect(() => {
     const getCookies = () => {
       const accessToken = Cookies.get("accessToken");

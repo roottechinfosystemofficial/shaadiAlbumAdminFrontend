@@ -49,8 +49,10 @@ const EventlistPage = () => {
   };
 
   useEffect(() => {
-    getAllEventsOfUser();
-  }, []);
+    if (accessToken) {
+      getAllEventsOfUser();
+    }
+  }, [accessToken]);
 
   const handleAddEvent = async (e) => {
     e.preventDefault();
