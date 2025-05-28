@@ -1,28 +1,42 @@
 // Redux store setup
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { persistStore, persistReducer, createTransform } from "redux-persist";
-import storage from "redux-persist/lib/storage"; // localStorage
+import storage from "redux-persist/lib/storage";
 
 import coverImgReducer from "./Slices/CoverImgSlice";
 import galleryLayoutReducer from "./Slices/GalleryLayoutSlice";
 import userReducer from "./Slices/UserSlice";
 import eventReducer from "./Slices/EventSlice.jsx";
+import tabReducer from "./Slices/TabSlice.jsx";
 
 // 🔐 Persist only `authUser` from user slice
 const authUserTransform = createTransform(
-  (inboundState) => ({
-    authUser: inboundState.authUser,
-  }),
+  (inboundState) => ({ authUser: inboundState.authUser }),
   (outboundState) => outboundState,
   { whitelist: ["user"] }
 );
 
-// 🛠 Persist config with transform
+// 🗂 Persist only `currentEvent` from event slice
+const singleEventTransform = createTransform(
+  // transform state on its way to being serialized and persisted
+  (inboundState) => ({
+    currentEventId: inboundState.currentEventId,
+    currentSubEventId: inboundState.currentSubEventId,
+    currentFlipbookId: inboundState.currentFlipbookId,
+  }),
+
+  // transform state being rehydrated
+  (outboundState) => outboundState,
+
+  { whitelist: ["event"] }
+);
+
+// 🛠 Persist config with transforms
 const persistConfig = {
   key: "root",
   storage,
-  whitelist: ["user"], // Only persist the user slice
-  transforms: [authUserTransform], // Only persist authUser from user
+  whitelist: ["user", "event"], // Include user and event
+  transforms: [authUserTransform, singleEventTransform],
 };
 
 // 🧠 Combine reducers
@@ -31,6 +45,7 @@ const rootReducer = combineReducers({
   galleryLayout: galleryLayoutReducer,
   coverImg: coverImgReducer,
   event: eventReducer,
+  tab: tabReducer,
 });
 
 // 🧊 Create persisted reducer

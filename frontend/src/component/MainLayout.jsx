@@ -1,16 +1,32 @@
 import React, { useEffect } from "react";
 import { Outlet } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setAccessToken, setRefreshToken } from "../Redux/Slices/UserSlice";
 import Cookies from "js-cookie";
 import { useAuthCheck } from "../Hooks/useAuthCheckHook";
+import { useGetSingleFlipBook } from "../Hooks/useGetSingleFlipBook";
+import { useGetSingleEvent } from "../Hooks/useGetSingleEvent";
 
 const MainLayout = () => {
   const dispatch = useDispatch();
-  console.log("mainlayout out");
+  const { currentFlipbookId, currentEventId } = useSelector(
+    (state) => state.event
+  );
+  const { refetchFlipBook } = useGetSingleFlipBook(currentFlipbookId);
+  const { refetchEvent } = useGetSingleEvent(currentEventId);
 
   useEffect(() => {
-    console.log("mainlayout out");
+    if (currentFlipbookId) {
+      refetchFlipBook();
+    }
+  }, [currentFlipbookId]);
+
+  useEffect(() => {
+    if (currentEventId) {
+      refetchEvent();
+    }
+  }, [currentEventId]);
+  useEffect(() => {
     const getCookies = () => {
       const accessToken = Cookies.get("accessToken");
       const refreshToken = Cookies.get("refreshToken");
@@ -20,7 +36,7 @@ const MainLayout = () => {
     };
 
     getCookies();
-  }, []);
+  }, [dispatch]);
 
   useAuthCheck();
 

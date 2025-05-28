@@ -1,255 +1,317 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import apiRequest from "../../utils/apiRequest";
+import { USER_API_END_POINT } from "../../constant";
+import { setAuthUser } from "../../Redux/Slices/UserSlice";
+import toast from "../../utils/toast.js";
 
 const MeProfile = () => {
-  const [watermark, setWatermark] = useState("none");
-  const [opacity, setOpacity] = useState(50);
-  const [position, setPosition] = useState("0");
-  const [imagePreview, setImagePreview] = useState(null);
-  const [watermarkText, setWatermarkText] = useState("");
+  const { authUser, accessToken } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result);
-      reader.readAsDataURL(file);
+  const [profileData, setProfileData] = useState({
+    name: authUser?.name || "",
+    address: authUser?.address || "",
+  });
+
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  const [changePassword, setChangePassword] = useState(false);
+  const [isProfileChanged, setIsProfileChanged] = useState(false);
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
+
+  // Sync profileData with updated authUser
+  useEffect(() => {
+    setProfileData({
+      name: authUser?.name || "",
+      address: authUser?.address || "",
+    });
+  }, [authUser]);
+
+  // Track changes to profile fields
+  useEffect(() => {
+    const nameChanged = profileData.name.trim() !== (authUser?.name || "");
+    const addressChanged =
+      profileData.address.trim() !== (authUser?.address || "");
+    setIsProfileChanged(nameChanged || addressChanged);
+  }, [profileData, authUser]);
+
+  const handleProfileChange = (e) => {
+    const { name, value } = e.target;
+    const trimmedValue = name === "name" ? value.trimStart() : value;
+    setProfileData((prev) => ({ ...prev, [name]: trimmedValue }));
+  };
+
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleProfileSubmit = async (e) => {
+    e.preventDefault();
+    setIsProfileLoading(true);
+
+    const trimmedData = {
+      name: profileData.name.trim(),
+      address: profileData.address.trim(),
+    };
+
+    try {
+      const endpoint = `${USER_API_END_POINT}/edit-profile`;
+      const res = await apiRequest(
+        "PUT",
+        endpoint,
+        trimmedData,
+        accessToken,
+        dispatch
+      );
+
+      if (res.status === 200) {
+        dispatch(setAuthUser(res.data.data));
+        toast.success("Profile updated successfully!");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(error?.message || "Failed to update profile.");
+    } finally {
+      setIsProfileLoading(false);
     }
   };
 
-  const handleSubmit = (e) => {
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault();
 
-    if (watermark === "center" && watermarkText.trim() === "") {
-      alert("Please enter watermark text.");
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error("Passwords do not match!");
       return;
     }
 
-    if (watermark === "bottomRight" && !imagePreview) {
-      alert("Please upload a watermark image.");
-      return;
+    setIsPasswordLoading(true);
+
+    try {
+      const endpoint = `${USER_API_END_POINT}/change-password`;
+      const res = await apiRequest(
+        "PUT",
+        endpoint,
+        passwordData,
+        accessToken,
+        dispatch
+      );
+
+      if (res.status === 200) {
+        toast.success("Password updated successfully!");
+        setPasswordData({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+        setChangePassword(false);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(error?.message || "Failed to update password.");
+    } finally {
+      setIsPasswordLoading(false);
     }
-
-    alert("Form submitted!");
-  };
-
-  const getLeftPosition = (val) => {
-    const percent = (val - 0) / (100 - 0);
-    return `calc(${percent * 100}% - 20px)`;
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 p-6 relative">
-      {/* First Name */}
-      <div className="flex justify-between">
-        <label htmlFor="firstName" className="w-1/5 font-medium">
-          First Name <span className="text-red-500">*</span>
-        </label>
-        <input
-          id="firstName"
-          name="firstName"
-          type="text"
-          placeholder="Your"
-          required
-          className="w-4/5 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-      </div>
+    <div className="space-y-10 p-6">
+      {/* Profile Update Form */}
+      <form onSubmit={handleProfileSubmit} className="space-y-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-2">
+          Profile Information
+        </h2>
 
-      {/* Last Name */}
-      <div className="flex items-center justify-between">
-        <label htmlFor="lastName" className="w-1/5 font-medium">
-          Last Name <span className="text-red-500">*</span>
-        </label>
-        <input
-          id="lastName"
-          name="lastName"
-          type="text"
-          placeholder="Business"
-          required
-          className="w-4/5 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-      </div>
-
-      {/* Username */}
-      <div className="flex items-center justify-between">
-        <label htmlFor="username" className="w-1/5 font-medium">
-          Username <span className="text-red-500">*</span>
-        </label>
-        <input
-          id="username"
-          name="username"
-          type="text"
-          placeholder="username@example.com"
-          required
-          className="w-4/5 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-      </div>
-
-      {/* Mobile Number */}
-      <div className="flex items-center justify-between">
-        <label htmlFor="mobileNumber" className="w-1/5 font-medium">
-          Mobile Number <span className="text-red-500">*</span>
-        </label>
-        <input
-          id="mobileNumber"
-          name="mobileNumber"
-          type="text"
-          placeholder="987654321"
-          required
-          className="w-4/5 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-      </div>
-
-      {/* Address */}
-      <div className="flex justify-between">
-        <label htmlFor="address" className="w-1/5 font-medium">
-          Address <span className="text-red-500">*</span>
-        </label>
-        <textarea
-          id="address"
-          name="address"
-          placeholder="Your Address"
-          required
-          className="w-4/5 h-24 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-      </div>
-
-      {/* Watermark Option */}
-      <div>
-        <div className="flex items-start gap-4 mb-4">
-          <label className="w-1/5 font-medium">
-            Add Watermark <span className="text-red-500">*</span>
+        {/* Name */}
+        <div className="flex justify-between items-center">
+          <label htmlFor="name" className="w-1/5 font-medium">
+            Name <span className="text-red-500">*</span>
           </label>
-          <div className="flex flex-col sm:flex-row gap-4 w-4/5">
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="watermark"
-                value="none"
-                checked={watermark === "none"}
-                onChange={() => setWatermark("none")}
-                className="accent-primary"
-              />
-              No Watermark
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="watermark"
-                value="center"
-                checked={watermark === "center"}
-                onChange={() => setWatermark("center")}
-                className="accent-primary"
-              />
-              Text
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="watermark"
-                value="bottomRight"
-                checked={watermark === "bottomRight"}
-                onChange={() => setWatermark("bottomRight")}
-                className="accent-primary"
-              />
-              Icon
-            </label>
-          </div>
+          <input
+            id="name"
+            name="name"
+            type="text"
+            value={profileData.name}
+            onChange={handleProfileChange}
+            className="w-4/5 border border-gray-300 rounded-lg px-4 py-2"
+          />
         </div>
 
-        {(watermark === "center" || watermark === "bottomRight") && (
-          <div className="flex flex-col sm:flex-row gap-6 px-4 py-10 border rounded-xl shadow-md bg-gray-50 w-4/5 ml-auto">
-            <div className="sm:w-1/2 space-y-6">
-              {/* Watermark Position */}
-              <select
-                value={position}
-                onChange={(e) => setPosition(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-10"
-              >
-                <option value="0">Select Position</option>
-                <option value="1">Left Top</option>
-                <option value="2">Left Middle</option>
-                <option value="3">Left Bottom</option>
-                <option value="4">Middle Top</option>
-                <option value="5">Middle Middle</option>
-                <option value="6">Middle Bottom</option>
-                <option value="7">Right Top</option>
-                <option value="8">Right Middle</option>
-                <option value="9">Right Bottom</option>
-              </select>
+        {/* Email (read-only) */}
+        <div className="flex justify-between items-center">
+          <label htmlFor="email" className="w-1/5 font-medium">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            value={authUser?.email || ""}
+            disabled
+            className="w-4/5 border border-gray-200 bg-gray-100 text-gray-600 rounded-lg px-4 py-2 cursor-not-allowed"
+          />
+        </div>
 
-              {/* Opacity Slider */}
-              <div className="relative w-full">
-                <div
-                  className="absolute -top-5 text-white text-xs bg-primary px-2 py-1 rounded shadow-md transition-all"
-                  style={{ left: getLeftPosition(opacity) }}
-                >
-                  {opacity}%
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={opacity}
-                  onChange={(e) => setOpacity(Number(e.target.value))}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
-                />
-              </div>
+        {/* Address */}
+        <div className="flex justify-between items-center">
+          <label htmlFor="address" className="w-1/5 font-medium">
+            Address <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            id="address"
+            name="address"
+            value={profileData.address}
+            onChange={handleProfileChange}
+            className="w-4/5 h-24 border border-gray-300 rounded-lg px-4 py-2"
+          />
+        </div>
 
-              {/* Watermark Input */}
-              {watermark === "center" ? (
-                <input
-                  type="text"
-                  placeholder="Enter watermark text"
-                  value={watermarkText}
-                  onChange={(e) => setWatermarkText(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                />
-              ) : (
-                <div className="w-full">
-                  <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 cursor-pointer hover:border-primary transition">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      id="watermark-upload"
-                      onChange={handleImageUpload}
-                    />
-                    <label
-                      htmlFor="watermark-upload"
-                      className="text-primary cursor-pointer"
-                    >
-                      Click or Drag Image Here
-                    </label>
-                    <p className="text-xs text-gray-500 mt-2">
-                      PNG, JPG up to 2MB
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
+        {/* Submit */}
+        <div className="text-right">
+          <button
+            type="submit"
+            disabled={!isProfileChanged || isProfileLoading}
+            className={`px-6 py-2 rounded-lg transition ${
+              isProfileChanged && !isProfileLoading
+                ? "bg-primary text-white hover:bg-primary-dark"
+                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+            }`}
+          >
+            {isProfileLoading ? "Updating..." : "Update Profile"}
+          </button>
+        </div>
+      </form>
 
-            {/* Image Preview */}
-            <div className="sm:w-1/2 flex justify-center items-center">
-              <img
-                src={imagePreview || "./public/sample.jpg"}
-                alt="preview"
-                className="max-h-48 object-cover rounded shadow"
+      {/* Password Toggle */}
+      <div className="flex items-center justify-between border-t pt-6 mt-6">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-700">
+            Change Password
+          </h3>
+          <p className="text-xs text-gray-500">
+            Enable this to update your password.
+          </p>
+        </div>
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            id="changePassword"
+            checked={changePassword}
+            onChange={(e) => setChangePassword(e.target.checked)}
+            className="sr-only peer"
+          />
+          <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-primary transition-colors"></div>
+          <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-full"></div>
+        </label>
+      </div>
+
+      {/* Password Form */}
+      {changePassword && (
+        <form onSubmit={handlePasswordSubmit} className="space-y-6">
+          {/* Current Password */}
+          <div className="flex flex-col md:flex-row md:items-center">
+            <label
+              htmlFor="currentPassword"
+              className="md:w-1/5 font-medium mb-1 md:mb-0"
+            >
+              Current Password <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="password"
+              name="currentPassword"
+              id="currentPassword"
+              value={passwordData.currentPassword}
+              onChange={handlePasswordChange}
+              required
+              autoComplete="current-password"
+              className="w-full md:w-4/5 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary focus:outline-none"
+            />
+          </div>
+
+          {/* New Password */}
+          <div className="flex flex-col md:flex-row md:items-start">
+            <label
+              htmlFor="newPassword"
+              className="md:w-1/5 font-medium pt-2 mb-1 md:mb-0"
+            >
+              New Password <span className="text-red-500">*</span>
+            </label>
+            <div className="w-full md:w-4/5 space-y-1">
+              <input
+                type="password"
+                name="newPassword"
+                id="newPassword"
+                value={passwordData.newPassword}
+                onChange={handlePasswordChange}
+                required
+                autoComplete="new-password"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary focus:outline-none"
               />
             </div>
           </div>
-        )}
-      </div>
 
-      <div className="pt-6 ml-[0%] relative">
-        <button
-          name="form_submit"
-          type="submit"
-          className="bg-primary absolute left-[160px] text-white px-6 py-2 rounded-lg hover:bg-primary-dark transition"
-        >
-          Submit
-        </button>
-      </div>
-    </form>
+          {/* Confirm Password */}
+          <div className="flex flex-col md:flex-row md:items-start">
+            <label
+              htmlFor="confirmPassword"
+              className="md:w-1/5 font-medium pt-2 mb-1 md:mb-0"
+            >
+              Confirm Password <span className="text-red-500">*</span>
+            </label>
+            <div className="w-full md:w-4/5 space-y-1">
+              <input
+                type="password"
+                name="confirmPassword"
+                id="confirmPassword"
+                value={passwordData.confirmPassword}
+                onChange={handlePasswordChange}
+                required
+                className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 ${
+                  passwordData.confirmPassword &&
+                  passwordData.newPassword !== passwordData.confirmPassword
+                    ? "border-red-500 focus:ring-red-300"
+                    : "border-gray-300 focus:ring-primary"
+                }`}
+              />
+              {passwordData.confirmPassword &&
+                passwordData.newPassword !== passwordData.confirmPassword && (
+                  <p className="text-xs text-red-500">
+                    🔁 Oops! Double-check that your new password and
+                    confirmation are the same.
+                  </p>
+                )}
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <div className="text-right">
+            <button
+              type="submit"
+              disabled={
+                !passwordData.currentPassword ||
+                !passwordData.newPassword ||
+                passwordData.newPassword !== passwordData.confirmPassword ||
+                isPasswordLoading
+              }
+              className={`px-6 py-2 rounded-lg transition duration-200 focus:outline-none ${
+                passwordData.newPassword === passwordData.confirmPassword &&
+                passwordData.currentPassword &&
+                !isPasswordLoading
+                  ? "bg-primary text-white hover:bg-primary-dark focus:ring-2 focus:ring-primary"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
+            >
+              {isPasswordLoading ? "Updating..." : "Update Password"}
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
   );
 };
 

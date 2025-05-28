@@ -1,13 +1,21 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FiDownload, FiLock, FiSettings } from "react-icons/fi";
+import { useSelector, useDispatch } from "react-redux";
+import { setCurrentEvent } from "../../Redux/Slices/EventSlice";
+import toast from "../../utils/toast";
+import { downloadEvent } from "../../utils/editEvents.util";
+import { Loader } from "../Loader";
 
-const DownloadsTab = () => {
+const DownloadsTab = ({ eventId }) => {
   const [singleImageDownload, setSingleImageDownload] = useState(false);
   const [bulkImageDownload, setBulkImageDownload] = useState(false);
   const [restrictSubEvents, setRestrictSubEvents] = useState(false);
   const [emailBlockList, setEmailBlockList] = useState([]);
   const [blockedEmail, setBlockedEmail] = useState("");
   const [isAdvancedOptionsOpen, setIsAdvancedOptionsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { accessToken } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
 
   const handleBlockEmail = () => {
     if (blockedEmail) {
@@ -16,8 +24,58 @@ const DownloadsTab = () => {
     }
   };
 
+  useEffect(() => {
+    const fetchDownloadSettings = async () => {
+      setIsLoading(true);
+      try {
+        const res = await downloadEvent(eventId, null, dispatch, accessToken);
+        if (res?.status === 200) {
+          const downloadEnabled = res.data?.data?.isImageDownloadEnabled;
+          setSingleImageDownload(downloadEnabled);
+          dispatch(setCurrentEvent(res.data.data));
+        }
+      } catch (error) {
+        toast.error("Failed to load download settings.");
+        console.error("GET download settings error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (eventId) {
+      fetchDownloadSettings();
+    }
+  }, [eventId]);
+
+  const toggleImageDownloadStatus = async () => {
+    const newStatus = !singleImageDownload;
+    const payload = { isImageDownloadEnabled: newStatus };
+
+    setIsLoading(true);
+    try {
+      const res = await downloadEvent(eventId, payload, dispatch, accessToken);
+      dispatch(setCurrentEvent(res.data.data));
+      setSingleImageDownload(newStatus);
+      toast.success(
+        `Single image download ${
+          newStatus ? "enabled" : "disabled"
+        } successfully!`
+      );
+    } catch (error) {
+      toast.error("Failed to update download setting.");
+      console.error("Error updating image download setting:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-8">
+      {isLoading && (
+        <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-50 rounded-lg">
+          <Loader message="Loading images..." />
+        </div>
+      )}
       <h2 className="text-3xl font-bold text-gray-800">Download Settings</h2>
 
       {/* Download Settings Section */}
@@ -42,7 +100,7 @@ const DownloadsTab = () => {
               <input
                 type="checkbox"
                 checked={singleImageDownload}
-                onChange={() => setSingleImageDownload(!singleImageDownload)}
+                onChange={toggleImageDownloadStatus}
                 className="sr-only"
               />
               <div
@@ -58,7 +116,7 @@ const DownloadsTab = () => {
             </label>
           </div>
           {/* Download Sizes */}
-          <div className="mt-4 space-y-2">
+          {/* <div className="mt-4 space-y-2">
             <p className="font-medium text-gray-800">Download Sizes</p>
             <div className="flex space-x-4">
               <div className="flex items-center space-x-2">
@@ -84,7 +142,7 @@ const DownloadsTab = () => {
                 </label>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Bulk Image Download */}
@@ -108,6 +166,7 @@ const DownloadsTab = () => {
                 type="checkbox"
                 checked={bulkImageDownload}
                 onChange={() => setBulkImageDownload(!bulkImageDownload)}
+                disabled
                 className="sr-only"
               />
               <div
@@ -123,7 +182,7 @@ const DownloadsTab = () => {
             </label>
           </div>
           {/* Download Sizes */}
-          <div className="mt-4 space-y-2">
+          {/* <div className="mt-4 space-y-2">
             <p className="font-medium text-gray-800">Download Sizes</p>
             <div className="flex space-x-4">
               <div className="flex items-center space-x-2">
@@ -163,7 +222,7 @@ const DownloadsTab = () => {
                 </label>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
 

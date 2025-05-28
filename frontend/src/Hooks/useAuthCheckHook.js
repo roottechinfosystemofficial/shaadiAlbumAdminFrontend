@@ -3,17 +3,17 @@ import { useDispatch, useSelector } from "react-redux";
 import apiRequest from "../utils/apiRequest";
 import { USER_API_END_POINT } from "../constant";
 import { setAuthUser } from "../Redux/Slices/UserSlice";
+import { useNavigate } from "react-router-dom";
+import { logoutUser } from "../utils/logoutUser";
 
 export const useAuthCheck = () => {
   const dispatch = useDispatch();
-  const { authUser, accessToken } = useSelector((state) => state.user);
+  const navigate = useNavigate();
+  const { accessToken } = useSelector((state) => state.user);
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        console.log("authUser", authUser);
-        console.log("access", accessToken);
-
         const endpoint = `${USER_API_END_POINT}/checkAuth`;
         const res = await apiRequest(
           "GET",
@@ -25,11 +25,15 @@ export const useAuthCheck = () => {
         dispatch(setAuthUser(res.data));
       } catch (err) {
         console.error("Auth check failed:", err);
+
+        if (err?.response?.status === 401 && err?.response?.data?.logout) {
+          await logoutUser({ accessToken, dispatch, navigate });
+        }
       }
     };
 
-    if (!authUser && accessToken) {
-      checkAuth();
+    if (accessToken) {
+      checkAuth(); 
     }
-  }, [accessToken, authUser, dispatch]);
+  }, [accessToken, dispatch, navigate]);
 };

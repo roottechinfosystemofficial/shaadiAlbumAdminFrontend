@@ -2,7 +2,8 @@ import express from "express";
 import {
   changePassword,
   checkAuth,
-  editPofile,
+  getDashboardDetails,
+  editProfile,
   getCurrentUser,
   login,
   logoutUser,
@@ -21,13 +22,17 @@ userRouter.post("/otp-provider", selectForgotPasswordOTPProvider);
 
 userRouter.get("/current-user", verifyJWT, getCurrentUser);
 
-userRouter.post("/change-password", verifyJWT, changePassword);
+userRouter.put("/user/change-password", verifyJWT, changePassword);
 
 userRouter.post("/refreshAccessToken", verifyJWT, refreshAccessToken);
 
-userRouter.put("/user/edit-profile", verifyJWT, editPofile);
+userRouter.put("/user/edit-profile", verifyJWT, editProfile);
 
-userRouter.post("/user/logout", verifyJWT, logoutUser);
+userRouter.post("/user/logout", logoutUser);
 userRouter.get("/user/checkAuth", verifyJWT, checkAuth);
+
+// Get DashBoard Data API
+userRouter.get("/user/dashboard", verifyJWT, getDashboardDetails);
+
 
 export default userRouter;

@@ -9,7 +9,7 @@ import Cookies from "js-cookie";
 import { useDispatch } from "react-redux";
 import { setAuthUser } from "../Redux/Slices/UserSlice";
 import toast from "../utils/toast";
-import Loader from "../component/Loader";
+import BtnLoader from "../component/Loader";
 
 const features = [
   {
@@ -177,7 +177,7 @@ const LoginPage = () => {
                   : "hover:bg-primary/80"
               }`}
             >
-              {loading && <Loader />}
+              {loading && <BtnLoader />}
               {loading ? "Logging in..." : "LOGIN"}
             </button>
           </form>

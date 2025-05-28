@@ -4,6 +4,7 @@ import axios from "axios";
 import { USER_API_END_POINT } from "../constant";
 import toast from "../utils/toast.js";
 import Loader from "../component/Loader.jsx";
+import BtnLoader from "../component/Loader.jsx";
 
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -167,7 +168,7 @@ const Signup = () => {
                 loading ? "bg-[#7A6A4A]" : "bg-[#9C8769]"
               } text-white font-semibold p-3 rounded-xl transition duration-200`}
             >
-              {loading && <Loader />}
+              {loading && <BtnLoader />}
               {loading ? "Submitting..." : "SIGNUP"}
             </button>
           </form>

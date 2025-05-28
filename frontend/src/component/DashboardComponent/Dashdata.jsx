@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   FaUsers,
   FaCalendarAlt,
@@ -6,14 +6,54 @@ import {
   FaHdd,
   FaClock,
 } from "react-icons/fa";
+import { useDispatch, useSelector } from "react-redux";
+import toast from "../../utils/toast";
+import { USER_API_END_POINT } from "../../constant";
+import apiRequest from "../../utils/apiRequest";
 
 const Dashdata = () => {
+  const { accessToken } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
+  const [dashboardData, setDashboardData] = useState({
+    totalUsers: 0,
+    totalEvents: 0,
+    userImageCount: 0,
+  });
+
+  const getDashboardData = async () => {
+    try {
+      const endpoint = `${USER_API_END_POINT}/dashboard`;
+      const res = await apiRequest("GET", endpoint, {}, accessToken, dispatch);
+      if (res?.status === 200) {
+        setDashboardData(res?.data);
+      }
+    } catch (error) {
+      toast.error("Failed to load dashboard");
+    }
+  };
+
+  useEffect(() => {
+    getDashboardData();
+  }, []);
+
   const data = [
-    { icon: <FaUsers />, label: "Total Users", value: "2" },
-    { icon: <FaCalendarAlt />, label: "Total Events", value: "1" },
-    { icon: <FaImages />, label: "Total Media", value: "11/∞" },
-    { icon: <FaHdd />, label: "Storage", value: "400GB" },
-    { icon: <FaClock />, label: "Expiry On", value: "12/12/2025" },
+    {
+      icon: <FaUsers />,
+      label: "Total Users",
+      value: dashboardData.totalUsers,
+    },
+    {
+      icon: <FaCalendarAlt />,
+      label: "Total Events",
+      value: dashboardData.totalEvents,
+    },
+    {
+      icon: <FaImages />,
+      label: "Total Media",
+      value: `${dashboardData.userImageCount}/∞`,
+    },
+    // { icon: <FaHdd />, label: "Storage", value: "400GB" },
+    { icon: <FaClock />, label: "Expiry On", value: "Coming Soon" },
   ];
 
   return (

@@ -7,15 +7,9 @@ import { FaAngleDown, FaUser } from "react-icons/fa";
 import { BiMenu } from "react-icons/bi";
 import "../css/Navbar.css";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  setAccessToken,
-  setAuthUser,
-  setRefreshToken,
-} from "../Redux/Slices/UserSlice";
-import { USER_API_END_POINT } from "../constant";
-import apiRequest from "../utils/apiRequest";
-import Cookies from "js-cookie";
 import toast from "../utils/toast.js";
+
+import { logoutUser } from "../utils/logoutUser.js";
 
 const Navbar = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -45,29 +39,11 @@ const Navbar = () => {
 
   const logoutHandler = async () => {
     try {
-      console.log(accessToken);
-      console.log();
-
-      const endpoint = `${USER_API_END_POINT}/logout`;
-
-      const res = await apiRequest("POST", endpoint, {}, accessToken, dispatch);
-
-      if (res.status === 200) {
-        Cookies.remove("accessToken");
-        dispatch(setAuthUser(null));
-        dispatch(setAccessToken(null));
-        dispatch(setRefreshToken(null));
-        Cookies.remove("refreshToken");
-
-        navigate("/login");
-
-        toast.success("You have successfully logged out!");
-      }
+      await logoutUser({ accessToken, dispatch, navigate });
+      toast.success("You have successfully logged out!");
     } catch (error) {
-      console.error("Logout failed:", error.message);
-      toast.error(
-        "Unable to logout. Please check your connection and try again."
-      );
+      toast.error("Logout failed. Please try again.");
+      console.error("Logout error:", error);
     }
   };
 
@@ -95,40 +71,35 @@ const Navbar = () => {
         {/* Navigation Links */}
         <div>
           <ul className={`${isMenuOpen ? "menu-open" : "menu-hidden"}`}>
-            <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
-              <IoIosHome />
-              <Link to="/" onClick={() => setIsMenuOpen(false)}>
+            <Link to="/" onClick={() => setIsMenuOpen(false)}>
+              <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
+                <IoIosHome />
                 Dashboard
-              </Link>
-            </li>
+              </li>
+            </Link>
 
-            <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
-              <GrGallery />
-              <Link to="/event" onClick={() => setIsMenuOpen(false)}>
+            <Link to="/event" onClick={() => setIsMenuOpen(false)}>
+              <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
+                <GrGallery />
                 Client Gallery
-              </Link>
-            </li>
+              </li>
+            </Link>
 
-            <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
-              <FaUser />
-              <Link to="/users" onClick={() => setIsMenuOpen(false)}>
+            <Link to="/users" onClick={() => setIsMenuOpen(false)}>
+              <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
+                <FaUser />
                 Users
-              </Link>
-            </li>
+              </li>
+            </Link>
 
             {/* Settings Dropdown */}
-            <div
-              className="relative"
-              onClick={changeSettingOpen}
-              onMouseEnter={() => {
-                setIsSettingsOpen(true);
-                setIsProfileOpen(false);
-              }}
-            >
-              <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
-                <IoMdSettings />
-                Settings
-                <FaAngleDown />
+            <div className="relative">
+              <li className="flex items-center justify-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
+                <Link to="/setting" className="flex gap-2 items-center">
+                  <IoMdSettings />
+                  Settings
+                </Link>
+                <FaAngleDown onClick={changeSettingOpen} />
               </li>
 
               {isSettingsOpen && (
@@ -165,10 +136,6 @@ const Navbar = () => {
         {/* User Profile Dropdown */}
         <div
           className="relative flex items-center gap-2"
-          onMouseEnter={() => {
-            setIsProfileOpen(true);
-            setIsSettingsOpen(false);
-          }}
           onClick={changeProfileOpen}
         >
           <img

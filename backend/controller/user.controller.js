@@ -3,7 +3,22 @@ import bcrypt from "bcrypt";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import { ApiError } from "../utils/ApiError.js";
+import { ClientViewUser } from "../model/ClientViewUser.model.js";
+import Event from "../model/Event.model.js";
+import {
+  S3Client,
+  ListObjectsV2Command,
+} from "@aws-sdk/client-s3";
+import dotenv from "dotenv";
+dotenv.config();
 
+const s3Client = new S3Client({
+  region: "ap-south-1",
+  credentials: {
+    accessKeyId: process.env.ACCESSID,
+    secretAccessKey: process.env.SECRETACCESSKEY,
+  },
+});
 export const signup = async (req, res) => {
   try {
     const { name, businessName, email, password, phone } = req.body;
@@ -106,8 +121,8 @@ export const selectForgotPasswordOTPProvider = async (req, res) => {
     const maskedEmail =
       user.email && user.email.includes("@")
         ? `${user.email[0]}*****${user.email.substring(
-            user.email.indexOf("@")
-          )}`
+          user.email.indexOf("@")
+        )}`
         : null;
 
     res.status(200).json(
@@ -148,7 +163,11 @@ export const getCurrentUser = async (req, res) => {
 
 export const changePassword = async (req, res) => {
   try {
-    const { oldPassword, newPassword } = req.body;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      throw new ApiError(400, "All password fields are required.");
+    }
 
     const userId = req.userId;
     const user = await User.findById(userId);
@@ -156,19 +175,110 @@ export const changePassword = async (req, res) => {
       throw new ApiError(404, "User not found");
     }
 
-    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
     if (!isPasswordValid) {
-      throw new ApiError(400, "Invalid old password");
+      throw new ApiError(400, "Incorrect current password.");
     }
+
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedPassword;
     await user.save();
+
     return res
       .status(200)
       .json(new ApiResponse(200, null, "Password changed successfully"));
   } catch (error) {
     console.error("🔴 Error in changePassword:", error);
-    return res.status(400).json(new ApiResponse(400, null, error.message));
+    return res
+      .status(error.statusCode || 500)
+      .json(new ApiResponse(error.statusCode || 500, null, error.message));
+  }
+};
+export const editProfile = async (req, res) => {
+  try {
+    const { name, address } = req.body;
+    const userId = req.userId;
+
+    if (!userId) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "UserId not found"));
+    }
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (address) updateData.address = address;
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+      new: true,
+    }).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json(new ApiResponse(404, null, "User not found"));
+    }
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, updatedUser, "Profile updated successfully"));
+  } catch (error) {
+    console.error("🔴 Error in editProfile:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "Something went wrong"));
+  }
+};
+
+export const logoutUser = async (req, res) => {
+  try {
+    const token = req.cookies?.accessToken;
+
+    if (!token) {
+      return res
+        .status(200)
+        .json(new ApiResponse(200, {}, "Already logged out"));
+    }
+
+    // Decode without verifying (because token may be expired)
+    const decoded = jwt.decode(token);
+    const userId = decoded?.userId;
+
+    if (!userId) {
+      return res
+        .status(200)
+        .json(new ApiResponse(200, {}, "Already logged out"));
+    }
+
+    // Clear refreshToken
+    await User.findByIdAndUpdate(userId, {
+      $set: { refreshToken: "", refreshTokenExpiry: "" },
+    });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "User logged out successfully"));
+  } catch (error) {
+    console.error("Logout Error:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, {}, "Internal Server Error"));
+  }
+};
+
+export const checkAuth = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const user = await User.findById(userId).select(
+      "name email role logo address"
+    );
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.log("🔴 Auth check failed:", error.message);
+    res.status(401).json({ error: "Invalid or expired token" });
   }
 };
 
@@ -226,92 +336,63 @@ export const refreshAccessToken = async (req, res) => {
   }
 };
 
-export const editPofile = async (req, res) => {
-  try {
-    const {
-      name,
-      address,
-      phoneNo,
-      country,
-      city,
-      zipcode,
-      coverImage,
-      about,
-      studioName,
-      logo,
-    } = req.body;
-    const updatedProfileDetails = {
-      ...(req.role === "STUDIO_ADMIN" && { studioName }),
-      ...(name && { name }),
-      ...(address && { address }),
-      ...(phoneNo && { phoneNo }),
-      ...(country && { country }),
-      ...(city && { city }),
-      ...(zipcode && { zipcode }),
-      ...(about && { about }),
-      ...(logo && { logo }),
-      ...(coverImage && { coverImage }),
-    };
 
-    const user = await User.findByIdAndUpdate(
-      req.userId,
-      { $set: updatedProfileDetails },
-      { new: true }
-    );
-    if (!user) {
-      throw new ApiError(404, "User not found");
-    }
-    return res
-      .status(200)
-      .json(new ApiResponse(200, user, "Profile updated successfully"));
-  } catch (error) {
-    console.error("🔴 Error in editPofile:", error);
-    return res.status(400).json(new ApiResponse(400, null, error.message));
-  }
-};
 
-export const logoutUser = async (req, res) => {
+
+export const getDashboardDetails = async (req, res) => {
   try {
     const userId = req.userId;
 
-    if (!userId) {
-      return res.status(400).json(new ApiResponse(400, {}, "User not found"));
+    // Get total counts
+    const totalUsers = await ClientViewUser.countDocuments({});
+    const totalEvents = await Event.countDocuments({});
+
+    // Get current user details
+    const currentUser = await User.findById(userId);
+    if (!currentUser) {
+      return res.status(404).json({ error: "User not found" });
     }
 
-    // Find and update the user's refreshToken in the database
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { $set: { refreshToken: "", refreshTokenExpiry: "" } }, // Clear refresh token and expiry
-      { new: true }
-    );
+    // Count events created by this user
+    const userEvents = await Event.find({ user: userId }, "_id"); // Fetch user's events
+    // const userEventsCount = userEvents.length;
 
-    // If the user isn't found or the refreshToken doesn't match
-    if (!user) {
-      throw new ApiError(404, "User not found");
+    // Count images in S3 for these events
+    let userImageCount = 0;
+    for (const event of userEvents) {
+
+      const prefix = `eventimages/${event._id}/`;
+      let continuationToken;
+
+      do {
+        const listCommand = new ListObjectsV2Command({
+          Bucket: process.env.BUCKET_NAME,
+          Prefix: prefix,
+          MaxKeys: 1000,
+          ContinuationToken: continuationToken,
+        });
+
+        const response = await s3Client.send(listCommand);
+
+        const imageFiles = (response.Contents || []).filter(item =>
+          item.Key.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+        );
+
+        userImageCount += imageFiles.length;
+
+        continuationToken = response.IsTruncated ? response.NextContinuationToken : null;
+      } while (continuationToken);
     }
+    // Return combined result
+    res.status(200).json({
+      totalUsers,
+      totalEvents,
+      // userEventsCount,
+      userImageCount,
+    });
 
-    // Send success response
-    return res
-      .status(200)
-      .json(new ApiResponse(200, {}, "User logged out successfully"));
   } catch (error) {
-    console.error("🔴 Error in logoutUser:", error);
-    return res
-      .status(500)
-      .json(new ApiResponse(500, null, "Internal Server Error"));
-  }
-};
-
-export const checkAuth = async (req, res) => {
-  try {
-    const userId = req.userId;
-
-    const user = await User.findById(userId).select("name email role logo");
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    res.status(200).json(user);
-  } catch (error) {
-    console.log("🔴 Auth check failed:", error.message);
-    res.status(401).json({ error: "Invalid or expired token" });
+    console.error("🔴 Dashboard fetch failed:", error.message);
+    res.status(500).json({ error: "Server error" });
   }
 };

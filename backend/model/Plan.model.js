@@ -11,7 +11,7 @@ const planSchema = new mongoose.Schema(
     },
     isPopular: { type: Boolean, default: false },
     cashfree_plan_id: { type: String, default: null },
-    duration: { type: Number, default: 0 }, // Duration in days (0 means unlimited)
+    duration: { type: Number, default: 0 }, 
     price: { type: Number, required: true },
     status: {
       type: String,
@@ -19,7 +19,7 @@ const planSchema = new mongoose.Schema(
       default: "ACTIVE",
     },
   },
-  { timestamps: true } // Automatically adds createdAt & updatedAt
+  { timestamps: true } 
 );
 
 

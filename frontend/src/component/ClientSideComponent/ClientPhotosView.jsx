@@ -1,173 +1,175 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { setCurrentSubEventId } from "../../Redux/Slices/EventSlice";
+import apiRequest from "../../utils/apiRequest";
+import { S3_API_END_POINT } from "../../constant";
 import {
-  ArrowDownToLineIcon,
-  Heart,
   ScanFace,
-  Share2,
-  ShoppingCart,
+  Heart,
   Upload,
+  ShoppingCart,
+  Share2,
+  ArrowDownToLineIcon,
   X,
-  ArrowLeftCircle,
-  ArrowRightCircle,
-  RotateCw,
-  FlipHorizontal,
 } from "lucide-react";
-import { useSelector } from "react-redux";
-import axios from "axios";
+import SelectedImage from "./SelectedImage";
 
-const ClientPhotosView = ({ setWhichView }) => {
-  const { singleEvent } = useSelector((state) => state.event);
-  const { layout, spacing, thumbnail, background } = useSelector(
-    (state) => state.galleryLayout
-  );
+const ClientPhotosView = () => {
+  const { eventId } = useParams();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const [imageUrls, setImageUrls] = useState([]);
-  const [loadedAll, setLoadedAll] = useState(false);
-  const [modalImage, setModalImage] = useState(null);
-  const [rotation, setRotation] = useState(0);
-  const [flip, setFlip] = useState(false);
-  const [isSlideshow, setIsSlideshow] = useState(false);
-  const [slideshowInterval, setSlideshowInterval] = useState(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [fetchedImages, setFetchedImages] = useState([]);
+  const [nextToken, setNextToken] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [activeSubEventId, setActiveSubEventId] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [nextTokenOriginal, setNextTokenOriginal] = useState(null);
+  const [nextTokenThumbs, setNextTokenThumbs] = useState(null);
 
-  const adminSettings = {
-    spacing: spacing || "large",
-    layout: layout || "vertical",
-    thumbnail: thumbnail || "large",
-    background: background || "light",
-  };
+  const nextTokenOriginalRef = useRef(null);
+  const nextTokenThumbsRef = useRef(null);
 
-  const bgClass =
-    adminSettings.background === "dark"
-      ? "bg-black text-white"
-      : "bg-white text-gray-900";
+  const { accessToken } = useSelector((state) => state.user);
+  const { currentEvent } = useSelector((state) => state.event);
 
-  const spacingClasses = {
-    small: "gap-2",
-    regular: "gap-4",
-    large: "gap-6",
-  };
+  const isLoadingRef = useRef(false);
+  const hasMoreRef = useRef(true);
+  const nextTokenRef = useRef(null);
 
-  const layoutClasses = {
-    vertical: "columns-1 sm:columns-2 md:columns-3",
-    horizontal: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4",
-  };
+  const goBack = () => navigate(-1);
 
-  const preloadImages = (urls) => {
-    return Promise.all(
-      urls.map(
-        (url) =>
-          new Promise((resolve) => {
-            const img = new Image();
-            img.src = url;
-            img.onload = () => resolve(url);
-            img.onerror = () => resolve(null);
-          })
-      )
-    ).then((loaded) => loaded.filter(Boolean));
+  const handleSubEventClick = (id) => {
+    setActiveSubEventId(id);
+    dispatch(setCurrentSubEventId(id));
   };
 
   const fetchImages = async () => {
-    if (!singleEvent?._id) return;
+    if (isLoadingRef.current || !hasMoreRef.current || !activeSubEventId)
+      return;
+
+    setIsLoading(true);
+    isLoadingRef.current = true;
 
     try {
-      const { data } = await axios.get(
-        "http://localhost:5000/api/v1/list-images",
+      const endpoint = `${S3_API_END_POINT}/list-images`;
+
+      const continuationTokenOriginal = nextTokenOriginalRef.current || "";
+      const continuationTokenThumbs = nextTokenThumbsRef.current || "";
+
+      const res = await apiRequest(
+        "POST",
+        endpoint,
         {
-          params: { eventId: singleEvent._id },
-        }
+          eventId,
+          subEventId: activeSubEventId,
+          continuationTokenOriginal,
+          continuationTokenThumbs,
+        },
+        accessToken,
+        dispatch
       );
 
-      const allImages = data.images || [];
-      const preloaded = await preloadImages(allImages);
+      if (res.status === 200) {
+        const newImages = res.data.images || [];
 
-      setImageUrls(preloaded);
-      setLoadedAll(true);
-      setIsInitialLoading(false);
+        // Append new images
+        setFetchedImages((prev) => [...prev, ...newImages]);
+
+        // Handle next tokens separately
+        const newTokenOriginal = res.data.nextTokenOriginal || null;
+        const newTokenThumbs = res.data.nextTokenThumbs || null;
+
+        if (newTokenOriginal || newTokenThumbs) {
+          setNextTokenOriginal(newTokenOriginal);
+          setNextTokenThumbs(newTokenThumbs);
+          nextTokenOriginalRef.current = newTokenOriginal;
+          nextTokenThumbsRef.current = newTokenThumbs;
+          setHasMore(true);
+          hasMoreRef.current = true;
+        } else {
+          setHasMore(false);
+          hasMoreRef.current = false;
+        }
+      }
     } catch (err) {
       console.error("Error fetching images:", err);
-      setIsInitialLoading(false);
+    } finally {
+      setIsLoading(false);
+      isLoadingRef.current = false;
     }
   };
 
   useEffect(() => {
-    if (!singleEvent?._id) return;
-    setImageUrls([]);
-    setLoadedAll(false);
-    setIsInitialLoading(true);
-    fetchImages();
-  }, [singleEvent]);
-
-  const closeModal = () => {
-    setModalImage(null);
-    setRotation(0);
-    setFlip(false);
-    if (isSlideshow) {
-      clearInterval(slideshowInterval);
-      setSlideshowInterval(null);
-      setIsSlideshow(false);
+    if (currentEvent?.subevents?.length > 0) {
+      const firstId = currentEvent.subevents[0]._id;
+      setActiveSubEventId(firstId);
+      dispatch(setCurrentSubEventId(firstId));
     }
-  };
-
-  const goBack = () => {
-    setWhichView("");
-  };
-
-  const stopSlideshowIfRunning = () => {
-    if (isSlideshow) {
-      clearInterval(slideshowInterval);
-      setSlideshowInterval(null);
-      setIsSlideshow(false);
+  }, [eventId, currentEvent, dispatch]);
+  useEffect(() => {
+    if (activeSubEventId) {
+      setFetchedImages([]); // Clear previous
+      setNextTokenOriginal(null);
+      setNextTokenThumbs(null);
+      nextTokenOriginalRef.current = null;
+      nextTokenThumbsRef.current = null;
+      setHasMore(true);
+      hasMoreRef.current = true;
+      fetchImages();
     }
-  };
+  }, [activeSubEventId]);
 
-  const handleNextImage = () => {
-    stopSlideshowIfRunning();
-    setCurrentImageIndex((prevIndex) => {
-      const nextIndex = (prevIndex + 1) % imageUrls.length;
-      setModalImage(imageUrls[nextIndex]);
-      setRotation(0);
-      setFlip(false);
-      return nextIndex;
-    });
-  };
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition =
+        window.innerHeight + document.documentElement.scrollTop;
+      const bottom = document.documentElement.offsetHeight;
 
-  const handlePreviousImage = () => {
-    stopSlideshowIfRunning();
-    setCurrentImageIndex((prevIndex) => {
-      const prev = (prevIndex - 1 + imageUrls.length) % imageUrls.length;
-      setModalImage(imageUrls[prev]);
-      setRotation(0);
-      setFlip(false);
-      return prev;
-    });
-  };
+      if (scrollPosition >= bottom - 100 && !isLoading && hasMore) {
+        fetchImages();
+      }
+    };
 
-  const toggleSlideshow = () => {
-    if (isSlideshow) {
-      clearInterval(slideshowInterval);
-      setSlideshowInterval(null);
-    } else {
-      const interval = setInterval(handleNextImage, 2000);
-      setSlideshowInterval(interval);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isLoading, hasMore]);
+
+  const handleDownload = async (img) => {
+    if (!img?.originalUrl) return;
+
+    try {
+      const response = await fetch(img.originalUrl, {
+        mode: "cors",
+      });
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = img.filename || "image.jpg";
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Download failed:", err);
+      alert("Failed to download image. CORS or network error.");
     }
-    setIsSlideshow(!isSlideshow);
-  };
-
-  const rotateImage = (e) => {
-    e.stopPropagation();
-    setRotation((prev) => prev + 90);
-  };
-
-  const flipImage = (e) => {
-    e.stopPropagation();
-    setFlip((prev) => !prev);
   };
 
   return (
-    <div className={`${bgClass} min-h-screen w-full py-6`}>
-      <div className="max-w-[95%] mx-auto px-4">
+    <>
+      <div className="container mx-auto p-4 pb-24 relative">
         <button
           onClick={goBack}
           className="flex items-center gap-2 px-3 py-2 text-sm bg-white border rounded shadow hover:bg-gray-200 transition mb-4"
@@ -178,19 +180,19 @@ const ClientPhotosView = ({ setWhichView }) => {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between pb-6 gap-4">
           <div>
             <h2 className="text-2xl font-bold">
-              {singleEvent?.eventName || "Event Name"}
+              {currentEvent?.eventName || "Event Name"}
             </h2>
             <p className="text-sm text-gray-500">
-              {singleEvent?.eventCode || "Event Code"}
+              {currentEvent?.eventCode || "Event Code"}
             </p>
           </div>
           <div className="flex flex-wrap gap-3 text-black">
             {[
-              ScanFace,
-              Heart,
-              Upload,
-              ShoppingCart,
-              Share2,
+              // ScanFace,
+              // Heart,
+              // Upload,
+              // ShoppingCart,
+              // Share2,
               ArrowDownToLineIcon,
             ].map((Icon, i) => (
               <button
@@ -203,141 +205,71 @@ const ClientPhotosView = ({ setWhichView }) => {
           </div>
         </div>
 
-        <div className="mb-4">
-          <h3 className="text-xl md:text-2xl font-semibold">Highlights</h3>
+        <div className="flex overflow-x-auto pb-6 gap-4">
+          {currentEvent?.subevents?.map((subevent, index) => (
+            <div
+              key={index}
+              onClick={() => handleSubEventClick(subevent?._id)}
+              className={`flex-shrink-0 w-32 p-2 rounded-md shadow-lg cursor-pointer transition-all duration-200 ${
+                activeSubEventId === subevent?._id
+                  ? "bg-primary text-white"
+                  : "bg-gray-300 text-black"
+              } hover:bg-gray-400`}
+            >
+              <h3 className="text-sm font-semibold text-center">
+                {subevent?.subEventName}
+              </h3>
+            </div>
+          ))}
         </div>
 
-        {isInitialLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-500 animate-pulse">
-            <svg
-              className="animate-spin h-8 w-8 mb-4 text-gray-400"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 018 8h-4l3 3 3-3h-4a8 8 0 01-8 8v-4l-3 3 3 3v-4a8 8 0 01-8-8z"
-              ></path>
-            </svg>
-            <p className="text-sm font-medium">
-              Just a moment — your memories are being beautifully unwrapped 🎁
-            </p>
-          </div>
+        {isLoading && !fetchedImages.length ? (
+          <p className="text-center text-gray-600 mt-12">Loading images...</p>
+        ) : fetchedImages.length === 0 ? (
+          <p className="text-center text-gray-500 mt-12">
+            No images found for this sub-event.
+          </p>
         ) : (
-          <div
-            className={`${layoutClasses[adminSettings.layout]} ${
-              spacingClasses[adminSettings.spacing]
-            }`}
-          >
-            {imageUrls.map((url, index) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 px-2 mt-4">
+            {fetchedImages.map((img, idx) => (
               <div
-                key={url}
-                className={`mb-4 ${
-                  adminSettings.layout === "vertical"
-                    ? "break-inside-avoid"
-                    : ""
-                } rounded overflow-hidden bg-white shadow hover:shadow-lg transition duration-300 cursor-pointer`}
-                onClick={() => {
-                  setModalImage(url);
-                  setCurrentImageIndex(index);
-                }}
+                key={idx}
+                className="break-inside-avoid rounded-xl overflow-hidden shadow hover:shadow-xl transition-all bg-white cursor-pointer"
+                onClick={() => setSelectedImage(img)}
               >
-                <img
-                  src={url}
-                  alt={`img-${index}`}
-                  className="w-full h-auto rounded"
-                />
+                <div className="relative">
+                  <img
+                    src={img.thumbnailUrl}
+                    alt={`Event Img ${idx + 1}`}
+                    className="w-full h-[300px] object-contain z-0"
+                    loading="lazy"
+                  />
+                  {currentEvent?.isImageDownloadEnabled && (
+                    <button
+                      className="absolute z-50 bottom-0 right-0 flex items-center gap-2 px-3 py-2 text-sm bg-gray-200 border rounded shadow hover:bg-gray-200 transition"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownload(img);
+                      }}
+                    >
+                      <ArrowDownToLineIcon className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
         )}
+
+        {/* Image Modal */}
       </div>
-
-      {modalImage && (
-        <div
-          className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center transition duration-300"
-          onClick={closeModal}
-        >
-          <div className="relative max-w-5xl max-h-[90vh] w-full px-4">
-            <div
-              className="relative mx-auto rounded transition-transform duration-300 ease-in-out"
-              style={{
-                transform: `rotate(${rotation}deg) scaleX(${flip ? -1 : 1})`,
-              }}
-            >
-              <img
-                src={modalImage}
-                alt="Full view"
-                className="w-full max-h-[90vh] object-contain mx-auto"
-              />
-              <button
-                onClick={closeModal}
-                className="absolute bg-slate rounded-md text-black font-bold top-0 right-0 cursor-pointer p-3"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 flex gap-4">
-              <button
-                onClick={rotateImage}
-                className="p-2 bg-white text-black rounded-full shadow hover:bg-gray-200"
-              >
-                <RotateCw className="w-6 h-6" />
-              </button>
-              <button
-                onClick={flipImage}
-                className="p-2 bg-white text-black rounded-full shadow hover:bg-gray-200"
-              >
-                <FlipHorizontal className="w-6 h-6" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleSlideshow();
-                }}
-                className="p-2 bg-white text-black rounded-full shadow hover:bg-gray-200 text-sm font-medium"
-              >
-                {isSlideshow ? "Stop" : "Start"} Slideshow
-              </button>
-            </div>
-
-            <div className="absolute top-1/2 left-0 transform -translate-y-1/2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handlePreviousImage();
-                }}
-                className="p-3 bg-white text-black rounded-full shadow hover:bg-gray-200"
-              >
-                <ArrowLeftCircle className="w-8 h-8" />
-              </button>
-            </div>
-            <div className="absolute top-1/2 right-0 transform -translate-y-1/2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleNextImage();
-                }}
-                className="p-3 bg-white text-black rounded-full shadow hover:bg-gray-200"
-              >
-                <ArrowRightCircle className="w-8 h-8" />
-              </button>
-            </div>
-          </div>
-        </div>
+      {selectedImage && (
+        <SelectedImage
+          selectedImage={selectedImage}
+          setSelectedImage={setSelectedImage}
+        />
       )}
-    </div>
+    </>
   );
 };
 

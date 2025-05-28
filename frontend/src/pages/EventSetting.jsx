@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import GeneralTab from "../component/EventSettingComponent/GeneralTab";
 import GalleryLayoutTab from "../component/EventSettingComponent/GalleryLayoutTab";
 import DownloadsTab from "../component/EventSettingComponent/DownloadsTab";
@@ -27,6 +27,8 @@ const EventSetting = () => {
   const [activeTab, setActiveTab] = useState("General");
   const ActiveComponent = tabComponents[activeTab];
   const navigate = useNavigate();
+  const location = useLocation();
+  const eventId = location.state?.eventId;
 
   return (
     <div className="w-full max-w-7xl mx-auto px-6 py-6 space-y-6">
@@ -63,7 +65,7 @@ const EventSetting = () => {
 
       {/* Active Tab Content */}
       <div>
-        <ActiveComponent />
+        <ActiveComponent eventId={eventId} />
       </div>
     </div>
   );

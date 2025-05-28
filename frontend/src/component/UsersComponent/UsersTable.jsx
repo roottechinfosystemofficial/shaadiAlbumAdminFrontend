@@ -1,44 +1,26 @@
 import React from "react";
 
-const UserTable = ({ users, onView, onEdit }) => {
+const UserTable = ({ newClientViewUser, onView, onEdit }) => {
   return (
     <div className="p-4 shadow-[0_3px_15px_rgba(0,0,0,0.06)] bg-white rounded">
-      {/* Filter & Search */}
-      <div className="flex justify-between items-center mb-4">
-        <select className="p-2 text-sm border border-slate-dark rounded text-gray-700 w-1/4">
-          <option>All Users</option>
-          <option>Guest Users</option>
-          <option>Event Users</option>
-        </select>
-        <div className="flex items-center gap-2">
-          <label className="text-gray-600">Search:</label>
-          <input
-            type="text"
-            className="p-2 text-sm border border-slate-dark rounded w-52"
-          />
-        </div>
-      </div>
-
-      {/* Table */}
       <table className="w-full border-collapse mb-4 text-sm">
         <thead>
           <tr className="bg-slate text-gray-700">
             <th className="border border-slate-dark p-2">
-              <input type="checkbox" />
+              
             </th>
-            <th className="border border-slate-dark p-2">##</th>
+            <th className="border border-slate-dark p-2">Sr.No</th>
             <th className="border border-slate-dark p-2">Name</th>
             <th className="border border-slate-dark p-2">Email</th>
             <th className="border border-slate-dark p-2">Phone No.</th>
-            <th className="border border-slate-dark p-2">Favorites</th>
-            <th className="border border-slate-dark p-2">Created Date</th>
+            <th className="border border-slate-dark p-2">Event Name</th>
             <th className="border border-slate-dark p-2">Action</th>
           </tr>
         </thead>
         <tbody>
-          {users.length ? (
-            users.map((user, index) => (
-              <tr key={user.id}>
+          {newClientViewUser?.length ? (
+            newClientViewUser.map((user, index) => (
+              <tr key={user._id}>
                 <td className="border border-slate-dark p-2">
                   <input type="checkbox" />
                 </td>
@@ -46,15 +28,8 @@ const UserTable = ({ users, onView, onEdit }) => {
                 <td className="border border-slate-dark p-2">{user.name}</td>
                 <td className="border border-slate-dark p-2">{user.email}</td>
                 <td className="border border-slate-dark p-2">{user.phone}</td>
-                <td
-                  className={`border border-slate-dark p-2 ${
-                    user.favorites === 0 ? "text-red-500 font-semibold" : ""
-                  }`}
-                >
-                  {user.favorites}
-                </td>
                 <td className="border border-slate-dark p-2">
-                  {user.createdDate}
+                  {user.eventId?.eventName || "—"}
                 </td>
                 <td className="border border-slate-dark p-2">
                   <div className="flex gap-3 justify-end">
@@ -79,7 +54,7 @@ const UserTable = ({ users, onView, onEdit }) => {
             ))
           ) : (
             <tr>
-              <td colSpan="8" className="text-center py-4 text-slate-dark">
+              <td colSpan="7" className="text-center py-4 text-slate-dark">
                 No record exists
               </td>
             </tr>

@@ -10,7 +10,6 @@ import { setAccessToken, setRefreshToken } from "../Redux/Slices/UserSlice";
 
 const Dashboard = () => {
   const dispatch = useDispatch();
-
   useEffect(() => {
     const getCookies = () => {
       const accessToken = Cookies.get("accessToken");

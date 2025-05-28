@@ -1,33 +1,37 @@
 import jwt from "jsonwebtoken";
 import { ApiError } from "../utils/ApiError.js";
 
-// Verify JWT Middleware
-export const verifyJWT = async (req, _, next) => {
+export const verifyJWT = async (req, res, next) => {
   try {
-    // Extract token from Authorization header or cookies
     const bearerToken = req.headers.authorization?.startsWith("Bearer")
       ? req.headers.authorization.split(" ")[1]
       : null;
 
     const token = bearerToken || req?.cookies?.accessToken;
 
-    console.log("Token Received:", token);
-
     if (!token) {
-      throw new ApiError(401, "Unauthorized request: Token missing");
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: Token missing", logout: true });
     }
 
-    // Verify the JWT token
     const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
-    // Attach user info to request object
     req.userId = decodedToken.userId;
     req.userRole = decodedToken.role;
 
-    next(); // Proceed to next middleware or route handler
+    next();
   } catch (err) {
     console.error("JWT verification failed:", err.message);
-    throw new ApiError(401, err?.message || "Unauthorized");
+
+    const isTokenExpired = err.name === "TokenExpiredError";
+
+    return res.status(401).json({
+      message: isTokenExpired
+        ? "Session expired. Please log in again."
+        : "Unauthorized",
+      logout: isTokenExpired,
+    });
   }
 };
 

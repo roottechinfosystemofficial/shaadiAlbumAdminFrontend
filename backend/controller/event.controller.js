@@ -44,6 +44,12 @@ export const createEvent = async (req, res) => {
       user: req.userId,
       eventImage:
         "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80",
+      subevents: [
+        {
+          subEventName: "Highlights",
+          subEventTotalImages: 0, // You can default this to 0
+        },
+      ],
     });
 
     const savedEvent = await newEvent.save();
@@ -54,6 +60,73 @@ export const createEvent = async (req, res) => {
   } catch (error) {
     console.error("🔴 Error in createEvent:", error);
     return res.status(500).json(new ApiResponse(500, null, error.message));
+  }
+};
+
+export const editEventById = async (req, res) => {
+  try {
+    const {
+      eventName,
+      eventDate,
+      eventCode,
+      eventPassword,
+      eventDeleteDate,
+      isPublished,
+      imageCount,
+      eventDescription,
+    } = req.body;
+    const eventId = req.params.eventId;
+
+    const findEvent = await Event.findById(eventId);
+
+    if (!findEvent) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Event not found"));
+    }
+
+    // Update only if the field is provided
+    if (imageCount !== undefined) findEvent.eventTotalImages = imageCount;
+    if (isPublished !== undefined) findEvent.isPublished = isPublished;
+    if (eventName !== undefined) findEvent.eventName = eventName;
+    if (eventDate !== undefined) findEvent.eventDate = new Date(eventDate);
+    // Check for unique eventCode
+    if (eventCode !== undefined && eventCode !== findEvent.eventCode) {
+      const existingCode = await Event.findOne({ eventCode });
+      if (existingCode && existingCode._id.toString() !== eventId) {
+        return res
+          .status(400)
+          .json(new ApiResponse(400, null, "Event code already in use."));
+      }
+    }
+
+    // Check for unique eventPassword
+    if (
+      eventPassword !== undefined &&
+      eventPassword !== findEvent.eventPassword
+    ) {
+      const existingPassword = await Event.findOne({ eventPassword });
+      if (existingPassword && existingPassword._id.toString() !== eventId) {
+        return res
+          .status(400)
+          .json(new ApiResponse(400, null, "Event password already in use."));
+      }
+    }
+
+    if (eventDeleteDate !== undefined)
+      findEvent.eventDeleteDate = new Date(eventDeleteDate);
+    if (eventDescription !== undefined)
+      findEvent.eventDescription = eventDescription;
+    await findEvent.save();
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, findEvent, "Event updated successfully"));
+  } catch (error) {
+    console.error("🔴 Error in editEventById:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "Internal Server Error"));
   }
 };
 
@@ -116,35 +189,99 @@ export const getEventById = async (req, res) => {
   }
 };
 
-export const editEventById = async (req, res) => {
+export const createSubEvent = async (req, res) => {
   try {
-    const { eventName, eventDate, eventCode, eventPassword, eventDeleteDate } =
-      req.body;
-    const eventId = req.params.eventId;
+    const { subEventName } = req.body;
+    const { eventId } = req.params;
+    console.log(req.body);
 
-    const findEvent = await Event.findById(eventId);
+    if (!subEventName) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "Sub-event name is required"));
+    }
 
-    if (!findEvent) {
+    const event = await Event.findById(eventId);
+
+    if (!event) {
       return res
         .status(404)
         .json(new ApiResponse(404, null, "Event not found"));
     }
 
-    // Update only if the field is provided
-    if (eventName !== undefined) findEvent.eventName = eventName;
-    if (eventDate !== undefined) findEvent.eventDate = new Date(eventDate);
-    if (eventCode !== undefined) findEvent.eventCode = eventCode;
-    if (eventPassword !== undefined) findEvent.eventPassword = eventPassword;
-    if (eventDeleteDate !== undefined)
-      findEvent.eventDeleteDate = new Date(eventDeleteDate);
+    // Add new subevent
+    const newSubEvent = { subEventName, subEventTotalImages: 0 };
+    event.subevents.push(newSubEvent);
+    await event.save();
 
-    await findEvent.save();
+    const createdSubEvent = event.subevents[event.subevents.length - 1]; // Get the last added one
 
     return res
-      .status(200)
-      .json(new ApiResponse(200, findEvent, "Event updated successfully"));
+      .status(201)
+      .json(
+        new ApiResponse(201, createdSubEvent, "Sub-event created successfully")
+      );
   } catch (error) {
-    console.error("🔴 Error in editEventById:", error);
+    console.error("🔴 Error in createSubEvent:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "Internal Server Error"));
+  }
+};
+
+export const updateDownloadSetting = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Event not found"));
+    }
+
+    return res.status(200).json(
+      new ApiResponse(200, {
+        isImageDownloadEnabled: event.isImageDownloadEnabled
+      }, "Download setting Get successfully")
+    );
+  } catch (error) {
+    console.error("🔴 Error in getDownloadSetting:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "Internal Server Error"));
+  }
+};
+export const updateDownloadSettingPost = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { isImageDownloadEnabled } = req.body;
+
+    // Validate input
+    if (typeof isImageDownloadEnabled !== 'boolean') {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "Boolean value required for isImageDownloadEnabled"));
+    }
+
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Event not found"));
+    }
+
+    // Update the toggle value
+    event.isImageDownloadEnabled = isImageDownloadEnabled;
+    await event.save();
+
+    return res.status(200).json(
+      new ApiResponse(200, {
+        isImageDownloadEnabled: event.isImageDownloadEnabled
+      }, "Download setting updated successfully")
+    );
+  } catch (error) {
+    console.error("🔴 Error in updateDownloadSetting:", error);
     return res
       .status(500)
       .json(new ApiResponse(500, null, "Internal Server Error"));

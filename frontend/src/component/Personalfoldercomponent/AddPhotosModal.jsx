@@ -1,15 +1,32 @@
 import React, { useState } from "react";
 import axios from "axios";
 import imageCompression from "browser-image-compression";
-import { X, CheckCircle, Circle, FolderOpen, ImagePlus } from "lucide-react";
-import { useSelector } from "react-redux";
+import { X, FolderOpen, ImagePlus } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { S3_API_END_POINT } from "../../constant";
+import toast from "../../utils/toast";
+import apiRequest from "../../utils/apiRequest";
+import { useGetEventImagesCount } from "../../Hooks/useGetEventImagesCount";
 
-const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
+const AddPhotosModal = ({
+  isOpen,
+  onClose,
+  onUploadSuccess,
+  currentSubEvent,
+}) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
-  const [duplicateHandling, setDuplicateHandling] = useState("skip");
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const { singleEvent } = useSelector((state) => state.event);
+  const [uploadProgresses, setUploadProgresses] = useState({});
+  const [uploadStatuses, setUploadStatuses] = useState({});
+  const [uploadedCount, setUploadedCount] = useState(0);
+  const [cancelTokens, setCancelTokens] = useState([]);
+  const [cancelRequested, setCancelRequested] = useState(false);
+  const [showRefreshButton, setShowRefreshButton] = useState(false); // New state for refresh button
+
+  const { currentEvent } = useSelector((state) => state.event);
+  const { accessToken } = useSelector((state) => state.user);
+  const { refetchImageCount } = useGetEventImagesCount(currentEvent?._id);
+  const dispatch = useDispatch();
 
   if (!isOpen) return null;
 
@@ -18,67 +35,194 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
     setSelectedFiles((prev) => [...prev, ...files]);
   };
 
-  const handleClose = () => {
-    setSelectedFiles([]);
-    onClose();
-  };
-
   const handleRemoveFile = (index) => {
     const updated = [...selectedFiles];
     updated.splice(index, 1);
     setSelectedFiles(updated);
   };
 
-  const handleDuplicateOption = (mode) => {
-    setDuplicateHandling(mode);
+  const compressFile = async (file, index) => {
+    try {
+      setUploadStatuses((prev) => ({ ...prev, [index]: "Preparing..." }));
+      for (let p = 5; p <= 50; p += 5) {
+        await new Promise((res) => setTimeout(res, 20));
+        setUploadProgresses((prev) => ({ ...prev, [index]: p }));
+      }
+
+      const compressed = await imageCompression(file, {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+      });
+
+      return compressed;
+    } catch (err) {
+      console.error("Compression failed:", err);
+      setUploadStatuses((prev) => ({ ...prev, [index]: "Failed" }));
+      return null;
+    }
   };
 
-  const handleUpload = async () => {
-    setUploading(true);
-    setUploadProgress(0);
-    let progressPerFile = 100 / selectedFiles.length;
+  const uploadFile = async (url, file, index, cancelToken) => {
+    try {
+      setUploadStatuses((prev) => ({ ...prev, [index]: "Uploading..." }));
 
-    for (let i = 0; i < selectedFiles.length; i++) {
-      const file = selectedFiles[i];
-      try {
-        const compressed = await imageCompression(file, {
-          maxSizeMB: 1,
-          maxWidthOrHeight: 1920,
-          useWebWorker: true,
-        });
+      await axios.put(url, file, {
+        headers: { "Content-Type": file.type },
+        onUploadProgress: (e) => {
+          const percent = Math.round((e.loaded * 70) / e.total);
+          const progress = 50 + percent;
+          setUploadProgresses((prev) => ({ ...prev, [index]: progress }));
+        },
+        cancelToken: cancelToken.token,
+      });
 
-        const { data } = await axios.get(
-          "http://localhost:5000/api/v1/api/s3/get-presigned-url",
-          {
-            params: {
-              fileName: compressed.name,
-              fileType: compressed.type,
-              eventId: singleEvent?._id,
-            },
-          }
-        );
-
-        await axios.put(data.url, compressed, {
-          headers: {
-            "Content-Type": compressed.type,
-          },
-        });
-
-        setUploadProgress((prev) => prev + progressPerFile);
-      } catch (err) {
-        console.error("Upload failed for:", file.name, err);
+      setUploadStatuses((prev) => ({ ...prev, [index]: "Completed ✅" }));
+      setUploadProgresses((prev) => ({ ...prev, [index]: 100 }));
+      setUploadedCount((prev) => prev + 1);
+    } catch (err) {
+      if (axios.isCancel(err)) {
+        console.log(`Upload for ${file.name} was canceled`);
+      } else {
+        console.error("Upload failed:", err);
+        setUploadStatuses((prev) => ({ ...prev, [index]: "Failed ❌" }));
+        setUploadProgresses((prev) => ({ ...prev, [index]: -1 }));
       }
     }
+  };
 
-    setUploading(false);
+  const processInPipeline = async (files) => {
+    const BATCH_SIZE = 50;
+    const MAX_CONCURRENT_UPLOADS = 5;
+
+    setUploading(true);
+    setUploadedCount(0);
+    setCancelRequested(false);
+    toast.loading("Uploading images...");
+
+    try {
+      for (let i = 0; i < files.length; i += BATCH_SIZE) {
+        if (cancelRequested) break;
+        const batch = files.slice(i, i + BATCH_SIZE);
+        const uploadQueue = [...batch.entries()];
+        const activeUploads = [];
+
+        const startUpload = async ([batchIndex, file]) => {
+          const globalIndex = i + batchIndex;
+          if (cancelRequested) return;
+
+          const cancelToken = axios.CancelToken.source();
+          setCancelTokens((prev) => [...prev, cancelToken]);
+
+          const compressed = await compressFile(file, globalIndex);
+          if (!compressed || cancelRequested) return;
+
+          try {
+            const urlResponse = await apiRequest(
+              "POST",
+              `${S3_API_END_POINT}/get-presigned-url`,
+              {
+                eventId: currentEvent?._id,
+                subEventId: currentSubEvent?._id,
+                files: [
+                  {
+                    fileName: compressed.name,
+                    fileType: compressed.type,
+                    fileSize: compressed.size,
+                  },
+                ],
+              },
+              accessToken,
+              dispatch
+            );
+
+            const url = urlResponse?.data?.urls?.[0]?.url;
+            if (url && !cancelRequested) {
+              await uploadFile(url, compressed, globalIndex, cancelToken);
+            } else {
+              setUploadStatuses((prev) => ({
+                ...prev,
+                [globalIndex]: "URL Error ❌",
+              }));
+              setUploadProgresses((prev) => ({ ...prev, [globalIndex]: -1 }));
+            }
+          } catch (err) {
+            setUploadStatuses((prev) => ({
+              ...prev,
+              [globalIndex]: "URL Fetch Failed ❌",
+            }));
+            setUploadProgresses((prev) => ({ ...prev, [globalIndex]: -1 }));
+          }
+        };
+
+        while (
+          !cancelRequested &&
+          (uploadQueue.length > 0 || activeUploads.length > 0)
+        ) {
+          while (
+            !cancelRequested &&
+            activeUploads.length < MAX_CONCURRENT_UPLOADS &&
+            uploadQueue.length > 0
+          ) {
+            const promise = startUpload(uploadQueue.shift());
+            activeUploads.push(promise);
+            promise.finally(() => {
+              const idx = activeUploads.indexOf(promise);
+              if (idx !== -1) activeUploads.splice(idx, 1);
+            });
+          }
+
+          if (activeUploads.length > 0) {
+            await Promise.race(activeUploads);
+          }
+        }
+      }
+
+      if (!cancelRequested) {
+        toast.dismiss();
+        toast.success("Images uploaded ✅");
+        onUploadSuccess?.(); // Trigger this to notify the parent to refresh images manually
+        handleClose();
+      }
+    } catch (err) {
+      if (!cancelRequested) {
+        console.error("Upload error:", err);
+        toast.dismiss();
+        toast.error("Upload failed ❌");
+      }
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRefreshImages = () => {
+    refetchImageCount();
+    setShowRefreshButton(false); // Hide the refresh button after the refresh
+  };
+
+  const handleClose = () => {
+    setCancelRequested(true);
+    cancelTokens.forEach((cancelToken) => cancelToken.cancel());
     setSelectedFiles([]);
+    setUploadProgresses({});
+    setUploadStatuses({});
+    setUploadedCount(0);
+    setUploading(false);
+    setCancelTokens([]);
     onClose();
-    onUploadSuccess(); // Refresh photo panel
+  };
+
+  const getTotalSize = (files) => {
+    const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
+    const totalMB = totalBytes / (1024 * 1024);
+    return totalMB >= 1024
+      ? `${(totalMB / 1024).toFixed(2)} GB`
+      : `${totalMB.toFixed(2)} MB`;
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-      <div className="bg-white rounded-xl px-6 py-10 w-[95%] max-w-2xl shadow-2xl relative animate-fadeIn flex flex-col gap-4">
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center overflow-x-hidden">
+      <div className="bg-white rounded-xl px-6 py-10 w-[95%] max-w-2xl shadow-2xl relative animate-fadeIn flex flex-col gap-4 overflow-x-hidden">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Upload Photos</h2>
           <button
@@ -89,41 +233,8 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
           </button>
         </div>
 
-        <div className="flex items-center gap-4 mb-4">
-          <button
-            onClick={() => handleDuplicateOption("skip")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full border transition ${
-              duplicateHandling === "skip"
-                ? "bg-primary text-white border-primary"
-                : "bg-gray-100 border-gray-300 text-gray-700"
-            }`}
-          >
-            {duplicateHandling === "skip" ? (
-              <CheckCircle size={18} />
-            ) : (
-              <Circle size={18} />
-            )}
-            Skip Duplicates
-          </button>
-          <button
-            onClick={() => handleDuplicateOption("overwrite")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full border transition ${
-              duplicateHandling === "overwrite"
-                ? "bg-primary text-white border-primary"
-                : "bg-gray-100 border-gray-300 text-gray-700"
-            }`}
-          >
-            {duplicateHandling === "overwrite" ? (
-              <CheckCircle size={18} />
-            ) : (
-              <Circle size={18} />
-            )}
-            Overwrite Duplicates
-          </button>
-        </div>
-
         <div className="flex flex-col sm:flex-row gap-4 mb-4">
-          <label className="flex-1 border-2 border-dashed border-slate p-4 text-center text-sm rounded-lg cursor-pointer hover:border-primary transition flex flex-col items-center gap-2">
+          <label className="flex-1 border-2 border-dashed border-slate p-4 text-center text-sm rounded-lg cursor-pointer hover:border-primary">
             <ImagePlus size={24} />
             <p>Select individual photos</p>
             <input
@@ -134,8 +245,7 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
               className="hidden"
             />
           </label>
-
-          <label className="flex-1 border-2 border-dashed border-slate p-4 text-center text-sm rounded-lg cursor-pointer hover:border-primary transition flex flex-col items-center gap-2">
+          <label className="flex-1 border-2 border-dashed border-slate p-4 text-center text-sm rounded-lg cursor-pointer hover:border-primary">
             <FolderOpen size={24} />
             <p>Select folder</p>
             <input
@@ -151,61 +261,68 @@ const AddPhotosModal = ({ isOpen, onClose, onUploadSuccess }) => {
         </div>
 
         {selectedFiles.length > 0 && (
-          <div className="mb-4 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50">
-            {selectedFiles.map((file, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between py-1 px-2 hover:bg-gray-100 rounded"
-              >
-                <span className="text-sm text-gray-700 truncate max-w-xs">
-                  {file.name}
-                </span>
-                <button
-                  onClick={() => handleRemoveFile(index)}
-                  className="text-red-500 hover:text-red-700 text-xs font-medium"
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {uploading && (
-          <div className="mb-4">
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-primary h-2 rounded-full"
-                style={{ width: `${uploadProgress}%` }}
-              ></div>
+          <>
+            <div className="text-sm text-gray-700 mb-2">
+              Selected {selectedFiles.length} files (
+              {getTotalSize(selectedFiles)})
             </div>
-            <p className="text-sm text-gray-500 text-center mt-2">
-              {uploadProgress.toFixed(0)}% Uploading...
-            </p>
-          </div>
+            <div className="mb-4 max-h-64 overflow-y-auto overflow-x-hidden border rounded p-2 bg-gray-50">
+              {selectedFiles.map((file, index) => (
+                <div key={index} className="mb-2 w-full">
+                  <div className="flex justify-between items-center gap-2 overflow-hidden">
+                    <span className="text-sm break-all truncate max-w-[80%]">
+                      {file.name}
+                    </span>
+                    {!uploading && (
+                      <button
+                        onClick={() => handleRemoveFile(index)}
+                        className="text-xs text-red-500"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  {uploading && (
+                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                      <div
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          uploadProgresses[index] === -1
+                            ? "bg-red-500 w-full"
+                            : "bg-primary"
+                        }`}
+                        style={{ width: `${uploadProgresses[index] || 5}%` }}
+                      ></div>
+                    </div>
+                  )}
+                  {uploadStatuses[index] && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      {uploadStatuses[index]}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => processInPipeline(selectedFiles)}
+              className="bg-primary text-white py-2 rounded-lg hover:bg-primary-dark transition w-full"
+              disabled={uploading}
+            >
+              {uploading
+                ? `Uploading (${uploadedCount}/${selectedFiles.length})`
+                : "Start Upload"}
+            </button>
+          </>
         )}
 
-        <div className="flex justify-between items-center">
-          <p className="text-sm text-gray-500">
-            {selectedFiles.length} file{selectedFiles.length !== 1 && "s"}{" "}
-            selected
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={handleClose}
-              className="px-4 py-2 rounded bg-slate text-gray-700 hover:bg-slate-dark transition"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleUpload}
-              disabled={selectedFiles.length === 0 || uploading}
-              className="px-4 py-2 rounded bg-primary text-white hover:bg-primary-dark transition disabled:opacity-50"
-            >
-              {uploading ? "Uploading..." : "Upload"}
-            </button>
-          </div>
-        </div>
+        {/* Add the Refresh button */}
+        {showRefreshButton && (
+          <button
+            onClick={handleRefreshImages}
+            className="bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 mt-4 w-full"
+          >
+            Refresh Images
+          </button>
+        )}
       </div>
     </div>
   );
