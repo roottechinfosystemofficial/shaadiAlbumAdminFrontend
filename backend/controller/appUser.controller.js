@@ -338,7 +338,7 @@ export const updateClientSelectedImages = async (req, res) => {
 export const finalSubmitImages = async (req, res) => {
   try {
     const { subEventId, images } = req.body;
-    console.log(req.body);
+    
     if (!subEventId || !images || !Array.isArray(images)) {
       return res.status(400).json({ message: "Invalid request data" });
     }

@@ -20,6 +20,9 @@ const flipBookSchema = new mongoose.Schema(
       type: flipBookImagesSchema,
       default: {},
     },
+    eventCode:{
+      type: String, required: true
+    }
   },
   { timestamps: true }
 );

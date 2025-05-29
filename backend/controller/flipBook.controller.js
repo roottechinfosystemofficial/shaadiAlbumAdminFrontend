@@ -1,6 +1,7 @@
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import FlipBook from "../model/FlipBook.model.js";
+import Event from "../model/Event.model.js";
 
 export const createFlipBook = async (req, res) => {
   try {
@@ -10,10 +11,14 @@ export const createFlipBook = async (req, res) => {
     if (!flipBookName || !eventId) {
       throw new ApiError(400, "Details are required");
     }
-
+    const event = await Event.findById(eventId);
+    if (!event) {
+      throw new ApiError(404, "Event not found");
+    }
     const newFlipbook = await FlipBook.create({
       flipBookName,
       eventId,
+      eventCode: event.eventCode
     });
 
     return res
@@ -104,5 +109,38 @@ export const setFrontBackCoverImg = async (req, res) => {
   } catch (error) {
     console.error("Error setting cover image index:", error);
     return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
+export const getByEventCode = async (req, res) => {
+  try {
+    console.log("=========>", req.body)
+    const eventCodeID = req.body.eventCodeID;
+
+    if (!eventCodeID) {
+      return res.status(400).json({ error: "event code is required" });
+    }
+
+    const eventCode = await FlipBook.find({ eventCode: eventCodeID });
+
+    if (!eventCode) {
+      return res.status(404).json({ error: "event not found" });
+    }
+
+    const event = await Event.find({ eventCode: eventCodeID });
+    if (!event) {
+      throw new ApiError(404, "Event not found");
+    }
+    const data = {
+      eventCode,
+      event
+    }
+    return res
+      .status(200)
+      .json(new ApiResponse(200, data, "event fetched successfully"));
+  } catch (error) {
+    console.error("Error fetching eventCode:", error);
+    return res.status(400).json(new ApiResponse(400, null, error.message));
   }
 };

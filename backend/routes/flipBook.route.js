@@ -4,6 +4,7 @@ import {
   getAllFlipBookByEvent,
   getSingleFlipbookById,
   setFrontBackCoverImg,
+  getByEventCode
 } from "../controller/flipBook.controller.js";
 
 const flipBookRouter = express.Router();
@@ -18,5 +19,7 @@ flipBookRouter.get(
   getSingleFlipbookById
 );
 flipBookRouter.post("/flipbook/setFrontBackCoverImg", setFrontBackCoverImg);
+flipBookRouter.get("/flipbook/getByEventCode", getByEventCode);
+
 
 export default flipBookRouter;
