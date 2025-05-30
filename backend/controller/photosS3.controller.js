@@ -8,6 +8,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import dotenv from "dotenv";
 import sharp from "sharp";
 import FlipBook from "../model/FlipBook.model.js";
+import Event from "../model/Event.model.js";
 // import ImageModel from "../model/ImageMetadata.js";
 
 dotenv.config();
@@ -521,62 +522,60 @@ export const getFlipbookImages = async (req, res) => {
 
 
 export const getFlipbookImagesByEventId = async (req, res) => {
- 
-  const { eventCodeID } = req.body;
-console.log("=====>1",eventCodeID)
-  if (!eventCodeID) {
+  const { eventID } = req.params ;
+  console.log("===========>",req.params )
+  if (!eventID) {
     return res.status(400).json({ error: "event code is required" });
   }
 
-  const eventCode = await FlipBook.find({ eventCode: eventCodeID });
-console.log("=====>2",eventCode)
-
-  if (!eventCode) {
-    return res.status(404).json({ error: "event not found" });
-  }
-const eventId = eventCode[0].eventId.toString();
-const flipbookId = eventCode[0]._id.toString();
-console.log("=====>",eventId,flipbookId)
-
-  if (!eventId || !flipbookId) {
-    return res.status(400).json({ error: "Missing eventId or flipbookId" });
-  }
-
   try {
-    const prefix = `flipbookimages/${eventId}/${flipbookId}/`;
+    const eventData = await Event.findOne({ _id: eventID });
+    if (!eventData) {
+      return res.status(404).json({ error: "event not found" });
+    }
+
+    const flipBooks = await FlipBook.find({ eventCode: eventData.eventCode });
+
+    if (!flipBooks || flipBooks.length === 0) {
+      return res.status(404).json({ error: "FlipBook data not found" });
+    }
+
     const allImages = [];
-    let continuationToken = undefined;
 
-    do {
-      const listCommand = new ListObjectsV2Command({
-        Bucket: process.env.BUCKET_NAME,
-        Prefix: prefix,
-        MaxKeys: 1000,
-        ContinuationToken: continuationToken,
-      });
+    for (const flipBook of flipBooks) {
+      const prefix = `flipbookimages/${eventID}/${flipBook._id.toString()}/`;
+      let continuationToken = undefined;
 
-      const response = await s3Client.send(listCommand);
+      do {
+        const listCommand = new ListObjectsV2Command({
+          Bucket: process.env.BUCKET_NAME,
+          Prefix: prefix,
+          MaxKeys: 1000,
+          ContinuationToken: continuationToken,
+        });
 
-      const imageUrls = await Promise.all(
-        (response.Contents || []).map(async (item) => {
-          const getCommand = new GetObjectCommand({
-            Bucket: process.env.BUCKET_NAME,
-            Key: item.Key,
-          });
-          const url = await getSignedUrl(s3Client, getCommand);
-          return url;
-        })
-      );
+        const response = await s3Client.send(listCommand);
 
-      allImages.push(...imageUrls);
-      continuationToken = response.IsTruncated
-        ? response.NextContinuationToken
-        : undefined;
-    } while (continuationToken);
+        const imageUrls = await Promise.all(
+          (response.Contents || []).map(async (item) => {
+            const getCommand = new GetObjectCommand({
+              Bucket: process.env.BUCKET_NAME,
+              Key: item.Key,
+            });
+            const url = await getSignedUrl(s3Client, getCommand);
+            return url;
+          })
+        );
 
-    return res.status(200).json({
-      images: allImages,
-    });
+        allImages.push(...imageUrls);
+
+        continuationToken = response.IsTruncated
+          ? response.NextContinuationToken
+          : undefined;
+      } while (continuationToken);
+    }
+
+    return res.status(200).json({ images: allImages });
   } catch (err) {
     console.error("Error fetching flipbook images:", err);
     res.status(500).json({ error: "Could not retrieve flipbook images" });
