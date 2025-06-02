@@ -10,6 +10,7 @@ import {
   signUp,
   updateUserName,
   user,
+  deactivateUser
 } from "../controller/appUser.controller.js";
 import { verifyAppJWT } from "../middlewares/appAuth.middleware.js";
 const appUserRouter = express.Router();
@@ -17,7 +18,9 @@ const appUserRouter = express.Router();
 appUserRouter.post("/app-user/signup", signUp);
 appUserRouter.post("/app-user/change-password", verifyAppJWT, changePassword);
 appUserRouter.post("/app-user/login", login);
-appUserRouter.get("/app-user/user", verifyAppJWT, user);
+appUserRouter.get("/app-user/user",
+   verifyAppJWT,
+    user);
 appUserRouter.put("/app-user/update-profile", verifyAppJWT, updateUserName);
 appUserRouter.post(
   "/app-event/findEventByEventcode",
@@ -36,4 +39,7 @@ appUserRouter.post(
 );
 appUserRouter.post("/app-event/final-submit", finalSubmitImages);
 appUserRouter.post("/app-event/client-selected", getSubEventImages);
+appUserRouter.post("/app-user/deactivate",
+   verifyAppJWT,
+   deactivateUser);
 export default appUserRouter;

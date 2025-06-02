@@ -4,6 +4,8 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import jwt from "jsonwebtoken";
 import Event from "../model/Event.model.js";
+import FlipBook from "../model/FlipBook.model.js";
+
 
 export const signUp = async (req, res) => {
   try {
@@ -118,6 +120,7 @@ export const user = async (req, res) => {
   try {
     const userId = req.userId;
 
+    // Fetch user and populate related events
     const user = await AppUser.findById(userId)
       .select("-password")
       .populate("searchEvent")
@@ -127,11 +130,23 @@ export const user = async (req, res) => {
       throw new ApiError(404, "User not found");
     }
 
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(200, user, "Current user details fetched successfully")
-      );
+    // Get eventCodes from searchEvent
+    const eventCodes = user.searchEvent?.map(event => event.eventCode) || [];
+
+    // Get FlipBooks that match those eventCodes
+    const flipBooks = await FlipBook.find({
+      eventCode: { $in: eventCodes },
+    });
+
+    // Return user with flipBooks
+    const userWithFlipBooks = {
+      ...user.toObject(),
+      flipBooks,
+    };
+    // console.log("===========>user",userWithFlipBooks)
+    return res.status(200).json(
+      new ApiResponse(200, userWithFlipBooks, "Current user details fetched successfully")
+    );
   } catch (error) {
     console.error("🔴 Error in getCurrentUser:", error);
     return res.status(400).json(new ApiResponse(400, null, error.message));
@@ -178,7 +193,7 @@ export const findEventByEventcode = async (req, res) => {
         message: "Event not found",
       });
     }
-
+    console.log("=======================>", findedEvent)
     if (userId) {
       const user = await AppUser.findById(userId);
 
@@ -194,10 +209,13 @@ export const findEventByEventcode = async (req, res) => {
       }
     }
 
+    const findFlipBookData = await FlipBook.find({ eventCode: findedEvent.eventCode })
+
     return res.status(200).json({
       success: true,
       eventId: findedEvent._id,
       event: findedEvent,
+      FlipBook: findFlipBookData
     });
   } catch (error) {
     console.error("Error finding event by code:", error);
@@ -338,7 +356,7 @@ export const updateClientSelectedImages = async (req, res) => {
 export const finalSubmitImages = async (req, res) => {
   try {
     const { subEventId, images } = req.body;
-    
+
     if (!subEventId || !images || !Array.isArray(images)) {
       return res.status(400).json({ message: "Invalid request data" });
     }
@@ -406,3 +424,26 @@ export const getSubEventImages = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+// deactivate user account
+export const deactivateUser = async (req, res) => {
+  try {
+    const userId = req.userId; // Assuming user ID is set in req.userId by auth middleware
+    // console.log("User ID:", userId);
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    const user = await AppUser.findByIdAndDelete(userId);
+    // console.log("User found:", user);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({ message: "User account deactivated successfully" });
+  } catch (error) {
+    console.error("Error fetching sub-event images:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+
