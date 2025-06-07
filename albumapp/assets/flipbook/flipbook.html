@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Flipbook</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/blasten/turn.js@master/lib/turn.min.js"></script>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: black;
+        overflow: hidden;
+        width: 100vw;
+        height: 100vh;
+        touch-action: pan-y;
+      }
+
+      #flipbook {
+        width: 100vw;
+        height: 100vh;
+      }
+
+      .page {
+        width: 100%;
+        height: 100%;
+        background-color: black;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+      }
+
+      .page img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        pointer-events: none;
+      }
+
+      .controls {
+        position: absolute;
+        bottom: 20px;
+        left: 0;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        padding: 0 20px;
+        z-index: 999;
+      }
+
+      .controls button {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-size: 18px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      }
+
+      .controls button:hover {
+        background-color: rgba(255, 255, 255, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">{{pages}}</div>
+
+    <div class="controls">
+      <button onclick="$('#flipbook').turn('previous')">⟵ Previous</button>
+      <button onclick="$('#flipbook').turn('next')">Next ⟶</button>
+    </div>
+
+    <script>
+      $(function () {
+        $("#flipbook").turn({
+          width: window.innerWidth,
+          height: window.innerHeight,
+          autoCenter: true,
+          display: "single",
+          elevation: 50,
+          gradients: true,
+          acceleration: true,
+        });
+      });
+    </script>
+  </body>
+</html>
