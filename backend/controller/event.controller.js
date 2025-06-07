@@ -287,3 +287,26 @@ export const updateDownloadSettingPost = async (req, res) => {
       .json(new ApiResponse(500, null, "Internal Server Error"));
   }
 };
+
+// / event / getFavouriteImage
+ export const getFavouriteImage = async (req, res) => {
+  try {
+    const { eventId } = req.body;
+
+    const event = await Event.findOne(eventId);
+    if (!event) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Event not found"));
+    }
+
+    return res.status(200).json(
+      new ApiResponse(200, event, "Event Data Get successfully")
+    );
+  } catch (error) {
+    console.error("🔴 Error in getFavouriteImage:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "Internal Server Error"));
+  }
+};

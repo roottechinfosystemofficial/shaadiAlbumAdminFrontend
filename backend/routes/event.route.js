@@ -7,7 +7,8 @@ import {
   getAllEventsOfUser,
   getEventById,
   updateDownloadSetting,
-  updateDownloadSettingPost
+  updateDownloadSettingPost,
+  getFavouriteImage
 } from "../controller/event.controller.js";
 
 const eventRouter = express.Router();
@@ -20,5 +21,6 @@ eventRouter.post("/event/createSubEvent/:eventId", verifyJWT, createSubEvent);
 // export Event Setting Download API;
 eventRouter.get("/event/DownloadEventSetting/:eventId",verifyJWT, updateDownloadSetting);
 eventRouter.post("/event/DownloadEventSetting/:eventId",verifyJWT, updateDownloadSettingPost);
+eventRouter.get("/event/getFavouriteImage",verifyJWT, getFavouriteImage);
 
 export default eventRouter;
