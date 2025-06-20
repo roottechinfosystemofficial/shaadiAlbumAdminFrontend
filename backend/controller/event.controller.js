@@ -310,3 +310,30 @@ export const updateDownloadSettingPost = async (req, res) => {
       .json(new ApiResponse(500, null, "Internal Server Error"));
   }
 };
+export const deleteEventById=async(req,res)=>{
+  console.log("DELETE event route hit. ID:", req.params.eventId);
+
+  try {
+
+    const { eventId } = req.params;
+
+    if (!eventId) {
+      return res.status(400).json({ error: "Missing eventId" });
+    }
+
+    // Check if event exists
+    const existingEvent = await Event.findById(eventId);
+    if (!existingEvent) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    // Delete the event
+    await Event.findByIdAndDelete(eventId);
+
+    return res.status(200).json({ message: "Event deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting event:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+
+}

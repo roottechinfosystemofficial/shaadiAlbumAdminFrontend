@@ -8,15 +8,22 @@ import { editEvent } from "../utils/editEvents.util.js";
 import toast from "../utils/toast.js";
 import SubEventSection from "./SubEventSection.jsx";
 import Loader from "../component/Loader.jsx";
+import ConfirmDeleteModal from "./ConfirmDeleteModal.jsx";
+import { transformValueTypes } from "framer-motion";
+import LoaderModal from "./LoadingModal.jsx";
+import apiRequest from "../utils/apiRequest.js";
+import axios from "axios";
 
 const PersonalfolderAside = () => {
   const { eventId } = useParams();
   const { currentEvent } = useSelector((state) => state.event);
+  const[isOpen,setIsOpen]=useState(false)
   const navigate = useNavigate();
   const { accessToken } = useSelector((state) => state.user);
   const dispatch = useDispatch();
 
   const [isLoading, setIsLoading] = useState(false);
+  const[isDeleteLoading,setIsDeleteLoading]=useState(false)
   const [description, setDescription] = useState("");
 
   const eventDate = currentEvent?.eventDate
@@ -82,6 +89,36 @@ const PersonalfolderAside = () => {
     }
   };
 
+  const onCancel=()=>{
+    setIsOpen(false)
+  }
+
+  const onConfirm = async () => {
+    setIsOpen(false);
+    setIsDeleteLoading(true);
+  
+    try {
+      const response = await axios.delete(`http://localhost:5000/api/v1/event/delete/${currentEvent?._id}`);
+      toast.success("Event Deleted successfully!");
+
+      console.log(response.data);
+      // ✅ Perform success action (e.g., toast or navigation)
+    } catch (error) {
+      console.error("Delete error:", error?.response?.data || error.message);
+      toast.error("Something Went Wrong!");
+
+      // ✅ Optionally show error message to user
+    } finally {
+      setIsDeleteLoading(false); // ✅ Only called once here
+    }
+  };
+  
+
+  const onOpenPopUp=()=>{
+    setIsOpen(transformValueTypes)
+  }
+  
+  console.log("info",currentEvent)
   return (
     <aside className="relative p-4 text-gray-900 space-y-6 sidebar-content">
       {/* Loading Overlay */}
@@ -106,7 +143,7 @@ const PersonalfolderAside = () => {
           <Settings2 size={16} />
           Event Setting
         </button>
-        <button className="flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white font-medium text-sm py-2.5 px-1 rounded-lg transition shadow">
+        <button onClick={onOpenPopUp} className="flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white font-medium text-sm py-2.5 px-1 rounded-lg transition shadow">
           <Trash2 size={16} />
           Delete Event
         </button>
@@ -249,6 +286,8 @@ const PersonalfolderAside = () => {
           </button>
         </div>
       </div>
+      <LoaderModal isOpen={isDeleteLoading}/>
+      <ConfirmDeleteModal eventName={currentEvent?.eventName} onCancel={onCancel} onConfirm={onConfirm} isOpen={isOpen}/>
     </aside>
   );
 };
