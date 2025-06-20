@@ -7,14 +7,42 @@ import {
   MdFormatAlignRight,
   MdVerticalAlignBottom,
 } from "react-icons/md";
+import apiRequest from "../../utils/apiRequest";
+import { S3_API_END_POINT } from "../../constant";
 
 const CoverImageTab = () => {
   const dispatch = useDispatch();
   const { coverImg, position } = useSelector((state) => state.coverImg);
+    const { currentEvent,currentSubEvent } = useSelector((state) => state.event);
+  
+
+  console.log("coverImage path",coverImg)
   const [mobileImg] = useState(
     "https://images.unsplash.com/photo-1549989317-c15a2203fd8b?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
   );
   const [text] = useState("Dhruv");
+
+
+  const setCoverImageByFetching=async()=>{
+    try {
+      const response = await apiRequest(
+        'GET',
+        `${S3_API_END_POINT}/cover-image?eventId=${currentEvent?._id}&subEventId=${currentSubEvent?._id}`
+      );
+      dispatch(setCoverImg(response.data.url))
+      
+      console.log(response.data.url)
+
+    }
+    catch(error){
+      console.log("cover image tab error",error)
+
+    }
+
+  }
+  useEffect(()=>{
+    setCoverImageByFetching()
+  },[])
 
   useEffect(() => {
     if (!coverImg) {

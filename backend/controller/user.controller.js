@@ -271,7 +271,7 @@ export const checkAuth = async (req, res) => {
     const userId = req.userId;
 
     const user = await User.findById(userId).select(
-      "name email role logo address"
+      "name email role logo address trialFinished"
     );
     if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -344,11 +344,24 @@ export const getDashboardDetails = async (req, res) => {
     const userId = req.userId;
 
     // Get total counts
-    const totalUsers = await ClientViewUser.countDocuments({});
-    const totalEvents = await Event.countDocuments({});
+    const currentUser = await User.findById(userId);
+
+    const currentEmail=currentUser?.email;
+
+    console.log("currentUser",currentUser)
+
+    const userEventIds = await Event.find({ user: userId }).distinct('_id');
+
+    // Count of users viewing those events
+    const totalUsers = await ClientViewUser.countDocuments({
+      eventId: { $in: userEventIds }
+    });
+
+    // Count of events created by the user
+    const totalEvents = await Event.countDocuments({ user: userId });
+
 
     // Get current user details
-    const currentUser = await User.findById(userId);
     if (!currentUser) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -393,6 +406,6 @@ export const getDashboardDetails = async (req, res) => {
 
   } catch (error) {
     console.error("🔴 Dashboard fetch failed:", error.message);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: error.message });
   }
 };

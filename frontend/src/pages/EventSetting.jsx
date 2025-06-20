@@ -6,6 +6,8 @@ import GalleryLayoutTab from "../component/EventSettingComponent/GalleryLayoutTa
 import DownloadsTab from "../component/EventSettingComponent/DownloadsTab";
 import SharingTab from "../component/EventSettingComponent/SharingTab";
 import CoverImageTab from "../component/EventSettingComponent/CoverImageTab";
+import AddSinglePhotoModal from "../component/Personalfoldercomponent/AddSinglePhotosModal";
+import { useSelector } from "react-redux";
 
 const tabs = [
   "General",
@@ -25,10 +27,14 @@ const tabComponents = {
 
 const EventSetting = () => {
   const [activeTab, setActiveTab] = useState("General");
+  const[isPopUpOpen,setIsPopUpOpen]=useState(false)
   const ActiveComponent = tabComponents[activeTab];
   const navigate = useNavigate();
   const location = useLocation();
   const eventId = location.state?.eventId;
+  const { currentSubEvent, currentEventId } = useSelector(
+    (state) => state.event
+  );
 
   return (
     <div className="w-full max-w-7xl mx-auto px-6 py-6 space-y-6">
@@ -62,11 +68,30 @@ const EventSetting = () => {
           </button>
         ))}
       </div>
+      {
+        activeTab==='Cover Image' &&
+      
+      (
+        <div className="flex justify-center items-center">
+          <button
+            onClick={() => setIsPopUpOpen(true)}
+            className="bg-primary hover:bg-primary-dark text-white text-sm font-medium px-4 py-2 rounded-md shadow transition"
+          >
+            + Upload
+          </button>
+          </div>
+      )}
 
       {/* Active Tab Content */}
       <div>
         <ActiveComponent eventId={eventId} />
       </div>
+      <AddSinglePhotoModal
+      onUploadSuccess={()=>{}}
+      currentSubEvent={currentSubEvent}
+      hasUploadFromFolder={false}
+      onClose={()=>{setIsPopUpOpen(false)}} 
+      isOpen={isPopUpOpen}/>
     </div>
   );
 };

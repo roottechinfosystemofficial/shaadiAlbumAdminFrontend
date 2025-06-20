@@ -30,6 +30,7 @@ const userSchema = new mongoose.Schema(
     refreshTokenExpiry: { type: Date, default: null },
     lastSeen: { type: Date, default: null },
     subscriptionEndDate: { type: Date, default: null },
+    trialFinished:{ type : Boolean,default:false },
 
     subscriptions: [
       { type: mongoose.Schema.Types.ObjectId, ref: "Subscription" },

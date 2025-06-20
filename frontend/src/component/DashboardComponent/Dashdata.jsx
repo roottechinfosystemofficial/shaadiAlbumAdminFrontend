@@ -28,7 +28,8 @@ const Dashdata = () => {
         setDashboardData(res?.data);
       }
     } catch (error) {
-      toast.error("Failed to load dashboard");
+      console.log(error)
+      toast.error(error?.response?.data?.error ??  "Failed to load dashboard");
     }
   };
 

@@ -28,6 +28,8 @@ const s3Client = new S3Client({
   },
 });
 
+console.log("amazon s3 cred",process.env.ACCESSID,process.env.SECRETACCESSKEY,process.env.BUCKET_NAME)
+
 export const getPresignedUrl = async (req, res) => {
   const { files, eventId, subEventId, usageType, flipbookId } = req.body;
 
@@ -80,10 +82,12 @@ export const getPresignedUrl = async (req, res) => {
         const command = new PutObjectCommand({
           Bucket: process.env.BUCKET_NAME,
           Key: uniqueKey,
-          ContentType: fileType,
+          ContentType: fileType || "image/jpeg"
         });
 
         const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+
+        console.log("upload to s3 successful")
 
         return { url, key: uniqueKey, fileName };
       } catch (err) {
@@ -579,5 +583,68 @@ export const getFlipbookImagesByEventId = async (req, res) => {
   } catch (err) {
     console.error("Error fetching flipbook images:", err);
     res.status(500).json({ error: "Could not retrieve flipbook images" });
+  }
+};
+
+
+
+
+export const getCoverImage = async (req, res) => {
+  const { eventId, subEventId } = req.query;
+
+  if (!eventId || !subEventId) {
+    return res.status(400).json({ error: "Missing eventId or subEventId" });
+  }
+
+  const prefix = `eventimages/${eventId}/${subEventId}/Original/`;
+
+  try {
+    let continuationToken;
+    let allItems = [];
+
+    // List all items under the "Original" folder
+    do {
+      const listCommand = new ListObjectsV2Command({
+        Bucket: process.env.BUCKET_NAME,
+        Prefix: prefix,
+        MaxKeys: 1000,
+        ContinuationToken: continuationToken,
+      });
+
+      const response = await s3Client.send(listCommand);
+      allItems = [...allItems, ...(response.Contents || [])];
+      continuationToken = response.IsTruncated
+        ? response.NextContinuationToken
+        : null;
+    } while (continuationToken);
+
+    if (allItems.length === 0) {
+      return res.status(404).json({ error: "No images found for this event." });
+    }
+
+    // Sort by most recent
+    const sortedItems = allItems.sort(
+      (a, b) => new Date(b.LastModified) - new Date(a.LastModified)
+    );
+
+    // Get the latest image
+    const latestImage = sortedItems[0];
+
+    const signedUrl = await getSignedUrl(
+      s3Client,
+      new GetObjectCommand({
+        Bucket: process.env.BUCKET_NAME,
+        Key: latestImage.Key,
+      }),
+      { expiresIn: 3600 }
+    );
+
+    return res.status(200).json({
+      key: latestImage.Key,
+      url: signedUrl,
+    });
+  } catch (err) {
+    console.error("Error getting cover image:", err);
+    return res.status(500).json({ error: "Failed to retrieve cover image" });
   }
 };

@@ -6,18 +6,23 @@ import apiRequest from "../utils/apiRequest";
 import { CLIENTVU_API_END_POINT } from "../constant";
 import Cookies from "js-cookie";
 import ClientPhotosView from "../component/ClientSideComponent/ClientPhotosView";
+import { setCoverImg } from "../Redux/Slices/CoverImgSlice";
+import { S3_API_END_POINT } from "../constant";
 
 const Clientview = () => {
   const { accessToken } = useSelector((state) => state.user);
   const dispatch = useDispatch();
-  const { position } = useSelector((state) => state.coverImg);
+  const { position,coverImg } = useSelector((state) => state.coverImg);
 
   const [showForm, setShowForm] = useState(false);
   const [showFormAnimated, setShowFormAnimated] = useState(false);
   const [whichView, setWhichView] = useState("");
   const [animateUnderView, setAnimateUnderView] = useState(false);
+  
 
-  const { currentEvent } = useSelector((state) => state.event);
+  const { currentEvent ,currentSubEvent} = useSelector((state) => state.event);
+
+  
 
   const getPositionClasses = () => {
     switch (position) {
@@ -84,9 +89,38 @@ const Clientview = () => {
     }
   }, [whichView]);
 
+  console.log(currentEvent?._id)
+
+  const setCoverImageByFetching=async()=>{
+    console.log("calling inside useEffect")
+    try {
+      const response = await apiRequest(
+        'GET',
+        `${S3_API_END_POINT}/cover-image?eventId=${currentEvent?._id}&subEventId=${currentSubEvent?._id}`
+      );
+      dispatch(setCoverImg(response.data.url))
+      
+      console.log(response.data.url,currentEvent?._id)
+
+    }
+    catch(error){
+      console.log("cover image tab error",error)
+
+    }
+
+  }
+  useEffect(()=>{
+    setCoverImageByFetching()
+  },[currentEvent?._id])
+
   return (
     <>
-      <div className="pics__header overflow-hidden relative md:h-[100vh] h-[50vh] bg-gray-800">
+      <div 
+      style={{
+        backgroundImage: `url(${coverImg})`
+
+      }}
+      className="pics__header overflow-hidden relative md:h-[100vh] h-[50vh] bg-gray-800">
         <div
           className={`absolute inset-0 text-white flex p-4 md:p-8 ${getPositionClasses()}`}
         >

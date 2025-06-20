@@ -10,6 +10,10 @@ import { useDispatch, useSelector } from "react-redux";
 import toast from "../utils/toast.js";
 
 import { logoutUser } from "../utils/logoutUser.js";
+import { BiPurchaseTagAlt } from "react-icons/bi";
+import { MdPayment } from "react-icons/md";
+
+
 
 const Navbar = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -77,6 +81,16 @@ const Navbar = () => {
                 Dashboard
               </li>
             </Link>
+            {
+              authUser.trialFinished &&
+            
+
+            (<Link to="/" onClick={() => setIsMenuOpen(false)}>
+              <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
+                <MdPayment size={20}/>
+                Purchase Plan
+              </li>
+            </Link>)}
 
             <Link to="/event" onClick={() => setIsMenuOpen(false)}>
               <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
