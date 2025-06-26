@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, Info } from "lucide-react";
-
-// Toggle switch component
+import { useSelector, useDispatch } from "react-redux";
+import { saveUserSettings } from "../../Redux/thunkfunctions/settings";
+import { setSettings } from "../../Redux/Slices/SettingSlice";
+// Toggle Switch Component
 const ToggleSwitch = ({ enabled, onToggle }) => (
   <button
     onClick={onToggle}
@@ -18,6 +20,12 @@ const ToggleSwitch = ({ enabled, onToggle }) => (
 );
 
 const GeneralTab = () => {
+  const dispatch = useDispatch();
+    const settingState = useSelector((state) => state.settings.settingState);
+  
+    const { accessToken, authUser } = useSelector((state) => state.user);
+  
+
   const [name, setName] = useState("Rahuk");
   const [emailEnabled, setEmailEnabled] = useState(true);
   const [socialEnabled, setSocialEnabled] = useState(true);
@@ -31,20 +39,29 @@ const GeneralTab = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  const handleToggleWatermark = () => {
+
+      const updatedState={...settingState}
+    
+      updatedState.waterMarkEnabled = !settingState.waterMarkEnabled
+    
+    dispatch(
+      saveUserSettings({
+        userId: authUser._id,
+        accessToken,
+        waterMarkEnabled: !settingState.waterMarkEnabled,
+        settingState:updatedState
+
+      })
+    );
+  };
+
   const toggleItems = [
     {
       label: "Email Registration",
       state: emailEnabled,
       toggle: setEmailEnabled,
     },
-    {
-      label: "Social Sharing Buttons",
-      state: socialEnabled,
-      toggle: setSocialEnabled,
-    },
-    { label: "Print Store", state: printStore, toggle: setPrintStore },
-    { label: "Mobile Field", state: mobileField, toggle: setMobileField },
-    { label: "Guest Upload", state: guestUpload, toggle: setGuestUpload },
   ];
 
   return (
@@ -111,14 +128,6 @@ const GeneralTab = () => {
 
           {/* Password Protection */}
           <div className="col-span-full space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="font-semibold">Password Protection</span>
-              <ToggleSwitch
-                enabled={passwordProtected}
-                onToggle={() => setPasswordProtected(!passwordProtected)}
-              />
-            </div>
-
             {passwordProtected && (
               <div className="space-y-2 max-w-md">
                 <p className="text-sm text-green-600 font-medium">
@@ -162,19 +171,20 @@ const GeneralTab = () => {
             />
           </div>
 
-          {/* Watermark Section */}
-          <div className="col-span-full mt-2">
-            <p className="font-semibold">Watermark</p>
-            <p className="text-sm text-gray-700">
-              Go to{" "}
-              <span className="text-blue-600 font-medium underline cursor-pointer">
-                General Settings
-              </span>{" "}
-              to edit watermark settings.
-            </p>
-            <p className="text-sm italic text-gray-500 mt-1">
-              You do not have any watermarks
-            </p>
+          {/* ✅ Watermark Toggle */}
+          <div className="flex justify-between items-center sm:col-span-1">
+            <div>
+              <p className="font-semibold">Watermark</p>
+              <p className="text-sm italic text-gray-500">
+                {settingState?.waterMarkEnabled
+                  ? "Watermark is currently enabled"
+                  : "Watermark is currently disabled"}
+              </p>
+            </div>
+            <ToggleSwitch
+              enabled={settingState?.waterMarkEnabled}
+              onToggle={handleToggleWatermark}
+            />
           </div>
         </div>
       </div>

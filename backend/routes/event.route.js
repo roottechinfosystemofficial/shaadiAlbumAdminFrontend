@@ -9,7 +9,11 @@ import {
   updateDownloadSetting,
   updateDownloadSettingPost,
   getFavouriteImage,
-  deleteEventById
+  deleteEventById,
+  uploadEventImage,
+  getEventImageUrl,
+  deleteSubEvent,
+  deleteEventImage
 } from "../controller/event.controller.js";
 
 const eventRouter = express.Router();
@@ -24,6 +28,11 @@ eventRouter.get("/event/DownloadEventSetting/:eventId",verifyJWT, updateDownload
 eventRouter.post("/event/DownloadEventSetting/:eventId",verifyJWT, updateDownloadSettingPost);
 eventRouter.get("/event/getFavouriteImage",verifyJWT, getFavouriteImage);
 eventRouter.delete("/event/delete/:eventId", deleteEventById);
+eventRouter.post("/event/upload-image/:eventId",uploadEventImage);
+eventRouter.get("/event/image/:eventId",getEventImageUrl)
+eventRouter.delete("/event/delete-subevent",deleteSubEvent)
+eventRouter.delete("/event/delete-image/:eventId",deleteEventImage)
+
 
 
 export default eventRouter;

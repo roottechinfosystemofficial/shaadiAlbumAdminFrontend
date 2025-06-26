@@ -7,12 +7,14 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import boximg from "../assets/box1.png";
+
 
 const EventCard = ({ event }) => {
   return (
     <TouchableOpacity style={styles.card}>
       <ImageBackground
-        source={{ uri: event.eventImage }}
+        source={event.eventImage ?   { uri: event.eventImage } : boximg }
         style={styles.image}
         imageStyle={styles.imageBorder}
       >

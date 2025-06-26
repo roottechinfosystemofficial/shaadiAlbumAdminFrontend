@@ -19,6 +19,8 @@ export const useAuthCheck = () => {
   const { accessToken,authUser } = useSelector((state) => state.user);
   console.log("authUser",authUser)
 
+  
+
   useEffect(() => {
     const checkAuth = async () => {
       try {

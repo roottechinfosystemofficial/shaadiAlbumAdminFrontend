@@ -8,6 +8,7 @@ import apiRequest from "../utils/apiRequest";
 import { CLIENTVU_API_END_POINT } from "../constant";
 import { Loader } from "../component/Loader"; // Assuming you have a Loader component
 import toast from "../utils/toast";
+import LoaderModal from "../component/LoadingModal";
 
 const Users = () => {
   const [showAddModal, setShowAddModal] = useState(false);
@@ -16,12 +17,14 @@ const Users = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [newClientViewUser, setNewClientViewUser] = useState([]);
   const [isLoading, setIsLoading] = useState(true); // Added loading state
-  const { accessToken } = useSelector((state) => state.user);
+  const { accessToken,authUser } = useSelector((state) => state.user);
+    const { currentEvent } = useSelector((state) => state.event);
+  
   const dispatch = useDispatch();
 
   const fetchClientViewUsers = async () => {
     try {
-      const endpoint = `${CLIENTVU_API_END_POINT}/getAllClientViewUsers`;
+      const endpoint = `${CLIENTVU_API_END_POINT}/getAllClientViewUsers/${authUser?._id}`;
       const res = await apiRequest("GET", endpoint, {}, accessToken, dispatch);
       if (res.status === 200) {
         setNewClientViewUser(res.data.data);
@@ -62,7 +65,7 @@ const Users = () => {
       {/* Display Loading Spinner if Data is Fetching */}
       {isLoading ? (
         <div className="flex justify-center items-center py-10">
-          <Loader message="Almost there! Loading user details..." />
+          <LoaderModal message={"Users Data is Loading..."} isOpen={isLoading}/>
         </div>
       ) : (
         <UserTable

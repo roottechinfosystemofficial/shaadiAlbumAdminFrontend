@@ -14,8 +14,11 @@ import {
   X,
 } from "lucide-react";
 import SelectedImage from "./SelectedImage";
+import { Loader } from "../Loader";
+import LoaderModal from "../LoadingModal";
 
-const ClientPhotosView = () => {
+const ClientPhotosView = ({image}) => {
+  console.log("on client photos views")
   const { eventId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -32,8 +35,13 @@ const ClientPhotosView = () => {
   const nextTokenOriginalRef = useRef(null);
   const nextTokenThumbsRef = useRef(null);
 
-  const { accessToken } = useSelector((state) => state.user);
-  const { currentEvent } = useSelector((state) => state.event);
+  const { accessToken,authUser } = useSelector((state) => state.user);
+  const { currentEvent,currentSubEvent } = useSelector((state) => state.event);
+  const s3Images=useSelector(state=>state.s3Images)
+  const s3Keys=s3Images.s3Keys?.map((i)=>(`eventimages/${currentEvent?._id}/${currentSubEvent?._id}/Original/${i.filename}`))
+
+
+  console.log("s3Keys:",currentEvent)
 
   const isLoadingRef = useRef(false);
   const hasMoreRef = useRef(true);
@@ -47,14 +55,14 @@ const ClientPhotosView = () => {
   };
 
   const fetchImages = async () => {
-    if (isLoadingRef.current || !hasMoreRef.current || !activeSubEventId)
+    if (s3Keys==[] || !s3Images.image)
       return;
 
     setIsLoading(true);
     isLoadingRef.current = true;
 
     try {
-      const endpoint = `${S3_API_END_POINT}/list-images`;
+      const endpoint = `${S3_API_END_POINT}/face-recognition/match`;
 
       const continuationTokenOriginal = nextTokenOriginalRef.current || "";
       const continuationTokenThumbs = nextTokenThumbsRef.current || "";
@@ -65,15 +73,18 @@ const ClientPhotosView = () => {
         {
           eventId,
           subEventId: activeSubEventId,
-          continuationTokenOriginal,
-          continuationTokenThumbs,
+          image:s3Images.image,
+          s3Keys:s3Keys,
+          userId:authUser?._id,
+          eventName:currentEvent?.eventName
+
         },
         accessToken,
         dispatch
       );
 
       if (res.status === 200) {
-        const newImages = res.data.images || [];
+        const newImages = res.data.matches || [];
 
         // Append new images
         setFetchedImages((prev) => [...prev, ...newImages]);
@@ -224,7 +235,7 @@ const ClientPhotosView = () => {
         </div>
 
         {isLoading && !fetchedImages.length ? (
-          <p className="text-center text-gray-600 mt-12">Loading images...</p>
+          <LoaderModal message="Loading Matching Images..." isOpen={isLoading}/>
         ) : fetchedImages.length === 0 ? (
           <p className="text-center text-gray-500 mt-12">
             No images found for this sub-event.
@@ -239,7 +250,7 @@ const ClientPhotosView = () => {
               >
                 <div className="relative">
                   <img
-                    src={img.thumbnailUrl}
+                    src={img.url}
                     alt={`Event Img ${idx + 1}`}
                     className="w-full h-[300px] object-contain z-0"
                     loading="lazy"

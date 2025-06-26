@@ -78,7 +78,7 @@ const SelectedImage = ({ selectedImage, setSelectedImage }) => {
         </div>
 
         <img
-          src={selectedImage?.originalUrl}
+          src={selectedImage?.url}
           onError={(e) => {
             e.target.onerror = null;
             e.target.src =

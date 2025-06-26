@@ -1,5 +1,27 @@
 import { ApiResponse } from "../utils/ApiResponse.js";
 import Event from "../model/Event.model.js";
+import { PutObjectCommand,S3Client ,GetObjectCommand,DeleteObjectCommand} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import dotenv from 'dotenv'
+import { v4 as uuidv4 } from "uuid";
+import mongoose from "mongoose";
+
+dotenv.config();
+// const streamToBuffer = async (stream) => {
+//   return new Promise((resolve, reject) => {
+//     const chunks = [];
+//     stream.on("data", (chunk) => chunks.push(chunk));
+//     stream.on("end", () => resolve(Buffer.concat(chunks)));
+//     stream.on("error", reject);
+//   });
+// };
+  const s3 = new S3Client({
+  region: "ap-south-1",
+  credentials: {
+    accessKeyId: process.env.ACCESSID,
+    secretAccessKey: process.env.SECRETACCESSKEY,
+  },
+});
 
 const generateRandomString = (length) => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz123456789";
@@ -143,11 +165,11 @@ export const getAllEventsOfUser = async (req, res) => {
     // Find events for the current user
     const events = await Event.find({ user: userId });
 
-    if (events.length === 0) {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, null, "No events found for this user"));
-    }
+    // if (events.length === 0) {
+    //   return res
+    //     .status(404)
+    //     .json(new ApiResponse(404, null, "No events found for this user"));
+    // }
 
     return res
       .status(200)
@@ -337,3 +359,161 @@ export const deleteEventById=async(req,res)=>{
   }
 
 }
+
+
+
+
+export const uploadEventImage = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { base64Image, fileType = "image/jpeg" } = req.body;
+
+    if (!base64Image) {
+      return res.status(400).json({ error: "Missing base64 image" });
+    }
+
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    const extension = fileType.split("/")[1] || "jpg";
+    const key = `events/${eventId}/event-image-${uuidv4()}.${extension}`;
+
+    // Decode base64 image
+    const base64Data = Buffer.from(
+      base64Image.replace(/^data:image\/\w+;base64,/, ""),
+      "base64"
+    );
+
+    // Upload to S3
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: process.env.BUCKET_NAME,
+        Key: key,
+        Body: base64Data,
+        ContentEncoding: "base64",
+        ContentType: fileType,
+        // No ACL needed; you're using public bucket policy
+      })
+    );
+
+    // Construct public S3 URL
+    const publicUrl = `https://${process.env.BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+
+    // Save the public URL to DB
+    event.eventImage = publicUrl;
+    await event.save();
+
+    return res.status(200).json({
+      message: "Image uploaded and accessible",
+      imageUrl: publicUrl
+    });
+  } catch (err) {
+    console.error("Upload eventImage error:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+};
+
+
+export const deleteEventImage = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    // 1. Find the event
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    if (!event.eventImage) {
+      return res.status(400).json({ error: "No image found for this event" });
+    }
+
+    // 2. Extract S3 key from the image URL
+    const imageUrl = event.eventImage;
+    const urlParts = imageUrl.split(".amazonaws.com/");
+    if (urlParts.length !== 2) {
+      return res.status(400).json({ error: "Invalid image URL" });
+    }
+
+    const s3Key = urlParts[1]; // key is everything after amazonaws.com/
+
+    // 3. Delete from S3
+    await s3.send(
+      new DeleteObjectCommand({
+        Bucket: process.env.BUCKET_NAME,
+        Key: s3Key,
+      })
+    );
+
+    // 4. Remove image URL from DB
+    event.eventImage = undefined;
+    await event.save();
+
+    return res.status(200).json({ message: "Event image deleted successfully" });
+  } catch (err) {
+    console.error("Delete eventImage error:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+};
+
+
+
+// 2. Get eventImage URL if already uploaded
+export const getEventImageUrl = async (req, res) => {
+  console.log("hitted client call to endpoint")
+  try {
+    const { eventId } = req.params;
+
+    const event = await Event.findById(eventId);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+
+    // if (!event.eventImage) {
+    //   return res.status(404).json({ error: "Event image not uploaded yet" });
+    // }
+
+    return res.status(200).json({ imageUrl: event.eventImage });
+  } catch (err) {
+    console.error("Get eventImage error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+export const deleteSubEvent = async (req, res) => {
+  try {
+    const { eventId, subEventId } = req.query;
+
+    // Validate IDs
+    if (!mongoose.Types.ObjectId.isValid(eventId) || !mongoose.Types.ObjectId.isValid(subEventId)) {
+      return res.status(400).json({ message: "Invalid eventId or subEventId." });
+    }
+
+    // Find the event
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found." });
+    }
+
+    // Check if subEvent exists
+    const subEventIndex = event.subevents.findIndex(
+      (sub) => sub._id.toString() === subEventId
+    );
+
+    if (subEventIndex === -1) {
+      return res.status(404).json({ message: "Sub-event not found." });
+    }
+
+    // Remove the subevent
+    event.subevents.splice(subEventIndex, 1);
+    await event.save();
+
+    return res.status(200).json({ message: "Sub-event deleted successfully." });
+  } catch (error) {
+    console.error("Error deleting sub-event:", error);
+    return res.status(500).json({
+      message: "Internal server error.",
+      error: error.message,
+    });
+  }
+};

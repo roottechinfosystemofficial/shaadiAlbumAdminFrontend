@@ -8,6 +8,9 @@ import {
   getFlipbookImagesByEventId,
   getCoverImage
 } from "../controller/photosS3.controller.js";
+import { getFaceRecognitionHistoryOfUser, recognizeFaces } from "../controller/awsrecognition.controller.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
+
 
 const photoS3Router = express.Router();
 
@@ -22,5 +25,8 @@ photoS3Router.get("/s3/getEventImageCount", getEventImageCount);
 // photoS3Router.post("/s3/search-face", searchFaceHandler);
 photoS3Router.get("/list-app-images", getAppEventImages);
 photoS3Router.get("/s3/cover-image",getCoverImage)
+photoS3Router.get("/s3/face-recognition-history/:userId",getFaceRecognitionHistoryOfUser)
+photoS3Router.post("/s3/face-recognition/match", express.json({ limit: "5mb" }), recognizeFaces);
+
 
 export default photoS3Router;

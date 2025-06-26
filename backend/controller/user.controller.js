@@ -346,16 +346,13 @@ export const getDashboardDetails = async (req, res) => {
     // Get total counts
     const currentUser = await User.findById(userId);
 
-    const currentEmail=currentUser?.email;
 
     console.log("currentUser",currentUser)
 
     const userEventIds = await Event.find({ user: userId }).distinct('_id');
 
     // Count of users viewing those events
-    const totalUsers = await ClientViewUser.countDocuments({
-      eventId: { $in: userEventIds }
-    });
+    const totalUsers = currentUser.totalUsers
 
     // Count of events created by the user
     const totalEvents = await Event.countDocuments({ user: userId });
