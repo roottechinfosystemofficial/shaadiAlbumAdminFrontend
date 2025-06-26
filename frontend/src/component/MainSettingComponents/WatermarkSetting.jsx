@@ -1,29 +1,78 @@
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import sampleImg from "../../assets/client/photo-1478760329108-5c3ed9d495a0.jpg";
+import { useDispatch, useSelector } from "react-redux";
+import apiRequest from "../../utils/apiRequest";
+import toast from "../../utils/toast";
+import { setSettings } from "../../Redux/Slices/SettingSlice";
+import { SETTINGS_API_END_POINTS } from "../../constant";
 
 const WatermarkSetting = () => {
-  const [watermarkType, setWatermarkType] = useState("text");
-  const [watermarkText, setWatermarkText] = useState("Dhruv");
-  const [fontStyle, setFontStyle] = useState("Arial");
-  const [fontColor, setFontColor] = useState("white");
-  const [fontSize, setFontSize] = useState(75);
-  const [opacity, setOpacity] = useState(50);
-  const [position, setPosition] = useState("bottom-right");
-  const [iconImg, setIconImg] = useState(null);
+  const dispatch = useDispatch();
+  const { accessToken, authUser } = useSelector((state) => state.user);
+  const settingState = useSelector((state) => state.settings.settingState);
 
   const fontColors = ["white", "black", "gray", "red", "blue"];
   const fontStyles = ["Arial", "Times New Roman", "Courier New", "Verdana"];
   const positions = [
-    "top-left",
-    "top-center",
-    "top-right",
-    "center-left",
-    "center",
-    "center-right",
-    "bottom-left",
-    "bottom-center",
-    "bottom-right",
+    "top-left", "top-center", "top-right",
+    "center-left", "center", "center-right",
+    "bottom-left", "bottom-center", "bottom-right"
   ];
+
+  // useEffect(() => {
+  //   const fetchSettings = async () => {
+  //     try {
+  //       const response = await apiRequest(
+  //         "GET",
+  //         `${SETTINGS_API_END_POINTS}/get-setting/${authUser?._id}`,
+  //         null,
+  //         accessToken,
+  //         dispatch
+  //       );
+  //       const settings = response?.data?.data;
+  //       if (settings) dispatch(setSettings(settings));
+  //     } catch (err) {
+  //       console.error("Error fetching settings:", err);
+  //     }
+  //   };
+  //   fetchSettings();
+  // }, [authUser?._id]);
+
+  const updateSetting = (key, value) => {
+    dispatch(setSettings({ ...settingState, [key]: value }));
+  };
+
+  const handleIconUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        updateSetting("iconImg", reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSave = async () => {
+    const body = {
+      ...settingState,
+      userId: authUser?._id,
+    };
+    try {
+      await apiRequest(
+        "POST",
+        `${SETTINGS_API_END_POINTS}/save-settings`,
+        body,
+        accessToken,
+        dispatch
+      );
+      dispatch(setSettings(body));
+      toast.success("Settings saved successfully ✅");
+    } catch (err) {
+      toast.error("Failed to save settings ❌");
+      console.error("Save error:", err);
+    }
+  };
 
   const getPositionStyles = () => {
     const styleMap = {
@@ -32,27 +81,12 @@ const WatermarkSetting = () => {
       "top-right": { top: "5%", right: "5%" },
       "center-left": { top: "50%", left: "5%", transform: "translateY(-50%)" },
       center: { top: "50%", left: "50%", transform: "translate(-50%, -50%)" },
-      "center-right": {
-        top: "50%",
-        right: "5%",
-        transform: "translateY(-50%)",
-      },
+      "center-right": { top: "50%", right: "5%", transform: "translateY(-50%)" },
       "bottom-left": { bottom: "5%", left: "5%" },
-      "bottom-center": {
-        bottom: "5%",
-        left: "50%",
-        transform: "translateX(-50%)",
-      },
+      "bottom-center": { bottom: "5%", left: "50%", transform: "translateX(-50%)" },
       "bottom-right": { bottom: "5%", right: "5%" },
     };
-    return styleMap[position] || {};
-  };
-
-  const handleIconUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setIconImg(URL.createObjectURL(file));
-    }
+    return styleMap[settingState.position] || {};
   };
 
   const renderPositionGrid = () => (
@@ -60,9 +94,9 @@ const WatermarkSetting = () => {
       {positions.map((pos) => (
         <button
           key={pos}
-          onClick={() => setPosition(pos)}
+          onClick={() => updateSetting("position", pos)}
           className={`py-2 px-2 rounded text-xs text-center border ${
-            position === pos
+            settingState.position === pos
               ? "bg-primary text-white"
               : "bg-white hover:bg-gray-200"
           }`}
@@ -76,74 +110,58 @@ const WatermarkSetting = () => {
   return (
     <div className="min-h-screen p-4 sm:p-6 bg-slate text-gray-900">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Preview */}
         <div className="relative w-full aspect-video rounded overflow-hidden shadow border border-slate-dark bg-white">
-          <img
-            src={sampleImg}
-            alt="preview"
-            className="w-full h-full object-cover"
-          />
-          {watermarkType === "text" && (
+          <img src={sampleImg} alt="preview" className="w-full h-full object-cover" />
+          {settingState.watermarkType === "text" && (
             <div
               className="absolute"
               style={{
-                fontSize: `${fontSize}px`,
-                color: fontColor,
-                fontFamily: fontStyle,
-                opacity: opacity / 100,
+                fontSize: `${settingState.fontSize}px`,
+                color: settingState.fontColor,
+                fontFamily: settingState.fontStyle,
+                opacity: settingState.opacity / 100,
                 ...getPositionStyles(),
               }}
             >
-              {watermarkText}
+              {settingState.watermarkText}
             </div>
           )}
-          {watermarkType === "icon" && iconImg && (
+          {settingState.watermarkType === "icon" && settingState.iconImg && (
             <img
-              src={iconImg}
+              src={settingState.iconImg}
               alt="Watermark Icon"
               className="absolute"
               style={{
-                width: `${fontSize}px`,
-                height: `${fontSize}px`,
-                opacity: opacity / 100,
+                width: `${settingState.fontSize}px`,
+                height: `${settingState.fontSize}px`,
+                opacity: settingState.opacity / 100,
                 ...getPositionStyles(),
               }}
             />
           )}
         </div>
 
-        {/* Controls */}
         <div className="space-y-4">
           <div className="flex items-center gap-6 flex-wrap">
             <label className="font-semibold">Watermark</label>
             <div className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="watermark"
-                checked={watermarkType === "text"}
-                onChange={() => setWatermarkType("text")}
-              />
+              <input type="radio" name="watermark" checked={settingState.watermarkType === "text"} onChange={() => updateSetting("watermarkType", "text")} />
               <span>Text</span>
             </div>
             <div className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="watermark"
-                checked={watermarkType === "icon"}
-                onChange={() => setWatermarkType("icon")}
-              />
+              <input type="radio" name="watermark" checked={settingState.watermarkType === "icon"} onChange={() => updateSetting("watermarkType", "icon")} />
               <span>Icon</span>
             </div>
           </div>
 
-          {watermarkType === "text" && (
+          {settingState.watermarkType === "text" && (
             <>
               <div>
                 <label className="font-semibold">Watermark Text</label>
                 <input
                   type="text"
-                  value={watermarkText}
-                  onChange={(e) => setWatermarkText(e.target.value)}
+                  value={settingState.watermarkText}
+                  onChange={(e) => updateSetting("watermarkText", e.target.value)}
                   className="w-full px-3 py-2 mt-1 rounded bg-white border border-slate-dark shadow"
                 />
               </div>
@@ -152,44 +170,31 @@ const WatermarkSetting = () => {
                 <div>
                   <label className="font-semibold">Font Style</label>
                   <select
-                    value={fontStyle}
-                    onChange={(e) => setFontStyle(e.target.value)}
+                    value={settingState.fontStyle}
+                    onChange={(e) => updateSetting("fontStyle", e.target.value)}
                     className="w-full mt-1 px-3 py-2 rounded bg-white border border-slate-dark shadow"
                   >
-                    {fontStyles.map((style) => (
-                      <option key={style} value={style}>
-                        {style}
-                      </option>
-                    ))}
+                    {fontStyles.map((style) => <option key={style} value={style}>{style}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="font-semibold">Font Color</label>
                   <select
-                    value={fontColor}
-                    onChange={(e) => setFontColor(e.target.value)}
+                    value={settingState.fontColor}
+                    onChange={(e) => updateSetting("fontColor", e.target.value)}
                     className="w-full mt-1 px-3 py-2 rounded bg-white border border-slate-dark shadow"
                   >
-                    {fontColors.map((color) => (
-                      <option key={color} value={color}>
-                        {color}
-                      </option>
-                    ))}
+                    {fontColors.map((color) => <option key={color} value={color}>{color}</option>)}
                   </select>
                 </div>
               </div>
             </>
           )}
 
-          {watermarkType === "icon" && (
+          {settingState.watermarkType === "icon" && (
             <div>
               <label className="font-semibold">Upload Watermark Icon</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleIconUpload}
-                className="mt-1"
-              />
+              <input type="file" accept="image/*" onChange={handleIconUpload} className="mt-1" />
             </div>
           )}
 
@@ -199,8 +204,8 @@ const WatermarkSetting = () => {
               type="range"
               min="10"
               max="150"
-              value={fontSize}
-              onChange={(e) => setFontSize(Number(e.target.value))}
+              value={settingState.fontSize}
+              onChange={(e) => updateSetting("fontSize", Number(e.target.value))}
               className="w-full"
             />
           </div>
@@ -211,18 +216,18 @@ const WatermarkSetting = () => {
               type="range"
               min="0"
               max="100"
-              value={opacity}
-              onChange={(e) => setOpacity(Number(e.target.value))}
+              value={settingState.opacity}
+              onChange={(e) => updateSetting("opacity", Number(e.target.value))}
               className="w-full"
             />
           </div>
 
           <div>
-            <label className=" font-semibold mb-1 block">Position</label>
+            <label className="font-semibold mb-1 block">Position</label>
             {renderPositionGrid()}
           </div>
 
-          <button className="w-full mt-4 py-2 rounded bg-primary text-white hover:bg-primary-dark shadow">
+          <button onClick={handleSave} className="w-full mt-4 py-2 rounded bg-primary text-white hover:bg-primary-dark shadow">
             Save Preset
           </button>
         </div>

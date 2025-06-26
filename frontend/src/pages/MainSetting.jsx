@@ -2,9 +2,13 @@ import React, { useState } from "react";
 import Basesetting from "../component/MainSettingComponents/Basesetting";
 import FaceRecognizationHistory from "../component/MainSettingComponents/FaceRecognizationHistory";
 import WatermarkSetting from "../component/MainSettingComponents/WatermarkSetting";
+import { useNavigate } from "react-router-dom";
 
 const MainSetting = () => {
   const [activeTab, setActiveTab] = useState("settings");
+
+
+  const navigate=useNavigate()
 
   const tabClass = (tab) =>
     `px-4 py-2 text-lg font-semibold transition duration-200 ${
@@ -26,7 +30,7 @@ const MainSetting = () => {
 
         <button
           className={tabClass("faceRecognition")}
-          onClick={() => setActiveTab("faceRecognition")}
+          onClick={() => {setActiveTab("faceRecognition");navigate('FaceRecognitionHistory')}}
         >
           Face Recognition History
         </button>

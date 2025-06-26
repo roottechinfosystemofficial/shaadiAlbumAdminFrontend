@@ -31,6 +31,7 @@ const userSchema = new mongoose.Schema(
     lastSeen: { type: Date, default: null },
     subscriptionEndDate: { type: Date, default: null },
     trialFinished:{ type : Boolean,default:false },
+    totalUsers:{type : Number,default:0},
 
     subscriptions: [
       { type: mongoose.Schema.Types.ObjectId, ref: "Subscription" },

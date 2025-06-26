@@ -25,6 +25,15 @@ const clientViewUserSchema = new mongoose.Schema(
       ref: "Event",
       required: true,
     },
+    eventName: {
+      type: String,
+      
+    },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
   { timestamps: true }
 );

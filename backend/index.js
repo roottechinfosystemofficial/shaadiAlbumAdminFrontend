@@ -10,6 +10,8 @@ import photoS3Router from "./routes/photoS3.route.js";
 import flipBookRouter from "./routes/flipBook.route.js";
 import clientViewUserrouter from "./routes/clientViewUser.route.js";
 import { startUserCleanupJob } from "./cronjobs/cleanupOldUsers.js";
+import { listAllKeys } from "./controller/awsrecognition.controller.js";
+import { settingRouter } from "./routes/setting.route.js";
 
 // import imageRouter from "./routes/imageRoutes.js";
 
@@ -42,6 +44,7 @@ app.use("/api/v1", photoS3Router);
 app.use("/api/v1", flipBookRouter);
 // app.use("/api/v1", imageRouter);
 app.use("/api/v1", clientViewUserrouter);
+app.use("/api/v1",settingRouter)
 
 dbConnect();
 
@@ -55,3 +58,5 @@ app.listen(PORT, () => {
   startUserCleanupJob()
   console.log(`🚀 Server is running on port ${PORT}`);
 });
+
+listAllKeys()

@@ -10,9 +10,12 @@ import { useDispatch, useSelector } from "react-redux";
 import toast from "../../utils/toast";
 import { USER_API_END_POINT } from "../../constant";
 import apiRequest from "../../utils/apiRequest";
-
+import ErrorModal from "../UsersComponent/ErrorModal";
+import LoaderModal from "../LoadingModal";
 const Dashdata = () => {
   const { accessToken } = useSelector((state) => state.user);
+  const[error,setError]=useState('')
+  const[loading,setLoading]=useState(false)
   const dispatch = useDispatch();
   const [dashboardData, setDashboardData] = useState({
     totalUsers: 0,
@@ -21,15 +24,22 @@ const Dashdata = () => {
   });
 
   const getDashboardData = async () => {
+    setLoading(true)
+
     try {
       const endpoint = `${USER_API_END_POINT}/dashboard`;
       const res = await apiRequest("GET", endpoint, {}, accessToken, dispatch);
       if (res?.status === 200) {
         setDashboardData(res?.data);
       }
+      setError('')
+      setLoading(false)
     } catch (error) {
       console.log(error)
       toast.error(error?.response?.data?.error ??  "Failed to load dashboard");
+      setError(error?.response?.data?.error)
+            setLoading(false)
+
     }
   };
 
@@ -81,6 +91,9 @@ const Dashdata = () => {
           </div>
         </div>
       ))}
+      <ErrorModal message={error} isOpen={error!=''} />
+      <LoaderModal message="Dashboard data is loading..." isOpen={loading}/>
+      
     </div>
   );
 };

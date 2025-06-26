@@ -9,7 +9,7 @@ const clientViewUserrouter = express.Router();
 
 clientViewUserrouter.post("/clientvu/newClientViewUser", newClientViewUser);
 clientViewUserrouter.get(
-  "/clientvu/getAllClientViewUsers",
+  "/clientvu/getAllClientViewUsers/:userId",
   getAllClientViewUsers
 );
 

@@ -18,7 +18,7 @@ import NavLayout from "./component/NavLayout";
 import MainLayout from "./component/MainLayout";
 import PublicOnlyRoute from "./component/PublicOnlyRoute";
 import ProtectedRoute from "./component/ProtectedRoute";
-
+import { FaceRecognitionHistory } from "./component/FaceRecognitionHistory";
 const appRouter = createBrowserRouter([
   {
     path: "/",
@@ -58,6 +58,9 @@ const appRouter = createBrowserRouter([
       { path: ":eventId/clientview", element: <Clientview /> },
 
       { path: "*", element: <Notfound /> },
+      {
+        path:"history",element:<FaceRecognitionHistory/>
+      }
     ],
   },
   {

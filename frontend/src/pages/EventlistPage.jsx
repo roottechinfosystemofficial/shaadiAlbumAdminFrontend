@@ -7,7 +7,10 @@ import EditEventModal from "../component/EventlistingComponent/EditEventModal";
 import EventModal from "../component/EventlistingComponent/EventModal";
 import apiRequest from "../utils/apiRequest";
 import toast from "../utils/toast.js";
-import { setCurrentEventId } from "../Redux/Slices/EventSlice.jsx";
+import boximg from "../assets/box1.png";
+
+import { setCurrentEvent, setCurrentEventId, setCurrentSubEvent } from "../Redux/Slices/EventSlice.jsx";
+import LoaderModal from "../component/LoadingModal.jsx";
 
 const EventlistPage = () => {
   const [showModal, setShowModal] = useState(false);
@@ -72,6 +75,8 @@ const EventlistPage = () => {
         setShowModal(false);
         setEventName("");
         setEventDate("");
+        dispatch(setCurrentEvent(res.data.data))
+        dispatch(setCurrentSubEvent(res.data.data.subEvents[res.data.data.subEvents?.length-1]))
       }
     } catch (error) {
       toast.error("Error adding event.");
@@ -127,11 +132,13 @@ const EventlistPage = () => {
       <hr className="border-t-1 border-gray-300 mt-3 mb-6" />
 
       {/* Content States */}
-      {loading ? (
-        <div className="text-center py-10">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2" />
-          <p className="text-gray-600">Loading events...</p>
-        </div>
+      {loading ? 
+      (
+        <LoaderModal isOpen={loading}/>
+        // <div className="text-center py-10">
+        //   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2" />
+        //   <p className="text-gray-600">Loading events...</p>
+        // </div>
       ) : events?.length === 0 ? (
         <div className="flex flex-col items-center justify-center text-center py-8">
           <p className="text-xl font-semibold text-gray-600 mb-2">

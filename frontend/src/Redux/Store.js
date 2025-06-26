@@ -8,6 +8,8 @@ import galleryLayoutReducer from "./Slices/GalleryLayoutSlice";
 import userReducer from "./Slices/UserSlice";
 import eventReducer from "./Slices/EventSlice.jsx";
 import tabReducer from "./Slices/TabSlice.jsx";
+import  s3ImageReducer from "./Slices/S3Images.jsx";
+import settingsReducer from './Slices/SettingSlice.jsx'
 
 // 🔐 Persist only `authUser` from user slice
 const authUserTransform = createTransform(
@@ -17,17 +19,27 @@ const authUserTransform = createTransform(
 );
 
 // 🗂 Persist only `currentEvent` from event slice
+// const singleEventTransform = createTransform(
+//   // transform state on its way to being serialized and persisted
+//   (inboundState) => ({
+//     currentEventId: inboundState.currentEventId,
+//     currentSubEventId: inboundState.currentSubEventId,
+//     currentFlipbookId: inboundState.currentFlipbookId,
+//   }),
+
+//   // transform state being rehydrated
+//   (outboundState) => outboundState,
+
+//   { whitelist: ["event"] }
+// );
+
 const singleEventTransform = createTransform(
-  // transform state on its way to being serialized and persisted
   (inboundState) => ({
-    currentEventId: inboundState.currentEventId,
-    currentSubEventId: inboundState.currentSubEventId,
+    currentEvent: inboundState.currentEvent,
+    currentSubEvent: inboundState.currentSubEvent,
     currentFlipbookId: inboundState.currentFlipbookId,
   }),
-
-  // transform state being rehydrated
   (outboundState) => outboundState,
-
   { whitelist: ["event"] }
 );
 
@@ -46,6 +58,8 @@ const rootReducer = combineReducers({
   coverImg: coverImgReducer,
   event: eventReducer,
   tab: tabReducer,
+  s3Images:s3ImageReducer,
+  settings:settingsReducer
 });
 
 // 🧊 Create persisted reducer

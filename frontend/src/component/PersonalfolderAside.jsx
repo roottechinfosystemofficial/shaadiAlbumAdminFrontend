@@ -3,7 +3,7 @@ import boximg from "../assets/box1.png";
 import { EditIcon, Trash2, Settings2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { setCurrentEvent } from "../Redux/Slices/EventSlice";
+import { setCurrentEvent, setEventImage } from "../Redux/Slices/EventSlice";
 import { editEvent } from "../utils/editEvents.util.js";
 import toast from "../utils/toast.js";
 import SubEventSection from "./SubEventSection.jsx";
@@ -13,25 +13,72 @@ import { transformValueTypes } from "framer-motion";
 import LoaderModal from "./LoadingModal.jsx";
 import apiRequest from "../utils/apiRequest.js";
 import axios from "axios";
+import AddEventPhotoModal from "./Personalfoldercomponent/AddEventPhtoModal.jsx";
+import { EVENT_API_END_POINT } from "../constant.js";
+import ImageCropModal from "./PopUps/ImageCropModal.jsx";
 
 const PersonalfolderAside = () => {
   const { eventId } = useParams();
-  const { currentEvent } = useSelector((state) => state.event);
-  const[isOpen,setIsOpen]=useState(false)
+  const { currentEvent, eventImage } = useSelector((state) => state.event);
+  const [isOpen, setIsOpen] = useState(false)
   const navigate = useNavigate();
   const { accessToken } = useSelector((state) => state.user);
+
+  const { position, coverImg } = useSelector((state) => state.coverImg);
+
   const dispatch = useDispatch();
 
   const [isLoading, setIsLoading] = useState(false);
-  const[isDeleteLoading,setIsDeleteLoading]=useState(false)
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false)
   const [description, setDescription] = useState("");
+  const [uploadPhtoOpen, setUploadPhotoOpen] = useState(false)
+  const [loader, setLoader] = useState(false)
+
+  const [isEventImageDeleteOpen, setIsEventImageDeleteOpen] = useState(false)
+
+
+  const onCancelEventImageDelete = () => {
+    setIsEventImageDeleteOpen(false)
+  }
+
+  const onOpenEventImageDelete = () => {
+    setIsEventImageDeleteOpen(true)
+
+
+  }
+
+  const onCofirmEventImageDelete = async () => {
+
+    if (!eventImage) {
+      toast.info("No Image Exist For Event")
+      setIsEventImageDeleteOpen(false)
+      return;
+    }
+    try {
+
+      const res = await apiRequest("DELETE", `${EVENT_API_END_POINT}/delete-image/${currentEvent?._id}`)
+      setCoverImageByFetching()
+      toast.success("Image Deleted SuccessFully")
+
+    }
+    catch (err) {
+      toast.error(err?.response?.data?.message ?? "Something Went Wrong!!!")
+
+    }
+    finally {
+      setIsEventImageDeleteOpen(false)
+    }
+
+  }
+
+
 
   const eventDate = currentEvent?.eventDate
     ? new Date(currentEvent.eventDate).toLocaleString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
     : "No Date Provided";
 
   const isPublished = currentEvent?.isPublished || false;
@@ -89,14 +136,14 @@ const PersonalfolderAside = () => {
     }
   };
 
-  const onCancel=()=>{
+  const onCancel = () => {
     setIsOpen(false)
   }
 
   const onConfirm = async () => {
     setIsOpen(false);
     setIsDeleteLoading(true);
-  
+
     try {
       const response = await axios.delete(`http://localhost:5000/api/v1/event/delete/${currentEvent?._id}`);
       toast.success("Event Deleted successfully!");
@@ -112,13 +159,35 @@ const PersonalfolderAside = () => {
       setIsDeleteLoading(false); // ✅ Only called once here
     }
   };
-  
 
-  const onOpenPopUp=()=>{
+  const setCoverImageByFetching = async () => {
+    setLoader(true)
+    try {
+      const response = await apiRequest(
+        "GET",
+        `${EVENT_API_END_POINT}/image/${currentEvent?._id}`
+      );
+      dispatch(setEventImage(response.data.imageUrl)); // use correct field
+      console.log("Fetched image URL:", response.data.imageUrl);
+      setLoader(false)
+
+    } catch (error) {
+      console.log("cover image fetch error", error);
+      setLoader(false)
+
+    }
+  };
+
+  useEffect(() => {
+    setCoverImageByFetching()
+  }, [])
+
+
+  const onOpenPopUp = () => {
     setIsOpen(transformValueTypes)
   }
-  
-  console.log("info",currentEvent)
+
+  console.log("info", currentEvent)
   return (
     <aside className="relative p-4 text-gray-900 space-y-6 sidebar-content">
       {/* Loading Overlay */}
@@ -161,9 +230,8 @@ const PersonalfolderAside = () => {
         <div className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-3 py-2 shadow-sm hover:bg-slate-50 transition-all duration-300">
           <div className="flex items-center gap-3">
             <span
-              className={`w-2.5 h-2.5 rounded-full ${
-                isPublished ? "bg-green-500" : "bg-red-500"
-              }`}
+              className={`w-2.5 h-2.5 rounded-full ${isPublished ? "bg-green-500" : "bg-red-500"
+                }`}
               title={
                 isPublished
                   ? "Event is Published and Visible"
@@ -183,11 +251,10 @@ const PersonalfolderAside = () => {
           <button
             onClick={togglePublishStatus}
             disabled={isLoading}
-            className={`flex items-center justify-center gap-2 text-xs font-medium rounded-lg px-3 py-1.5 transition-all ${
-              isPublished
-                ? "bg-red-100 text-red-600 hover:bg-red-200"
-                : "bg-green-100 text-green-600 hover:bg-green-200"
-            } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+            className={`flex items-center justify-center gap-2 text-xs font-medium rounded-lg px-3 py-1.5 transition-all ${isPublished
+              ? "bg-red-100 text-red-600 hover:bg-red-200"
+              : "bg-green-100 text-green-600 hover:bg-green-200"
+              } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             {isLoading ? (
               <Loader message="Publishing your content..." />
@@ -208,15 +275,17 @@ const PersonalfolderAside = () => {
       {/* Folder Image with Hover Actions */}
       <div className="relative border border-slate rounded-xl overflow-hidden shadow-sm">
         <img
-          src={boximg}
+          src={eventImage ?? boximg}
           alt="Folder Cover"
           className="w-full h-44 object-cover"
         />
         <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/50 opacity-0 hover:opacity-100 transition-opacity duration-300">
-          <button className="bg-white p-2 rounded-full shadow hover:bg-slate transition">
+          <button onClick={onOpenEventImageDelete} className="bg-white p-2 rounded-full shadow hover:bg-slate transition">
             <Trash2 size={18} className="text-rose-600" />
           </button>
-          <button className="bg-white p-2 rounded-full shadow hover:bg-slate transition">
+          <button onClick={() => {
+            setUploadPhotoOpen(true)
+          }} className="bg-white p-2 rounded-full shadow hover:bg-slate transition">
             <EditIcon size={18} className="text-primary" />
           </button>
         </div>
@@ -286,8 +355,13 @@ const PersonalfolderAside = () => {
           </button>
         </div>
       </div>
-      <LoaderModal isOpen={isDeleteLoading}/>
-      <ConfirmDeleteModal eventName={currentEvent?.eventName} onCancel={onCancel} onConfirm={onConfirm} isOpen={isOpen}/>
+      <LoaderModal isOpen={isDeleteLoading} />
+      <LoaderModal isOpen={loader} />
+      <ImageCropModal isOpen={false} />
+      <AddEventPhotoModal onClose={() => { setUploadPhotoOpen(false) }} isOpen={uploadPhtoOpen} />
+      <ConfirmDeleteModal title="Image" eventName={currentEvent?.eventName} onCancel={onCancelEventImageDelete} onConfirm={onCofirmEventImageDelete} isOpen={isEventImageDeleteOpen} />
+
+      <ConfirmDeleteModal eventName={currentEvent?.eventName} onCancel={onCancel} onConfirm={onConfirm} isOpen={isOpen} />
     </aside>
   );
 };

@@ -6,6 +6,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { S3_API_END_POINT } from "../../constant";
 import apiRequest from "../../utils/apiRequest";
 import { Loader } from "../Loader";
+import { Trash2 } from "lucide-react";
+import { setS3Keys } from "../../Redux/Slices/S3Images";
+import { getSettings } from "../../Redux/thunkfunctions/settings";
+
 
 const PhotosPanel = () => {
   const [images, setImages] = useState([]);
@@ -21,7 +25,23 @@ const PhotosPanel = () => {
   const { eventId } = useParams();
   const [reloadKey, setReloadKey] = useState(0);
   const dispatch = useDispatch();
-  const { accessToken } = useSelector((state) => state.user);
+
+  const { accessToken,authUser } = useSelector((state) => state.user);
+    const settingState = useSelector((state) => state.settings.settingState);
+
+      console.log("setting State",settingState)
+
+
+
+    const fetchUserSettings=async()=>{
+      await dispatch(getSettings({userId:authUser?._id}))
+
+    }
+
+    useEffect(()=>{
+      fetchUserSettings()
+    },[])
+  
 
   const pageSize = 25;
 
@@ -73,6 +93,7 @@ const PhotosPanel = () => {
           };
 
           setImages(data);
+          dispatch(setS3Keys(data))
 
           setHasNext(!!(nextToken.original || nextToken.thumbs));
 
@@ -248,6 +269,15 @@ const PhotosPanel = () => {
               (i) => i.originalUrl === img.originalUrl
             )}
             onToggleSelect={() => toggleSelect(img)}
+            onDelete={()=>{alert(img.filename)}}
+            waterMarkEnabled={settingState.waterMarkEnabled}
+            watermarkText={settingState.watermarkText}
+            watermarkType={settingState.watermarkType}
+            fontColor={settingState.fontColor}
+            opacity={settingState.opacity}
+            fontSize={settingState.fontSize}
+            fontStyle={settingState.fontStyle}
+            iconImg={settingState.iconImg}
           />
         ))}
       </div>
@@ -272,51 +302,129 @@ const PhotosPanel = () => {
   );
 };
 
-const ImageCard = ({ src, alt, selected, onToggleSelect }) => (
-  <div
-    className={`relative overflow-hidden rounded-lg shadow group ${
-      selected ? "ring-2 ring-primary" : ""
-    }`}
-  >
-    <img
-      src={src}
-      alt={alt}
-      loading="lazy"
-      className="w-full h-64 object-contain transition-transform duration-200 ease-in-out group-hover:scale-105"
-    />
-    <div className="absolute top-2 left-2">
-      <label className="inline-flex items-center cursor-pointer bg-transparent bg-opacity-75 p-1 rounded shadow">
-        <input
-          type="checkbox"
-          checked={selected}
-          onChange={onToggleSelect}
-          className="sr-only"
-        />
+
+const ImageCard = ({
+  src,
+  alt,
+  selected,
+  onToggleSelect,
+  onDelete,
+  waterMarkEnabled,
+  watermarkType = "text",
+  watermarkText = "Dhruv",
+  fontStyle = "Arial",
+  fontColor = "white",
+  fontSize = 24,
+  opacity = 15,
+  position = "bottom-right",
+  iconImg,
+}) => {
+  const positionClasses = {
+    "top-left": "top-4 left-4",
+    "top-center": "top-4 left-1/2 transform -translate-x-1/2",
+    "top-right": "top-4 right-4",
+    "center-left": "top-1/2 left-4 transform -translate-y-1/2",
+    center: "top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2",
+    "center-right": "top-1/2 right-4 transform -translate-y-1/2",
+    "bottom-left": "bottom-4 left-4",
+    "bottom-center": "bottom-4 left-1/2 transform -translate-x-1/2",
+    "bottom-right": "bottom-4 right-4",
+  };
+
+  const watermarkStyle = {
+    fontFamily: fontStyle,
+    fontSize: `${fontSize}px`,
+    color: fontColor,
+    opacity: opacity / 100,
+    textShadow: "1px 1px 3px rgba(0,0,0,0.3)",
+    pointerEvents: "none",
+    userSelect: "none",
+    whiteSpace: "nowrap",
+  };
+
+  return (
+    <div
+      className={`relative overflow-hidden rounded-lg shadow group ${
+        selected ? "ring-2 ring-primary" : ""
+      }`}
+    >
+      {/* Image */}
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        className="w-full h-64 object-contain transition-transform duration-200 ease-in-out group-hover:scale-105"
+      />
+
+      {/* ✅ Watermark Overlay */}
+      {waterMarkEnabled && (
         <div
-          className={`w-4 h-4 rounded border-2 flex items-center justify-center transition ${
-            selected
-              ? "bg-primary border-primary"
-              : "bg-check border-slate-dark"
-          }`}
+          className={`absolute z-20 ${positionClasses[position] || positionClasses["bottom-right"]}`}
         >
-          {selected && (
-            <svg
-              className="w-3 h-3 text-white"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M16.707 5.293a1 1 0 010 1.414l-8.25 8.25a1 1 0 01-1.414 0l-4.25-4.25a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                clipRule="evenodd"
+          {watermarkType === "text" ? (
+            <span style={watermarkStyle}>{watermarkText}</span>
+          ) : (
+            iconImg && (
+              <img
+                src={iconImg}
+                alt="Watermark Icon"
+                className="w-12 h-12 object-contain opacity-50"
+                style={{
+                  opacity: opacity / 100,
+                  filter: "drop-shadow(1px 1px 2px rgba(0,0,0,0.4))",
+                  pointerEvents: "none",
+                }}
               />
-            </svg>
+            )
           )}
         </div>
-      </label>
+      )}
+
+      {/* Checkbox (Top Left) */}
+      <div className="absolute top-2 left-2 z-30">
+        <label className="inline-flex items-center cursor-pointer bg-transparent bg-opacity-75 p-1 rounded shadow">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggleSelect}
+            className="sr-only"
+          />
+          <div
+            className={`w-4 h-4 rounded border-2 flex items-center justify-center transition ${
+              selected
+                ? "bg-primary border-primary"
+                : "bg-check border-slate-dark"
+            }`}
+          >
+            {selected && (
+              <svg
+                className="w-3 h-3 text-white"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8.25 8.25a1 1 0 01-1.414 0l-4.25-4.25a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            )}
+          </div>
+        </label>
+      </div>
+
+      {/* Delete Button */}
+      <button
+        onClick={onDelete}
+        className="absolute top-2 right-2 z-30 bg-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-rose-100"
+        title="Delete"
+      >
+        <Trash2 size={16} className="text-rose-500" />
+      </button>
     </div>
-  </div>
-);
+  );
+};
+
 
 const MemoizedImageCard = memo(ImageCard);
 export default PhotosPanel;

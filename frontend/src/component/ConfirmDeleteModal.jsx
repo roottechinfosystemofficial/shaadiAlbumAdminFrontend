@@ -3,17 +3,17 @@ import React from "react";
 import { FaClosedCaptioning } from "react-icons/fa";
 import { MdClose } from "react-icons/md";
 
-const ConfirmDeleteModal = ({ isOpen, onCancel, onConfirm, eventName }) => {
+const ConfirmDeleteModal = ({ title='Event', isOpen, onCancel, onConfirm, eventName }) => {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 text-center">
         <h2 className="text-xl font-bold text-gray-800 mb-2">
-          Delete Event
+          Delete {title}
         </h2>
         <p className="text-gray-600 mb-6">
-          Are you sure you want to delete
+          Are you sure you want to delete {title}
           <span className="font-semibold text-red-500"> {eventName} </span>?
           This action cannot be undone.
         </p>

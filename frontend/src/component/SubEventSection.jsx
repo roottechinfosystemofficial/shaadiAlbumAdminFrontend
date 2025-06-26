@@ -9,11 +9,20 @@ import {
   setCurrentSubEventId,
 } from "../Redux/Slices/EventSlice";
 import toast from "../utils/toast";
+import ConfirmDeleteModal from "./ConfirmDeleteModal";
+import LoaderModal from "./LoadingModal";
+import ErrorModal from "./UsersComponent/ErrorModal";
 
 const SubEventSection = ({ currentEvent, setIsLoading }) => {
   const [showInput, setShowInput] = useState(false);
   const [subEventName, setSubEventName] = useState("");
   const { accessToken } = useSelector((state) => state.user);
+
+  const[err,setErr]=useState('')
+
+  const[deleteLoader,setDeleteLoader]=useState(false)
+
+  const [isOpen,setIsOpen]=useState(false)
   const dispatch = useDispatch();
   const { currentSubEvent, currentEventId } = useSelector(
     (state) => state.event
@@ -54,6 +63,7 @@ const SubEventSection = ({ currentEvent, setIsLoading }) => {
   };
 
   const handleSubEvent = (sub) => {
+    console.log("sub info",sub)
     dispatch(setCurrentSubEvent(sub));
     dispatch(setCurrentSubEventId(sub._id));
   };
@@ -64,8 +74,41 @@ const SubEventSection = ({ currentEvent, setIsLoading }) => {
   // Log sub-event ID when trash button is clicked
   const handleDeleteSubEvent = (subEventId) => {
     console.log("Sub-event ID to be deleted:", subEventId);
+    setIsOpen(true)
     // You can also make an API call to delete the sub-event if required
   };
+
+  const onCancel=()=>{
+    setIsOpen(false)
+
+  }
+
+  const onConfirm=async()=>{
+    setDeleteLoader(true)
+    setErr('')
+
+    try{
+
+      const res=await apiRequest("DELETE",`${EVENT_API_END_POINT}/delete-subevent?eventId=${currentEvent?._id}&subEventId=${currentSubEvent?._id}`
+)     
+       toast.success("SubEvent Deleted SuccessFully")
+      setDeleteLoader(false)
+          setErr('')
+
+
+    }
+    catch(err){
+            setDeleteLoader(false)
+            setErr(err?.response?.data?.message ?? "Something Went Wrong!!!")
+
+
+    }
+    finally{
+      setIsOpen(false)
+      setDeleteLoader(false)
+    }
+
+  }
 
   return (
     <div className="border-t border-slate pt-3">
@@ -130,6 +173,9 @@ const SubEventSection = ({ currentEvent, setIsLoading }) => {
       ) : (
         <p className="text-sm text-gray-500 mt-2">No sub-events yet.</p>
       )}
+      <LoaderModal message="Deleting Subevent ..." isOpen={deleteLoader}/>
+      <ErrorModal onClose={()=>{setErr('')}} message={err} isOpen={err!=''}/>
+      <ConfirmDeleteModal title="SubEvent" onConfirm={onConfirm} eventName={currentSubEvent?.subEventName} onCancel={onCancel}   isOpen={isOpen}/>
     </div>
   );
 };

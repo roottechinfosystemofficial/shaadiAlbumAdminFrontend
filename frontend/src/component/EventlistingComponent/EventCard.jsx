@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { RefreshCw, MoreVertical, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { setCurrentEventId } from "../../Redux/Slices/EventSlice";
+import { setCurrentEventId, setEventImage } from "../../Redux/Slices/EventSlice";
+
 
 const EventCard = ({ event, onEdit, onDelete, setOpenEditModel }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -30,12 +31,14 @@ const EventCard = ({ event, onEdit, onDelete, setOpenEditModel }) => {
       {/* Event Image & More Options */}
       <div className="relative cursor-pointer">
         <img
-          src={eventImage}
+          src={eventImage?.startsWith("http") ? eventImage : 'https://picsum.photos/id/1015/800/400'}
+
           alt={eventName}
           className="w-full h-40 object-cover"
           onClick={() => {
             navigate(`/personalfolder/${event?._id}`);
             dispatch(setCurrentEventId(event?._id));
+            dispatch(setEventImage(event?.eventImage))
           }}
         />
         <button

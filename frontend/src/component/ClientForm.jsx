@@ -6,13 +6,15 @@ import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import Cookies from "js-cookie";
 const ClientForm = ({ onSubmit, onClose }) => {
-  const { accessToken } = useSelector((state) => state.user);
+  const { accessToken,authUser } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
   });
+      const { currentEvent, currentSubEvent } = useSelector((state) => state.event);
+  
   const { eventId } = useParams();
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -33,6 +35,8 @@ const ClientForm = ({ onSubmit, onClose }) => {
       const data = {
         ...formData,
         eventId,
+        userId:authUser._id,
+        eventName:currentEvent?.eventName
       };
 
       const res = await apiRequest(
