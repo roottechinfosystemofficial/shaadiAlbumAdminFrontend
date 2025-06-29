@@ -14,7 +14,7 @@ import { Buffer } from "buffer";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { FaceRecognitionHistory } from "../model/faceRecognitionHistory.model.js";
 import mongoose from "mongoose";
-
+import { getActiveSubscription,checkFaceRecognitionLimit,incrementFaceRecognitionUsage } from "../utils/planChecks.js";
 
 config();
 
@@ -195,62 +195,123 @@ export const findMatchingFaces = async (cameraFaceBuffer, s3Keys = [], similarit
 
     return matchedImages;
 };
+
+
 export const recognizeFaces = async (req, res) => {
-    try {
-        const { image, s3Keys, userId, eventId, subEventId, eventName } = req.body;
+  try {
+    const { image, s3Keys, userId, eventId, subEventId, eventName } = req.body;
 
-        if (!image || !s3Keys || !Array.isArray(s3Keys)) {
-            return res.status(400).json({ message: "Invalid input" });
-        }
-        let base64Image = image;
-        if (base64Image.includes(',')) {
-            base64Image = base64Image.split(',')[1]; // Strip data URL prefix
-        }
-
-        const cameraFaceBuffer = Buffer.from(base64Image, "base64");
-
-
-        const matches = await findMatchingFaces(cameraFaceBuffer, s3Keys);
-
-
-        const existingfaceRecognition = await FaceRecognitionHistory.findOne({ event: eventId });
-
-        if (existingfaceRecognition?.matchesCount != 0 && existingfaceRecognition) {
-            existingfaceRecognition.subEventId = subEventId;
-            existingfaceRecognition.matches = matches;
-            existingfaceRecognition.matchesCount = matches?.length;
-            existingfaceRecognition.image = image;
-            existingfaceRecognition.eventName = eventName;
-            existingfaceRecognition.updatedAt = new Date();
-
-            await existingfaceRecognition?.save();
-            res.status(200).json({ matches, matchFacesCount: matches?.length });
-            return;
-
-
-        }
-        else {
-
-            const newFaceRecognitionHistory = new FaceRecognitionHistory({
-                event: eventId,
-                subEventId: subEventId,
-                matches: matches,
-                matchesCount: matches?.length,
-                user: userId,
-                image: image,
-                eventName: eventName
-
-
-            })
-            await newFaceRecognitionHistory.save()
-        }
-
-        res.status(200).json({ matches, matchFacesCount: matches?.length });
-    } catch (error) {
-        console.error("Recognition error:", error);
-        res.status(500).json({ message: "Recognition failed" });
+    if (!image || !s3Keys || !Array.isArray(s3Keys)) {
+      return res.status(400).json({ message: "Invalid input" });
     }
+
+    const subscription = await getActiveSubscription(userId);
+    if (!subscription) {
+      return res.status(403).json({ message: "No active subscription." });
+    }
+
+    if (!checkFaceRecognitionLimit(subscription)) {
+      return res.status(403).json({ message: "Face recognition limit exceeded." });
+    }
+
+    let base64Image = image;
+    if (base64Image.includes(',')) {
+      base64Image = base64Image.split(',')[1];
+    }
+
+    const cameraFaceBuffer = Buffer.from(base64Image, "base64");
+    const matches = await findMatchingFaces(cameraFaceBuffer, s3Keys);
+
+    const existingfaceRecognition = await FaceRecognitionHistory.findOne({ event: eventId });
+
+    if (existingfaceRecognition?.matchesCount != 0 && existingfaceRecognition) {
+      existingfaceRecognition.subEventId = subEventId;
+      existingfaceRecognition.matches = matches;
+      existingfaceRecognition.matchesCount = matches?.length;
+      existingfaceRecognition.image = image;
+      existingfaceRecognition.eventName = eventName;
+      existingfaceRecognition.updatedAt = new Date();
+
+      await existingfaceRecognition?.save();
+    } else {
+      const newFaceRecognitionHistory = new FaceRecognitionHistory({
+        event: eventId,
+        subEventId: subEventId,
+        matches: matches,
+        matchesCount: matches?.length,
+        user: userId,
+        image: image,
+        eventName: eventName,
+      });
+      await newFaceRecognitionHistory.save();
+    }
+
+    // ✅ Update face recognition usage count
+    await incrementFaceRecognitionUsage(subscription);
+
+    res.status(200).json({ matches, matchFacesCount: matches?.length });
+  } catch (error) {
+    console.error("Recognition error:", error);
+    res.status(500).json({ message: "Recognition failed" });
+  }
 };
+
+// export const recognizeFaces = async (req, res) => {
+//     try {
+//         const { image, s3Keys, userId, eventId, subEventId, eventName } = req.body;
+
+//         if (!image || !s3Keys || !Array.isArray(s3Keys)) {
+//             return res.status(400).json({ message: "Invalid input" });
+//         }
+//         let base64Image = image;
+//         if (base64Image.includes(',')) {
+//             base64Image = base64Image.split(',')[1]; // Strip data URL prefix
+//         }
+
+//         const cameraFaceBuffer = Buffer.from(base64Image, "base64");
+
+
+//         const matches = await findMatchingFaces(cameraFaceBuffer, s3Keys);
+
+
+//         const existingfaceRecognition = await FaceRecognitionHistory.findOne({ event: eventId });
+
+//         if (existingfaceRecognition?.matchesCount != 0 && existingfaceRecognition) {
+//             existingfaceRecognition.subEventId = subEventId;
+//             existingfaceRecognition.matches = matches;
+//             existingfaceRecognition.matchesCount = matches?.length;
+//             existingfaceRecognition.image = image;
+//             existingfaceRecognition.eventName = eventName;
+//             existingfaceRecognition.updatedAt = new Date();
+
+//             await existingfaceRecognition?.save();
+//             res.status(200).json({ matches, matchFacesCount: matches?.length });
+//             return;
+
+
+//         }
+//         else {
+
+//             const newFaceRecognitionHistory = new FaceRecognitionHistory({
+//                 event: eventId,
+//                 subEventId: subEventId,
+//                 matches: matches,
+//                 matchesCount: matches?.length,
+//                 user: userId,
+//                 image: image,
+//                 eventName: eventName
+
+
+//             })
+//             await newFaceRecognitionHistory.save()
+//         }
+
+//         res.status(200).json({ matches, matchFacesCount: matches?.length });
+//     } catch (error) {
+//         console.error("Recognition error:", error);
+//         res.status(500).json({ message: "Recognition failed" });
+//     }
+// };
 
 
 

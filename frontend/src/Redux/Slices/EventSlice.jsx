@@ -55,7 +55,8 @@ export const eventSlice = createSlice({
     currentEventId: "",
     currentSubEventId: "",
     currentFlipbookId: "",
-    eventImage : ""
+    eventImage : "",
+    images:[]
   },
   reducers: {
     setCurrentEvent: (state, action) => {
@@ -90,6 +91,10 @@ export const eventSlice = createSlice({
 
     setEventImage:(state,action)=>{
       state.eventImage=action.payload
+    },
+    setEventImages:(state,action)=>{
+      state.images=action.payload
+
     }
   },
 });
@@ -102,7 +107,8 @@ export const {
   setCurrentEventId,
   setCurrentSubEventId,
   setCurrentFlipbookId,
-  setEventImage
+  setEventImage,
+  setEventImages
 } = eventSlice.actions;
 
 export default eventSlice.reducer;

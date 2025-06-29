@@ -3,6 +3,8 @@ import {
   PutObjectCommand,
   GetObjectCommand,
   ListObjectsV2Command,
+  DeleteObjectCommand,
+  DeleteObjectsCommand
   
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -20,6 +22,12 @@ import {
 
 } from "@aws-sdk/client-rekognition";
 // import ImageModel from "../model/ImageMetadata.js";
+import {
+  getActiveSubscription,
+  checkStorageLimit,
+  updateStorageUsed,
+} from "../utils/planChecks.js";
+
 
 dotenv.config();
 // const streamToBuffer = async (stream) => {
@@ -256,19 +264,153 @@ const streamToBuffer = async (readableStream) => {
   return Buffer.concat(chunks);
 };
 
+// export const getPresignedUrl = async (req, res) => {
+//   const { files, eventId, subEventId, usageType, flipbookId } = req.body;
+
+//   if (!files || !Array.isArray(files) || !eventId) {
+//     return res.status(400).json({ error: "Missing files or eventId" });
+//   }
+
+//   if (usageType === "flipbook" && !flipbookId) {
+//     return res.status(400).json({ error: "Missing flipbookId for flipbook usage" });
+//   }
+
+//   if (usageType !== "flipbook" && !subEventId) {
+//     return res.status(400).json({ error: "Missing subEventId for event usage" });
+//   }
+
+//   const timestamp = Date.now();
+//   const signedUrls = [];
+//   const failedFiles = [];
+
+//   try {
+//     const results = await Promise.all(
+//       files.map(async (file) => {
+//         const { fileName, fileType, path } = file;
+//         const isThumbnail = path?.toLowerCase().includes("thumbnails");
+
+//         try {
+//           const fileExt = fileName.includes(".")
+//             ? fileName.substring(fileName.lastIndexOf("."))
+//             : ".jpg";
+//           const baseName = fileName.substring(0, fileName.lastIndexOf("."));
+
+//           const folder = usageType === "flipbook" ? "flipbookimages" : "eventimages";
+//           const middleId = usageType === "flipbook" ? flipbookId : subEventId;
+//           const storageFolder = isThumbnail ? "Thumbnails" : "Original";
+//           const uniqueKey = `${folder}/${eventId}/${middleId}/${storageFolder}/${timestamp}_${baseName}${fileExt}`;
+
+//           // Generate pre-signed URL
+//           const command = new PutObjectCommand({
+//             Bucket: process.env.BUCKET_NAME,
+//             Key: uniqueKey,
+//             ContentType: fileType || "image/jpeg",
+//           });
+
+//           const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+
+//           // Optional: Run Rekognition detectFaces after upload (skip thumbnails)
+//           let faceDetectionStatus = null;
+
+//           if (!isThumbnail && usageType !== "flipbook") {
+//             try {
+//               // Simulate immediate post-upload check by calling DetectFaces after upload
+//               const getObject = new GetObjectCommand({
+//                 Bucket: process.env.BUCKET_NAME,
+//                 Key: uniqueKey,
+//               });
+
+//               const { Body } = await s3Client.send(getObject);
+//               const imageBuffer = await streamToBuffer(Body);
+
+//               const detectCommand = new DetectFacesCommand({
+//                 Image: { Bytes: imageBuffer },
+//                 Attributes: ["DEFAULT"],
+//               });
+
+//               const detectResult = await rekognitionClient.send(detectCommand);
+//               const facesDetected = detectResult.FaceDetails.length;
+
+//               if (facesDetected === 0) {
+//                 faceDetectionStatus = "❌ No face detected";
+//                 console.warn(`⚠️ No face detected in uploaded image: ${fileName}`);
+//               } else {
+//                 faceDetectionStatus = `✅ Detected ${facesDetected} face(s)`;
+//               }
+
+//               // Optional: Index the face (you can re-enable this if needed)
+//               // const indexCommand = new IndexFacesCommand({
+//               //   CollectionId: eventId,
+//               //   Image: {
+//               //     S3Object: {
+//               //       Bucket: process.env.BUCKET_NAME,
+//               //       Name: uniqueKey,
+//               //     },
+//               //   },
+//               //   ExternalImageId: `${timestamp}_${baseName}`,
+//               //   DetectionAttributes: [],
+//               // });
+//               // await rekognitionClient.send(indexCommand);
+
+//             } catch (faceErr) {
+//               console.warn(`⚠️ Rekognition detect failed for ${fileName}:`, faceErr.message);
+//               faceDetectionStatus = "⚠️ Face detection error";
+//             }
+//           }
+
+//           return { url, key: uniqueKey, fileName, faceDetectionStatus };
+//         } catch (err) {
+//           console.error(`Error generating URL for ${fileName}:`, err);
+//           return { fileName, reason: "Internal error generating URL" };
+//         }
+//       })
+//     );
+
+//     // Process results
+//     results.forEach((result) => {
+//       if (result.url) {
+//         signedUrls.push(result);
+//       } else {
+//         failedFiles.push(result);
+//       }
+//     });
+
+//     if (signedUrls.length === 0) {
+//       return res.status(500).json({
+//         error: "Failed to generate any signed URLs",
+//         failedFiles,
+//       });
+//     }
+
+//     return res.status(200).json({
+//       urls: signedUrls,
+//       failedFiles,
+//     });
+//   } catch (err) {
+//     console.error("Unexpected error during URL generation:", err);
+//     return res.status(500).json({ error: "Unexpected error during URL generation" });
+//   }
+// };
+
 export const getPresignedUrl = async (req, res) => {
-  const { files, eventId, subEventId, usageType, flipbookId } = req.body;
+  const { files, eventId, subEventId, usageType, flipbookId, userId } = req.body;
 
   if (!files || !Array.isArray(files) || !eventId) {
     return res.status(400).json({ error: "Missing files or eventId" });
   }
 
-  if (usageType === "flipbook" && !flipbookId) {
-    return res.status(400).json({ error: "Missing flipbookId for flipbook usage" });
+  const subscription = await getActiveSubscription(userId);
+  if (!subscription) {
+    return res.status(403).json({ error: "No active subscription found." });
   }
 
-  if (usageType !== "flipbook" && !subEventId) {
-    return res.status(400).json({ error: "Missing subEventId for event usage" });
+  let totalUploadSize = 0;
+  for (const file of files) {
+    totalUploadSize += file.size || 0;
+  }
+
+  if (!checkStorageLimit(subscription, totalUploadSize)) {
+    return res.status(403).json({ error: "Storage limit exceeded." });
   }
 
   const timestamp = Date.now();
@@ -282,9 +424,7 @@ export const getPresignedUrl = async (req, res) => {
         const isThumbnail = path?.toLowerCase().includes("thumbnails");
 
         try {
-          const fileExt = fileName.includes(".")
-            ? fileName.substring(fileName.lastIndexOf("."))
-            : ".jpg";
+          const fileExt = fileName.includes(".") ? fileName.substring(fileName.lastIndexOf(".")) : ".jpg";
           const baseName = fileName.substring(0, fileName.lastIndexOf("."));
 
           const folder = usageType === "flipbook" ? "flipbookimages" : "eventimages";
@@ -292,7 +432,6 @@ export const getPresignedUrl = async (req, res) => {
           const storageFolder = isThumbnail ? "Thumbnails" : "Original";
           const uniqueKey = `${folder}/${eventId}/${middleId}/${storageFolder}/${timestamp}_${baseName}${fileExt}`;
 
-          // Generate pre-signed URL
           const command = new PutObjectCommand({
             Bucket: process.env.BUCKET_NAME,
             Key: uniqueKey,
@@ -306,7 +445,6 @@ export const getPresignedUrl = async (req, res) => {
 
           if (!isThumbnail && usageType !== "flipbook") {
             try {
-              // Simulate immediate post-upload check by calling DetectFaces after upload
               const getObject = new GetObjectCommand({
                 Bucket: process.env.BUCKET_NAME,
                 Key: uniqueKey,
@@ -323,66 +461,41 @@ export const getPresignedUrl = async (req, res) => {
               const detectResult = await rekognitionClient.send(detectCommand);
               const facesDetected = detectResult.FaceDetails.length;
 
-              if (facesDetected === 0) {
-                faceDetectionStatus = "❌ No face detected";
-                console.warn(`⚠️ No face detected in uploaded image: ${fileName}`);
-              } else {
-                faceDetectionStatus = `✅ Detected ${facesDetected} face(s)`;
-              }
-
-              // Optional: Index the face (you can re-enable this if needed)
-              // const indexCommand = new IndexFacesCommand({
-              //   CollectionId: eventId,
-              //   Image: {
-              //     S3Object: {
-              //       Bucket: process.env.BUCKET_NAME,
-              //       Name: uniqueKey,
-              //     },
-              //   },
-              //   ExternalImageId: `${timestamp}_${baseName}`,
-              //   DetectionAttributes: [],
-              // });
-              // await rekognitionClient.send(indexCommand);
+              faceDetectionStatus = facesDetected === 0
+                ? "❌ No face detected"
+                : `✅ Detected ${facesDetected} face(s)`;
 
             } catch (faceErr) {
-              console.warn(`⚠️ Rekognition detect failed for ${fileName}:`, faceErr.message);
               faceDetectionStatus = "⚠️ Face detection error";
             }
           }
 
           return { url, key: uniqueKey, fileName, faceDetectionStatus };
         } catch (err) {
-          console.error(`Error generating URL for ${fileName}:`, err);
           return { fileName, reason: "Internal error generating URL" };
         }
       })
     );
 
-    // Process results
     results.forEach((result) => {
-      if (result.url) {
-        signedUrls.push(result);
-      } else {
-        failedFiles.push(result);
-      }
+      if (result.url) signedUrls.push(result);
+      else failedFiles.push(result);
     });
 
     if (signedUrls.length === 0) {
-      return res.status(500).json({
-        error: "Failed to generate any signed URLs",
-        failedFiles,
-      });
+      return res.status(500).json({ error: "Failed to generate any signed URLs", failedFiles });
     }
 
-    return res.status(200).json({
-      urls: signedUrls,
-      failedFiles,
-    });
+    // ✅ Update used storage
+    await updateStorageUsed(subscription, totalUploadSize);
+
+    return res.status(200).json({ urls: signedUrls, failedFiles });
   } catch (err) {
-    console.error("Unexpected error during URL generation:", err);
     return res.status(500).json({ error: "Unexpected error during URL generation" });
   }
 };
+
+
 
 export const getPresignedUrl2 = async (req, res) => {
   const { files, eventId, subEventId, usageType, flipbookId } = req.body;
@@ -754,26 +867,35 @@ export const getEventImages = async (req, res) => {
             Key: item.Key,
           });
           const url = await getSignedUrl(s3Client, getCommand);
-          return { filename, url };
+          return {
+            filename,
+            key: item.Key,
+            url,
+          };
         })
       );
 
-      return { items, nextToken: response.NextContinuationToken || null };
+      return {
+        items,
+        nextToken: response.NextContinuationToken || null,
+      };
     };
 
+    // Fetch both folders
     const [originalData, thumbData] = await Promise.all([
       fetchFolderItems("Original", continuationTokenOriginal),
       fetchFolderItems("Thumbs", continuationTokenThumbs),
     ]);
 
+    // Create maps by filename (case-sensitive now)
     const originalMap = {};
     originalData.items.forEach((img) => {
-      originalMap[img.filename.toLowerCase()] = img.url;
+      originalMap[img.filename] = { url: img.url, key: img.key };
     });
 
     const thumbMap = {};
     thumbData.items.forEach((img) => {
-      thumbMap[img.filename.toLowerCase()] = img.url;
+      thumbMap[img.filename] = { url: img.url, key: img.key };
     });
 
     const allFilenames = new Set([
@@ -782,13 +904,14 @@ export const getEventImages = async (req, res) => {
     ]);
 
     const merged = Array.from(allFilenames)
-      .filter((f) => originalMap[f] && thumbMap[f])
-      .map((f) => ({
-        filename: f,
-        originalUrl: originalMap[f],
-        thumbnailUrl: thumbMap[f],
+      .filter((filename) => originalMap[filename] && thumbMap[filename])
+      .map((filename) => ({
+        filename,
+        originalUrl: originalMap[filename].url,
+        originalKey: originalMap[filename].key,
+        thumbnailUrl: thumbMap[filename].url,
+        thumbnailKey: thumbMap[filename].key,
       }));
-
 
     return res.status(200).json({
       images: merged,
@@ -800,6 +923,7 @@ export const getEventImages = async (req, res) => {
     res.status(500).json({ error: "Could not retrieve event images" });
   }
 };
+
 
 export const getFlipbookImages = async (req, res) => {
   const { eventId, flipbookId } = req.body;
@@ -973,3 +1097,81 @@ export const getCoverImage = async (req, res) => {
     return res.status(500).json({ error: "Failed to retrieve cover image" });
   }
 };
+
+
+export const deleteSelectedEventImageSingle = async (req, res) => {
+  const { key } = req.body;
+
+  if (!key) {
+    return res.status(400).json({ error: "Missing S3 object key" });
+  }
+
+  try {
+    const deleteCommand = new DeleteObjectCommand({
+      Bucket: process.env.BUCKET_NAME,
+      Key: key,
+    });
+
+    await s3Client.send(deleteCommand);
+    return res.status(200).json({ message: "Image deleted successfully", key });
+  } catch (err) {
+    console.error("Error deleting image:", err);
+    return res.status(500).json({ error: "Failed to delete image" });
+  }
+};
+
+
+export const deleteMultipleEventImages = async (req, res) => {
+  const { keys } = req.body;
+
+  if (!Array.isArray(keys) || keys.length === 0) {
+    return res.status(400).json({ error: "No keys provided for deletion" });
+  }
+
+  try {
+    const deleteCommand = new DeleteObjectsCommand({
+      Bucket: process.env.BUCKET_NAME,
+      Delete: {
+        Objects: keys.map((key) => ({ Key: key })),
+        Quiet: false,
+      },
+    });
+
+    const result = await s3Client.send(deleteCommand);
+
+    return res.status(200).json({
+      message: "Selected images deleted successfully",
+      deleted: result.Deleted || [],
+      errors: result.Errors || [],
+    });
+  } catch (err) {
+    console.error("Error deleting images:", err);
+    return res.status(500).json({ error: "Failed to delete images" });
+  }
+};
+
+
+
+export const listThumbs = async (req, res) => {
+  const { eventId, subEventId } = req.body;
+
+  const prefix = `eventimages/${eventId}/${subEventId}/Thumbs/`;
+
+  try {
+    const result = await s3Client.send(
+      new ListObjectsV2Command({
+        Bucket: process.env.BUCKET_NAME,
+        Prefix: prefix,
+      })
+    );
+
+    const keys = result.Contents.map((item) => item.Key);
+    console.log("Keys in Thumbs folder:", keys);
+    res.json(keys);
+  } catch (err) {
+    console.error("Failed to list keys:", err);
+    res.status(500).json({ error: "Failed to list" });
+  }
+};
+
+

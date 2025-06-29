@@ -50,6 +50,11 @@ const Dashdata = () => {
   }, [accessToken]);
 
   const data = [
+     {
+      icon: <FaUsers />,
+      label: "Total FlipBooks",
+      value: dashboardData.totalUsers,
+    },
     {
       icon: <FaUsers />,
       label: "Total Users",

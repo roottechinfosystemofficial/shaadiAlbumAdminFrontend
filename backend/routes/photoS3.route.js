@@ -6,7 +6,9 @@ import {
   getFlipbookImages,
   getPresignedUrl,
   getFlipbookImagesByEventId,
-  getCoverImage
+  getCoverImage,
+  deleteSelectedEventImageSingle,
+  deleteMultipleEventImages
 } from "../controller/photosS3.controller.js";
 import { getFaceRecognitionHistoryOfUser, recognizeFaces } from "../controller/awsrecognition.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -27,6 +29,10 @@ photoS3Router.get("/list-app-images", getAppEventImages);
 photoS3Router.get("/s3/cover-image",getCoverImage)
 photoS3Router.get("/s3/face-recognition-history/:userId",getFaceRecognitionHistoryOfUser)
 photoS3Router.post("/s3/face-recognition/match", express.json({ limit: "5mb" }), recognizeFaces);
+photoS3Router.delete("/s3/delete-single/image",deleteSelectedEventImageSingle)
+photoS3Router.delete("/s3/delete-multiple/image",deleteMultipleEventImages)
+
+
 
 
 export default photoS3Router;

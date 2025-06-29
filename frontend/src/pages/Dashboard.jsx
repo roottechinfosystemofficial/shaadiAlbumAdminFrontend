@@ -7,6 +7,7 @@ import DashFooterBoxes from "../component/DashboardComponent/DashFooterBoxes";
 import Cookies from "js-cookie";
 import { useDispatch } from "react-redux";
 import { setAccessToken, setRefreshToken } from "../Redux/Slices/UserSlice";
+import SubscriptionPlans from "../component/SubSriptions/SubScriptionPlans";
 
 const Dashboard = () => {
   const dispatch = useDispatch();
@@ -26,6 +27,8 @@ const Dashboard = () => {
     <div className="flex flex-col gap-[50px] justify-evenly bg-check">
       <Dashdata />
       <BusinessSetting />
+      <SubscriptionPlans />
+
       <DirectLinkCard />
       <DashFooterBoxes />
     </div>

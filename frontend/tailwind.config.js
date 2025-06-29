@@ -18,7 +18,23 @@ export default {
           DEFAULT: "#6366F1",
           dark: "#4F46E5",
         },
+        
       },
+      keyframes: {
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-5px)' },
+        },
+        pulseGlow: {
+          '0%, 100%': { boxShadow: '0 0 0px rgba(255,255,255,0.5)' },
+          '50%': { boxShadow: '0 0 12px rgba(255,255,255,0.8)' },
+        },
+      },
+      animation: {
+        float: 'float 3s ease-in-out infinite',
+        pulseGlow: 'pulseGlow 2s ease-in-out infinite',
+      },
+      
     },
   },
   safelist: [

@@ -12,6 +12,7 @@ import clientViewUserrouter from "./routes/clientViewUser.route.js";
 import { startUserCleanupJob } from "./cronjobs/cleanupOldUsers.js";
 import { listAllKeys } from "./controller/awsrecognition.controller.js";
 import { settingRouter } from "./routes/setting.route.js";
+import planSubscritptionRouter from "./routes/plansubscription.route.js";
 
 // import imageRouter from "./routes/imageRoutes.js";
 
@@ -45,6 +46,7 @@ app.use("/api/v1", flipBookRouter);
 // app.use("/api/v1", imageRouter);
 app.use("/api/v1", clientViewUserrouter);
 app.use("/api/v1",settingRouter)
+app.use("/api/v1",planSubscritptionRouter)
 
 dbConnect();
 

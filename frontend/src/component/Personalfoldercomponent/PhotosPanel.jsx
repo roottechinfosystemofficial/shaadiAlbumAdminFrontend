@@ -9,6 +9,9 @@ import { Loader } from "../Loader";
 import { Trash2 } from "lucide-react";
 import { setS3Keys } from "../../Redux/Slices/S3Images";
 import { getSettings } from "../../Redux/thunkfunctions/settings";
+import ConfirmDeleteModal from "../ConfirmDeleteModal";
+import toast from "../../utils/toast";
+import { setEventImages } from "../../Redux/Slices/EventSlice";
 
 
 const PhotosPanel = () => {
@@ -19,29 +22,67 @@ const PhotosPanel = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tokens, setTokens] = useState({ 1: { original: null, thumbs: null } });
   const [hasNext, setHasNext] = useState(false);
-  const { currentSubEvent, currentEventId } = useSelector(
+  const [deleteImageOpen, setDeleteImageOpen] = useState(false)
+  const[fileName,setFileName]=useState('')
+  const { currentSubEvent, currentEventId,currentEvent } = useSelector(
     (state) => state.event
   );
   const { eventId } = useParams();
   const [reloadKey, setReloadKey] = useState(0);
   const dispatch = useDispatch();
 
-  const { accessToken,authUser } = useSelector((state) => state.user);
-    const settingState = useSelector((state) => state.settings.settingState);
+  const { accessToken, authUser } = useSelector((state) => state.user);
+  const settingState = useSelector((state) => state.settings.settingState);
 
-      console.log("setting State",settingState)
+  console.log("setting State", settingState)
+  
+
+  
+  const originalKeys = Array.from(selectedImages).map((img) => img.originalKey);
+
+
+  console.log("selected Images",originalKeys)
+
+  
 
 
 
-    const fetchUserSettings=async()=>{
-      await dispatch(getSettings({userId:authUser?._id}))
+  const fetchUserSettings = async () => {
+    await dispatch(getSettings({ userId: authUser?._id }))
+
+  }
+
+  const onConfirmDelete = async () => {
+
+    try {
+
+
+
+      const res = await apiRequest("DELETE", `${S3_API_END_POINT}/delete-single/image`, {
+        key : fileName
+
+
+      })
+      fetchImages()
+      setDeleteImageOpen(false)
+
+      toast.success("Image Deleted Succesfully")
+
+    }
+    catch (err) {
+      toast.error(err?.response?.data?.message ?? "Something Went Wrong!!!")
+            setDeleteImageOpen(false)
+
+
 
     }
 
-    useEffect(()=>{
-      fetchUserSettings()
-    },[])
-  
+  }
+
+  useEffect(() => {
+    fetchUserSettings()
+  }, [])
+
 
   const pageSize = 25;
 
@@ -54,62 +95,67 @@ const PhotosPanel = () => {
     setReloadKey((prev) => prev + 1);
   }, [currentEventId, currentSubEvent]);
 
-  useEffect(() => {
-    const fetchImages = async () => {
-      const tokenData = tokens[page] || { original: null, thumbs: null };
-      const { original, thumbs } = tokenData;
 
-      setIsLoading(true);
-      try {
-        const endpoint = `${S3_API_END_POINT}/list-images`;
-        const res = await apiRequest(
-          "POST",
-          endpoint,
-          {
-            eventId,
-            continuationTokenOriginal: original,
-            continuationTokenThumbs: thumbs,
-            pageSize,
-            subEventId: currentSubEvent._id,
-          },
-          accessToken,
-          dispatch
-        );
-        console.log(res);
 
-        console.log({
-          page,
-          tokenData,
-          receivedImages: res.data.images?.length,
-          nextOriginal: res.data.nextTokenOriginal,
-          nextThumbs: res.data.nextTokenThumbs,
-        });
+  const fetchImages = async () => {
+    const tokenData = tokens[page] || { original: null, thumbs: null };
+    const { original, thumbs } = tokenData;
 
-        if (res.status === 200) {
-          const data = res.data.images || [];
-          const nextToken = {
-            original: res.data.nextTokenOriginal,
-            thumbs: res.data.nextTokenThumbs,
-          };
+    setIsLoading(true);
+    try {
+      const endpoint = `${S3_API_END_POINT}/list-images`;
+      const res = await apiRequest(
+        "POST",
+        endpoint,
+        {
+          eventId,
+          continuationTokenOriginal: original,
+          continuationTokenThumbs: thumbs,
+          pageSize,
+          subEventId: currentSubEvent._id,
+        },
+        accessToken,
+        dispatch
+      );
+      console.log(res);
 
-          setImages(data);
-          dispatch(setS3Keys(data))
+      console.log({
+        page,
+        tokenData,
+        receivedImages: res.data.images?.length,
+        nextOriginal: res.data.nextTokenOriginal,
+        nextThumbs: res.data.nextTokenThumbs,
+      });
 
-          setHasNext(!!(nextToken.original || nextToken.thumbs));
+      if (res.status === 200) {
+        const data = res.data.images || [];
+        const nextToken = {
+          original: res.data.nextTokenOriginal,
+          thumbs: res.data.nextTokenThumbs,
+        };
 
-          if (nextToken.original || nextToken.thumbs) {
-            setTokens((prev) => ({
-              ...prev,
-              [page + 1]: nextToken,
-            }));
-          }
+        setImages(data);
+        dispatch(setEventImages(data))
+        dispatch(setS3Keys(data))
+
+        setHasNext(!!(nextToken.original || nextToken.thumbs));
+
+        if (nextToken.original || nextToken.thumbs) {
+          setTokens((prev) => ({
+            ...prev,
+            [page + 1]: nextToken,
+          }));
         }
-      } catch (err) {
-        console.error("Image load error:", err);
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (err) {
+      console.error("Image load error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+
 
     if (eventId && currentSubEvent?._id) {
       fetchImages();
@@ -156,12 +202,25 @@ const PhotosPanel = () => {
     triggerRefresh();
   };
 
+  const onOpenDelete = (item) => {
+    console.log("item selected",item)
+    setFileName(item.originalKey)
+    setDeleteImageOpen(true)
+
+  }
+
+  const onCancelDelete = () => {
+    setDeleteImageOpen(false)
+
+
+  }
+
   const eventDate = currentSubEvent?.createdAt
     ? new Date(currentSubEvent.createdAt).toLocaleString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
     : "No Date Provided";
 
   return (
@@ -200,11 +259,10 @@ const PhotosPanel = () => {
               className="sr-only"
             />
             <div
-              className={`w-4 h-4 rounded border-2 flex items-center justify-center transition ${
-                allSelected
-                  ? "bg-primary border-primary"
-                  : "bg-check border-slate-dark"
-              }`}
+              className={`w-4 h-4 rounded border-2 flex items-center justify-center transition ${allSelected
+                ? "bg-primary border-primary"
+                : "bg-check border-slate-dark"
+                }`}
             >
               {allSelected && (
                 <svg
@@ -229,11 +287,10 @@ const PhotosPanel = () => {
             <button
               onClick={() => setPage((prev) => Math.max(1, prev - 1))}
               disabled={page === 1 || isLoading}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition shadow-sm ${
-                page === 1 || isLoading
-                  ? "bg-slate text-gray-400 cursor-not-allowed"
-                  : "bg-primary hover:bg-primary-dark text-white"
-              }`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition shadow-sm ${page === 1 || isLoading
+                ? "bg-slate text-gray-400 cursor-not-allowed"
+                : "bg-primary hover:bg-primary-dark text-white"
+                }`}
             >
               <ChevronLeft className="w-4 h-4" />
               Previous
@@ -246,11 +303,10 @@ const PhotosPanel = () => {
             <button
               onClick={() => setPage((prev) => prev + 1)}
               disabled={!hasNext || isLoading}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition shadow-sm ${
-                !hasNext || isLoading
-                  ? "bg-slate text-gray-400 cursor-not-allowed"
-                  : "bg-primary hover:bg-primary-dark text-white"
-              }`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition shadow-sm ${!hasNext || isLoading
+                ? "bg-slate text-gray-400 cursor-not-allowed"
+                : "bg-primary hover:bg-primary-dark text-white"
+                }`}
             >
               Next
               <ChevronRight className="w-4 h-4" />
@@ -268,8 +324,8 @@ const PhotosPanel = () => {
             selected={[...selectedImages].some(
               (i) => i.originalUrl === img.originalUrl
             )}
-            onToggleSelect={() => toggleSelect(img)}
-            onDelete={()=>{alert(img.filename)}}
+            onToggleSelect={() => { toggleSelect(img) }}
+            onDelete={()=>{onOpenDelete(img)}}
             waterMarkEnabled={settingState.waterMarkEnabled}
             watermarkText={settingState.watermarkText}
             watermarkType={settingState.watermarkType}
@@ -298,6 +354,8 @@ const PhotosPanel = () => {
         onUploadSuccess={handleUploadSuccess}
         currentSubEvent={currentSubEvent}
       />
+      <ConfirmDeleteModal onConfirm={onConfirmDelete} eventName={'Image'} onCancel={onCancelDelete} isOpen={deleteImageOpen} />
+
     </div>
   );
 };
@@ -344,9 +402,8 @@ const ImageCard = ({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-lg shadow group ${
-        selected ? "ring-2 ring-primary" : ""
-      }`}
+      className={`relative overflow-hidden rounded-lg shadow group ${selected ? "ring-2 ring-primary" : ""
+        }`}
     >
       {/* Image */}
       <img
@@ -390,11 +447,10 @@ const ImageCard = ({
             className="sr-only"
           />
           <div
-            className={`w-4 h-4 rounded border-2 flex items-center justify-center transition ${
-              selected
-                ? "bg-primary border-primary"
-                : "bg-check border-slate-dark"
-            }`}
+            className={`w-4 h-4 rounded border-2 flex items-center justify-center transition ${selected
+              ? "bg-primary border-primary"
+              : "bg-check border-slate-dark"
+              }`}
           >
             {selected && (
               <svg

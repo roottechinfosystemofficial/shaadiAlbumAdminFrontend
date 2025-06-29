@@ -24,7 +24,7 @@ const AddPhotosModal = ({
   const [showRefreshButton, setShowRefreshButton] = useState(false); // New state for refresh button
 
   const { currentEvent } = useSelector((state) => state.event);
-  const { accessToken } = useSelector((state) => state.user);
+  const { accessToken,authUser } = useSelector((state) => state.user);
   const { refetchImageCount } = useGetEventImagesCount(currentEvent?._id);
   const dispatch = useDispatch();
 
@@ -91,109 +91,228 @@ const AddPhotosModal = ({
     }
   };
 
+  // const processInPipeline = async (files) => {
+  //   const BATCH_SIZE = 50;
+  //   const MAX_CONCURRENT_UPLOADS = 5;
+
+  //   setUploading(true);
+  //   setUploadedCount(0);
+  //   setCancelRequested(false);
+  //   toast.loading("Uploading images...");
+
+  //   try {
+  //     for (let i = 0; i < files.length; i += BATCH_SIZE) {
+  //       if (cancelRequested) break;
+  //       const batch = files.slice(i, i + BATCH_SIZE);
+  //       const uploadQueue = [...batch.entries()];
+  //       const activeUploads = [];
+
+  //       const startUpload = async ([batchIndex, file]) => {
+  //         const globalIndex = i + batchIndex;
+  //         if (cancelRequested) return;
+
+  //         const cancelToken = axios.CancelToken.source();
+  //         setCancelTokens((prev) => [...prev, cancelToken]);
+
+  //         const compressed = await compressFile(file, globalIndex);
+  //         if (!compressed || cancelRequested) return;
+
+  //         try {
+  //           const urlResponse = await apiRequest(
+  //             "POST",
+  //             `${S3_API_END_POINT}/get-presigned-url`,
+  //             {
+  //               eventId: currentEvent?._id,
+  //               subEventId: currentSubEvent?._id,
+  //               userId:authUser?._id,
+  //               files: [
+  //                 {
+  //                   fileName: compressed.name,
+  //                   fileType: compressed.type,
+  //                   fileSize: compressed.size,
+  //                 },
+  //               ],
+  //             },
+  //             accessToken,
+  //             dispatch
+  //           );
+
+  //           const url = urlResponse?.data?.urls?.[0]?.url;
+  //           if (url && !cancelRequested) {
+  //             await uploadFile(url, compressed, globalIndex, cancelToken);
+  //           } else {
+  //             setUploadStatuses((prev) => ({
+  //               ...prev,
+  //               [globalIndex]: "URL Error ❌",
+  //             }));
+  //             setUploadProgresses((prev) => ({ ...prev, [globalIndex]: -1 }));
+  //           }
+  //         } catch (err) {
+  //           setUploadStatuses((prev) => ({
+  //             ...prev,
+  //             [globalIndex]: "URL Fetch Failed ❌",
+  //           }));
+  //           setUploadProgresses((prev) => ({ ...prev, [globalIndex]: -1 }));
+  //         }
+  //       };
+
+  //       while (
+  //         !cancelRequested &&
+  //         (uploadQueue.length > 0 || activeUploads.length > 0)
+  //       ) {
+  //         while (
+  //           !cancelRequested &&
+  //           activeUploads.length < MAX_CONCURRENT_UPLOADS &&
+  //           uploadQueue.length > 0
+  //         ) {
+  //           const promise = startUpload(uploadQueue.shift());
+  //           activeUploads.push(promise);
+  //           promise.finally(() => {
+  //             const idx = activeUploads.indexOf(promise);
+  //             if (idx !== -1) activeUploads.splice(idx, 1);
+  //           });
+  //         }
+
+  //         if (activeUploads.length > 0) {
+  //           await Promise.race(activeUploads);
+  //         }
+  //       }
+  //     }
+
+  //     if (!cancelRequested) {
+  //       toast.dismiss();
+  //       toast.success("Images uploaded ✅");
+  //       onUploadSuccess?.(); // Trigger this to notify the parent to refresh images manually
+  //       handleClose();
+  //     }
+  //   } catch (err) {
+  //                 toast.error(err?.response?.data?.error)
+
+  //     if (!cancelRequested) {
+  //       console.error("Upload error:", err);
+  //       toast.dismiss();
+  //       toast.error("Upload failed ❌");
+  //     }
+  //   } finally {
+  //     setUploading(false);
+  //   }
+  // };
+
   const processInPipeline = async (files) => {
-    const BATCH_SIZE = 50;
-    const MAX_CONCURRENT_UPLOADS = 5;
+  const BATCH_SIZE = 50;
+  const MAX_CONCURRENT_UPLOADS = 5;
 
-    setUploading(true);
-    setUploadedCount(0);
-    setCancelRequested(false);
-    toast.loading("Uploading images...");
+  setUploading(true);
+  setUploadedCount(0);
+  setCancelRequested(false);
+  toast.loading("Uploading images...");
 
-    try {
-      for (let i = 0; i < files.length; i += BATCH_SIZE) {
-        if (cancelRequested) break;
-        const batch = files.slice(i, i + BATCH_SIZE);
-        const uploadQueue = [...batch.entries()];
-        const activeUploads = [];
+  let hasUploadFailure = false;
 
-        const startUpload = async ([batchIndex, file]) => {
-          const globalIndex = i + batchIndex;
-          if (cancelRequested) return;
+  try {
+    for (let i = 0; i < files.length; i += BATCH_SIZE) {
+      if (cancelRequested) break;
 
-          const cancelToken = axios.CancelToken.source();
-          setCancelTokens((prev) => [...prev, cancelToken]);
+      const batch = files.slice(i, i + BATCH_SIZE);
+      const uploadQueue = [...batch.entries()];
+      const activeUploads = new Set();
 
-          const compressed = await compressFile(file, globalIndex);
-          if (!compressed || cancelRequested) return;
+      const startUpload = async ([batchIndex, file]) => {
+        const globalIndex = i + batchIndex;
+        if (cancelRequested) return;
 
-          try {
-            const urlResponse = await apiRequest(
-              "POST",
-              `${S3_API_END_POINT}/get-presigned-url`,
-              {
-                eventId: currentEvent?._id,
-                subEventId: currentSubEvent?._id,
-                files: [
-                  {
-                    fileName: compressed.name,
-                    fileType: compressed.type,
-                    fileSize: compressed.size,
-                  },
-                ],
-              },
-              accessToken,
-              dispatch
-            );
+        const cancelToken = axios.CancelToken.source();
+        setCancelTokens((prev) => [...prev, cancelToken]);
 
-            const url = urlResponse?.data?.urls?.[0]?.url;
-            if (url && !cancelRequested) {
-              await uploadFile(url, compressed, globalIndex, cancelToken);
-            } else {
-              setUploadStatuses((prev) => ({
-                ...prev,
-                [globalIndex]: "URL Error ❌",
-              }));
-              setUploadProgresses((prev) => ({ ...prev, [globalIndex]: -1 }));
-            }
-          } catch (err) {
+        const compressed = await compressFile(file, globalIndex);
+        if (!compressed || cancelRequested) return;
+
+        try {
+          const urlResponse = await apiRequest(
+            "POST",
+            `${S3_API_END_POINT}/get-presigned-url`,
+            {
+              eventId: currentEvent?._id,
+              subEventId: currentSubEvent?._id,
+              userId: authUser?._id,
+              files: [
+                {
+                  fileName: compressed.name,
+                  fileType: compressed.type,
+                  size: compressed.size, // ✅ Correct key
+                },
+              ],
+            },
+            accessToken,
+            dispatch
+          );
+
+          const url = urlResponse?.data?.urls?.[0]?.url;
+          if (url && !cancelRequested) {
+            await uploadFile(url, compressed, globalIndex, cancelToken);
+          } else {
+            hasUploadFailure = true;
             setUploadStatuses((prev) => ({
               ...prev,
-              [globalIndex]: "URL Fetch Failed ❌",
+              [globalIndex]: "URL Error ❌",
             }));
             setUploadProgresses((prev) => ({ ...prev, [globalIndex]: -1 }));
           }
-        };
+        } catch (err) {
+          hasUploadFailure = true;
+                  toast.error(err?.response?.data?.error ??   "Some uploads failed ❌");
 
+          console.error("Upload URL error:", err?.response || err);
+          setUploadStatuses((prev) => ({
+            ...prev,
+            [globalIndex]: "URL Fetch Failed ❌",
+          }));
+          setUploadProgresses((prev) => ({ ...prev, [globalIndex]: -1 }));
+        }
+      };
+
+      while (!cancelRequested && (uploadQueue.length > 0 || activeUploads.size > 0)) {
         while (
           !cancelRequested &&
-          (uploadQueue.length > 0 || activeUploads.length > 0)
+          activeUploads.size < MAX_CONCURRENT_UPLOADS &&
+          uploadQueue.length > 0
         ) {
-          while (
-            !cancelRequested &&
-            activeUploads.length < MAX_CONCURRENT_UPLOADS &&
-            uploadQueue.length > 0
-          ) {
-            const promise = startUpload(uploadQueue.shift());
-            activeUploads.push(promise);
-            promise.finally(() => {
-              const idx = activeUploads.indexOf(promise);
-              if (idx !== -1) activeUploads.splice(idx, 1);
-            });
-          }
+          const uploadTask = startUpload(uploadQueue.shift());
+          activeUploads.add(uploadTask);
 
-          if (activeUploads.length > 0) {
-            await Promise.race(activeUploads);
-          }
+          uploadTask.finally(() => {
+            activeUploads.delete(uploadTask);
+          });
+        }
+
+        if (activeUploads.size > 0) {
+          await Promise.race(activeUploads);
         }
       }
+    }
 
-      if (!cancelRequested) {
-        toast.dismiss();
-        toast.success("Images uploaded ✅");
-        onUploadSuccess?.(); // Trigger this to notify the parent to refresh images manually
+    toast.dismiss();
+
+    if (!cancelRequested) {
+      if (hasUploadFailure) {
+        toast.error(err?.response?.data?.error ??   "Some uploads failed ❌");
+      } else {
+        toast.success("Images uploaded successfully ✅");
+        onUploadSuccess?.();
         handleClose();
       }
-    } catch (err) {
-      if (!cancelRequested) {
-        console.error("Upload error:", err);
-        toast.dismiss();
-        toast.error("Upload failed ❌");
-      }
-    } finally {
-      setUploading(false);
     }
-  };
+  } catch (err) {
+    toast.dismiss();
+    if (!cancelRequested) {
+      toast.error(err?.response?.data?.error || "Upload failed ❌");
+      console.error("Pipeline error:", err);
+    }
+  } finally {
+    setUploading(false);
+  }
+};
+
 
   const handleRefreshImages = () => {
     refetchImageCount();
