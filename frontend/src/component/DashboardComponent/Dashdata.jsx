@@ -5,17 +5,35 @@ import {
   FaImages,
   FaHdd,
   FaClock,
+
 } from "react-icons/fa";
+import { GrStorage } from "react-icons/gr";
+
 import { useDispatch, useSelector } from "react-redux";
 import toast from "../../utils/toast";
 import { USER_API_END_POINT } from "../../constant";
 import apiRequest from "../../utils/apiRequest";
 import ErrorModal from "../UsersComponent/ErrorModal";
 import LoaderModal from "../LoadingModal";
+import { getPlanSubscriptionInfo } from "../../Redux/thunkfunctions/plansubscription";
+import { store } from "../../Redux/Store";
+import { LuScanFace } from "react-icons/lu";
+import { bytesToGB } from "../../../../backend/utils/response.util";
+
+const formatDate = (isoDate) => {
+  const date = new Date(isoDate);
+  const dd = String(date.getDate()).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const yy = String(date.getFullYear()).slice(-2);
+  return `${dd}-${mm}-${yy}`;
+};
+
 const Dashdata = () => {
   const { accessToken } = useSelector((state) => state.user);
-  const[error,setError]=useState('')
-  const[loading,setLoading]=useState(false)
+  const subscription = useSelector((state) => state.subscription.subscriptionState.subscriptions);
+
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const dispatch = useDispatch();
   const [dashboardData, setDashboardData] = useState({
     totalUsers: 0,
@@ -36,9 +54,9 @@ const Dashdata = () => {
       setLoading(false)
     } catch (error) {
       console.log(error)
-      toast.error(error?.response?.data?.error ??  "Failed to load dashboard");
+      toast.error(error?.response?.data?.error ?? "Failed to load dashboard");
       setError(error?.response?.data?.error)
-            setLoading(false)
+      setLoading(false)
 
     }
   };
@@ -49,8 +67,16 @@ const Dashdata = () => {
     }
   }, [accessToken]);
 
+  const getSubScriptionInfo = async () => {
+    await dispatch(getPlanSubscriptionInfo({ id: store.getState().user.authUser?._id }))
+
+  }
+  useEffect(() => {
+    getSubScriptionInfo()
+  }, [])
+
   const data = [
-     {
+    {
       icon: <FaUsers />,
       label: "Total FlipBooks",
       value: dashboardData.totalUsers,
@@ -71,7 +97,17 @@ const Dashdata = () => {
       value: `${dashboardData.userImageCount}`,
     },
     // { icon: <FaHdd />, label: "Storage", value: "400GB" },
-    { icon: <FaClock />, label: "Expiry On", value: "Coming Soon" },
+    { icon: <FaClock />, label: "Expiry On", value: dashboardData.expiryDate != 'Coming Soon' ? formatDate(dashboardData.expiryDate) : "Coming Soon" },
+    {
+      icon: <GrStorage />,
+      label: "Storage Used",
+      value: `${bytesToGB(subscription?.usedStorageInBytes, 6)} / ${subscription?.storageLimitGB} GB`,
+    },
+    {
+      icon: <LuScanFace />,
+      label: "Face Scans",
+      value: `${subscription?.faceRecognitionsUsed} / ${subscription?.faceRecognitionLimit}`,
+    },
   ];
 
   return (
@@ -96,9 +132,9 @@ const Dashdata = () => {
           </div>
         </div>
       ))}
-      <ErrorModal message={error} isOpen={error!=''} />
-      <LoaderModal message="Dashboard data is loading..." isOpen={loading}/>
-      
+      <ErrorModal message={error} isOpen={error != ''} />
+      <LoaderModal message="Dashboard data is loading..." isOpen={loading} />
+
     </div>
   );
 };

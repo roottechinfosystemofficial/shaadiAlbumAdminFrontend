@@ -19,7 +19,7 @@ import ImageCropModal from "./PopUps/ImageCropModal.jsx";
 
 const PersonalfolderAside = () => {
   const { eventId } = useParams();
-  const { currentEvent, eventImage } = useSelector((state) => state.event);
+  const { currentEvent, eventImage,images } = useSelector((state) => state.event);
   const [isOpen, setIsOpen] = useState(false)
   const navigate = useNavigate();
   const { accessToken } = useSelector((state) => state.user);
@@ -268,7 +268,7 @@ const PersonalfolderAside = () => {
 
         <div className="flex justify-between text-sm text-gray-500 mt-2">
           <p>Total Images:</p>
-          <p>{currentEvent?.eventTotalImages}</p>
+          <p>{images?.length}</p>
         </div>
       </div>
 

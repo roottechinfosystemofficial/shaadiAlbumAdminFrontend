@@ -217,59 +217,137 @@ const AddPhotosModal = ({
       const uploadQueue = [...batch.entries()];
       const activeUploads = new Set();
 
+      // const startUpload = async ([batchIndex, file]) => {
+      //   const globalIndex = i + batchIndex;
+      //   if (cancelRequested) return;
+
+      //   const cancelToken = axios.CancelToken.source();
+      //   setCancelTokens((prev) => [...prev, cancelToken]);
+
+      //   const compressed = await compressFile(file, globalIndex);
+      //   if (!compressed || cancelRequested) return;
+
+      //   try {
+      //     const urlResponse = await apiRequest(
+      //       "POST",
+      //       `${S3_API_END_POINT}/get-presigned-url`,
+      //       {
+      //         eventId: currentEvent?._id,
+      //         subEventId: currentSubEvent?._id,
+      //         userId: authUser?._id,
+      //         files: [
+      //           {
+      //             fileName: compressed.name,
+      //             fileType: compressed.type,
+      //             size: compressed.size, // ✅ Correct key
+      //           },
+      //         ],
+      //       },
+      //       accessToken,
+      //       dispatch
+      //     );
+
+      //     const url = urlResponse?.data?.urls?.[0]?.url;
+      //     if (url && !cancelRequested) {
+      //       await uploadFile(url, compressed, globalIndex, cancelToken);
+      //     } else {
+      //       hasUploadFailure = true;
+      //       setUploadStatuses((prev) => ({
+      //         ...prev,
+      //         [globalIndex]: "URL Error ❌",
+      //       }));
+      //       setUploadProgresses((prev) => ({ ...prev, [globalIndex]: -1 }));
+      //     }
+      //   } catch (err) {
+      //     hasUploadFailure = true;
+      //             toast.error(err?.response?.data?.error ??   "Some uploads failed ❌");
+
+      //     console.error("Upload URL error:", err?.response || err);
+      //     setUploadStatuses((prev) => ({
+      //       ...prev,
+      //       [globalIndex]: "URL Fetch Failed ❌",
+      //     }));
+      //     setUploadProgresses((prev) => ({ ...prev, [globalIndex]: -1 }));
+      //   }
+      // };
       const startUpload = async ([batchIndex, file]) => {
-        const globalIndex = i + batchIndex;
-        if (cancelRequested) return;
+  const globalIndex = i + batchIndex;
+  if (cancelRequested) return;
 
-        const cancelToken = axios.CancelToken.source();
-        setCancelTokens((prev) => [...prev, cancelToken]);
+  const cancelToken = axios.CancelToken.source();
+  setCancelTokens((prev) => [...prev, cancelToken]);
 
-        const compressed = await compressFile(file, globalIndex);
-        if (!compressed || cancelRequested) return;
+  // Compress for original
+  const originalCompressed = await compressFile(file, globalIndex);
+  if (!originalCompressed || cancelRequested) return;
 
-        try {
-          const urlResponse = await apiRequest(
-            "POST",
-            `${S3_API_END_POINT}/get-presigned-url`,
-            {
-              eventId: currentEvent?._id,
-              subEventId: currentSubEvent?._id,
-              userId: authUser?._id,
-              files: [
-                {
-                  fileName: compressed.name,
-                  fileType: compressed.type,
-                  size: compressed.size, // ✅ Correct key
-                },
-              ],
-            },
-            accessToken,
-            dispatch
-          );
+  // ✅ Create thumbnail version
+  const thumbnailCompressed = await imageCompression(file, {
+    maxSizeMB: 0.2,
+    maxWidthOrHeight: 300,
+    useWebWorker: true,
+  });
 
-          const url = urlResponse?.data?.urls?.[0]?.url;
-          if (url && !cancelRequested) {
-            await uploadFile(url, compressed, globalIndex, cancelToken);
-          } else {
-            hasUploadFailure = true;
-            setUploadStatuses((prev) => ({
-              ...prev,
-              [globalIndex]: "URL Error ❌",
-            }));
-            setUploadProgresses((prev) => ({ ...prev, [globalIndex]: -1 }));
-          }
-        } catch (err) {
-          hasUploadFailure = true;
-                  toast.error(err?.response?.data?.error ??   "Some uploads failed ❌");
+  if (!thumbnailCompressed || cancelRequested) return;
 
-          console.error("Upload URL error:", err?.response || err);
-          setUploadStatuses((prev) => ({
-            ...prev,
-            [globalIndex]: "URL Fetch Failed ❌",
-          }));
-          setUploadProgresses((prev) => ({ ...prev, [globalIndex]: -1 }));
-        }
-      };
+  try {
+    // Step 1: Get presigned URLs for both original and thumbnail
+    const urlResponse = await apiRequest(
+      "POST",
+      `${S3_API_END_POINT}/get-presigned-url`,
+      {
+        eventId: currentEvent?._id,
+        subEventId: currentSubEvent?._id,
+        userId: authUser?._id,
+        files: [
+          {
+            fileName: originalCompressed.name,
+            fileType: originalCompressed.type,
+            size: originalCompressed.size,
+            path: "Original", // 👈 specify path for backend
+          },
+          {
+            fileName: originalCompressed.name, // same name
+            fileType: thumbnailCompressed.type,
+            size: thumbnailCompressed.size,
+            path: "Thumb", // 👈 thumbnail path for backend
+          },
+        ],
+      },
+      accessToken,
+      dispatch
+    );
+
+    const urls = urlResponse?.data?.urls || [];
+    const originalUrl = urls.find((u) => u.key.includes("/Original/"))?.url;
+    const thumbUrl = urls.find((u) => u.key.includes("/Thumb/"))?.url;
+
+    if (!originalUrl || !thumbUrl) {
+      hasUploadFailure = true;
+      setUploadStatuses((prev) => ({
+        ...prev,
+        [globalIndex]: "URL Missing ❌",
+      }));
+      setUploadProgresses((prev) => ({ ...prev, [globalIndex]: -1 }));
+      return;
+    }
+
+    // Step 2: Upload both
+    await uploadFile(originalUrl, originalCompressed, globalIndex, cancelToken);
+    await uploadFile(thumbUrl, thumbnailCompressed, globalIndex, cancelToken);
+
+  } catch (err) {
+    hasUploadFailure = true;
+    toast.error(err?.response?.data?.error ?? "Some uploads failed ❌");
+
+    setUploadStatuses((prev) => ({
+      ...prev,
+      [globalIndex]: "Upload failed ❌",
+    }));
+    setUploadProgresses((prev) => ({ ...prev, [globalIndex]: -1 }));
+  }
+};
+
 
       while (!cancelRequested && (uploadQueue.length > 0 || activeUploads.size > 0)) {
         while (

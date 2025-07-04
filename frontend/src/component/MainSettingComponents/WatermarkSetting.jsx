@@ -111,7 +111,7 @@ const WatermarkSetting = () => {
     <div className="min-h-screen p-4 sm:p-6 bg-slate text-gray-900">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="relative w-full aspect-video rounded overflow-hidden shadow border border-slate-dark bg-white">
-          <img src={sampleImg} alt="preview" className="w-full h-full object-cover" />
+          <img  src={sampleImg} alt="preview" className="w-full h-full object-cover" />
           {settingState.watermarkType === "text" && (
             <div
               className="absolute"
@@ -132,8 +132,8 @@ const WatermarkSetting = () => {
               alt="Watermark Icon"
               className="absolute"
               style={{
-                width: `${settingState.fontSize}px`,
-                height: `${settingState.fontSize}px`,
+                width: `${settingState.iconSize}px`,
+                height: `${settingState.iconSize}px`,
                 opacity: settingState.opacity / 100,
                 ...getPositionStyles(),
               }}
@@ -187,28 +187,42 @@ const WatermarkSetting = () => {
                     {fontColors.map((color) => <option key={color} value={color}>{color}</option>)}
                   </select>
                 </div>
+                
               </div>
+              <div className="mt-10">
+              <label className="font-semibold">Size</label>
+            <input
+              type="range"
+              min="10"
+              max="150"
+              value={settingState.fontSize}
+              onChange={(e) => {updateSetting("fontSize", Number(e.target.value));console.log(e.target.value)}}
+              className="w-full"
+            />
+            </div>
             </>
           )}
 
           {settingState.watermarkType === "icon" && (
             <div>
               <label className="font-semibold">Upload Watermark Icon</label>
+              
               <input type="file" accept="image/*" onChange={handleIconUpload} className="mt-1" />
-            </div>
-          )}
-
-          <div>
+               <div>
             <label className="font-semibold">Size</label>
             <input
               type="range"
               min="10"
               max="150"
-              value={settingState.fontSize}
-              onChange={(e) => updateSetting("fontSize", Number(e.target.value))}
+              value={settingState.iconSize}
+              onChange={(e) => {updateSetting("iconSize", Number(e.target.value));console.log(e.target.value)}}
               className="w-full"
             />
           </div>
+            </div>
+          )}
+
+         
 
           <div>
             <label className="font-semibold">Opacity</label>

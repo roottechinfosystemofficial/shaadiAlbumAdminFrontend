@@ -10,6 +10,8 @@ import { useDispatch } from "react-redux";
 import { setAuthUser } from "../Redux/Slices/UserSlice";
 import toast from "../utils/toast";
 import BtnLoader from "../component/Loader";
+import { getPlanSubscriptionInfo } from "../Redux/thunkfunctions/plansubscription";
+import { store } from "../Redux/Store";
 
 const features = [
   {
@@ -79,6 +81,7 @@ const LoginPage = () => {
         });
 
         toast.success("Login successful!");
+        await dispatch(getPlanSubscriptionInfo({id:store.getState().user.authUser?._id}))
         navigate("/");
       }
     } catch (error) {

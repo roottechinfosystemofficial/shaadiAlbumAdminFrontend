@@ -3,18 +3,20 @@ import Basesetting from "../component/MainSettingComponents/Basesetting";
 import FaceRecognizationHistory from "../component/MainSettingComponents/FaceRecognizationHistory";
 import WatermarkSetting from "../component/MainSettingComponents/WatermarkSetting";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const MainSetting = () => {
   const [activeTab, setActiveTab] = useState("settings");
+  const subscriptionState = useSelector((state) => state.subscription.subscriptionState)
 
 
-  const navigate=useNavigate()
+
+  const navigate = useNavigate()
 
   const tabClass = (tab) =>
-    `px-4 py-2 text-lg font-semibold transition duration-200 ${
-      activeTab === tab
-        ? "text-primary border-b-2 border-primary"
-        : "text-muted hover:text-primary"
+    `px-4 py-2 text-lg font-semibold transition duration-200 ${activeTab === tab
+      ? "text-primary border-b-2 border-primary"
+      : "text-muted hover:text-primary"
     }`;
 
   return (
@@ -30,10 +32,12 @@ const MainSetting = () => {
 
         <button
           className={tabClass("faceRecognition")}
-          onClick={() => {setActiveTab("faceRecognition");navigate('FaceRecognitionHistory')}}
+          onClick={() => { setActiveTab("faceRecognition"); navigate('FaceRecognitionHistory') }}
         >
           Face Recognition History
         </button>
+        
+        
         <button
           className={tabClass("watermark")}
           onClick={() => setActiveTab("watermark")}

@@ -25,6 +25,7 @@ const settingSchema = new mongoose.Schema(
       default: "white",
     },
     fontSize: { type: Number, default: 75 },
+    iconSize :{type:Number,default:5},
     opacity: { type: Number, min: 0, max: 100, default: 50 },
     waterMarkEnabled:{
         type : Boolean,

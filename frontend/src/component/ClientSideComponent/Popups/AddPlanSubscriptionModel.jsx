@@ -1,11 +1,8 @@
-// components/CreateSubscriptionModal.tsx
 import React from "react";
-import { X, Star } from "lucide-react";
+import { X, Star, CreditCard, IndianRupee, ScanLine } from "lucide-react";
 import clsx from "clsx";
 
-
-
-const CreateSubscriptionModal= ({
+const CreateSubscriptionModal = ({
   isOpen,
   onClose,
   onCreate,
@@ -15,7 +12,6 @@ const CreateSubscriptionModal= ({
 
   const Icon = selectedPlan.icon;
 
-  // Extract prefill details from features
   const parseFeature = (featureName, keyword) =>
     featureName.toLowerCase().includes(keyword.toLowerCase());
 
@@ -33,6 +29,12 @@ const CreateSubscriptionModal= ({
     ? 6
     : 3;
 
+  const handleCashfreePayment = () => {
+    // TODO: Integrate Cashfree payment logic here
+    console.log("Initiate Cashfree payment for", selectedPlan.name);
+    onCreate(); // Call original onCreate after payment for now
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="relative w-full max-w-xl p-6 bg-white rounded-2xl shadow-xl animate-fade-in-down">
@@ -46,19 +48,19 @@ const CreateSubscriptionModal= ({
 
         {/* Modal Title */}
         <div className="flex justify-center mb-6">
-  <div className="flex items-center space-x-3">
-    <Icon
-      className={`text-white p-1 rounded-full w-9 h-9 bg-gradient-to-r ${selectedPlan.gradient}`}
-    />
-    <h2 className="text-2xl font-semibold text-gray-800 text-center">
-      Subscription Details: {selectedPlan.name}
-    </h2>
-  </div>
-</div>
+          <div className="flex items-center space-x-3">
+            <Icon
+              className={`text-white p-1 rounded-full w-9 h-9 bg-gradient-to-r ${selectedPlan.gradient}`}
+            />
+            <h2 className="text-2xl font-semibold text-gray-800 text-center">
+              Subscription Details: {selectedPlan.name}
+            </h2>
+          </div>
+        </div>
 
-
-        {/* Prefilled Fields */}
+        {/* Feature Info */}
         <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
+          {/* Same fields as before */}
           <div className="input-style bg-gray-50">
             <label className="block text-xs text-gray-500">Plan Name</label>
             {selectedPlan.name}
@@ -105,16 +107,35 @@ const CreateSubscriptionModal= ({
           </div>
         </div>
 
-        {/* Confirm Button */}
+        {/* Payment Section */}
+        <div className="mt-6 p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
+          <h3 className="text-sm font-semibold text-indigo-700 flex items-center mb-2">
+            <CreditCard className="mr-2 text-indigo-600" size={18} />
+            Payment Method
+          </h3>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <ScanLine className="text-green-600" size={22} />
+              <span className="text-gray-800 font-medium">Cashfree Gateway</span>
+            </div>
+            <div className="text-indigo-600 font-bold text-lg flex items-center">
+              <IndianRupee size={16} className="mr-1" />
+              {priceAmount}
+            </div>
+          </div>
+        </div>
+
+        {/* Confirm & Pay Button */}
         <div className="mt-6 text-right">
           <button
-            onClick={onCreate}
+            onClick={handleCashfreePayment}
             className={clsx(
-              "inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-full shadow-md transition-transform hover:scale-105 hover:shadow-lg"
+              "inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-full shadow-md transition-transform hover:scale-105 hover:shadow-lg"
             )}
           >
-            <Star className="mr-2 animate-bounce" size={20} />
-            Confirm Subscription
+            <CreditCard className="mr-2" size={20} />
+            Proceed to Pay
           </button>
         </div>
       </div>

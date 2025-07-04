@@ -20,6 +20,8 @@ const AddSinglePhotoModal = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState("");
   const [cancelToken, setCancelToken] = useState(null);
+    const { coverImg, position } = useSelector((state) => state.coverImg);
+  
 
   const { currentEvent } = useSelector((state) => state.event);
   const { accessToken } = useSelector((state) => state.user);
@@ -57,40 +59,18 @@ const AddSinglePhotoModal = ({
     }
   };
 
-//   const uploadFile = async (url, file) => {
-//     try {
-//       setUploadStatus("Uploading...");
-//       await axios.put(url, file, {
-//         // headers: { "Content-Type": file.type },
-//         headers: {
-//             "Content-Type": file.type, // file.type must match fileType on backend exactly
-//           },
-//         onUploadProgress: (e) => {
-//           const percent = Math.round((e.loaded * 70) / e.total);
-//           setUploadProgress(50 + percent);
-//         },
-//         cancelToken: cancelToken?.token,
-//       });
-//       console.log("cancel token",cancelToken)
+  const toBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+    });
+  };
 
-//       setUploadStatus("Completed ✅");
-//       setUploadProgress(100);
-//     } catch (err) {
-//       if (axios.isCancel(err)) {
-//         console.log("Upload canceled");
-//         setUploadStatus("Canceled");
-//       } else {
-//         console.error("Upload failed:", err);
-//         setUploadStatus("Upload Failed ❌");
-//         setUploadProgress(-1);
-//       }
-//     }
-//   };
-
-const uploadFile = async (url, file) => {
+  const uploadFile = async (url, file) => {
     try {
-      console.log("Uploading:", file.name, file.type, file.size);
-  
+      setUploadStatus("Uploading...");
       const res = await fetch(url, {
         method: "PUT",
         headers: {
@@ -98,37 +78,36 @@ const uploadFile = async (url, file) => {
         },
         body: file,
       });
-  
+
       if (!res.ok) {
         const errorText = await res.text();
         throw new Error(`Upload failed: ${res.status} - ${errorText}`);
       }
-  
-      console.log("✅ Upload successful");
+
+      setUploadStatus("Completed ✅");
+      setUploadProgress(100);
     } catch (err) {
       console.error("❌ Upload failed", err.message);
+      setUploadStatus("Upload Failed ❌");
+      setUploadProgress(-1);
     }
   };
-  const setCoverImageByFetching=async()=>{
+
+  const setCoverImageByFetching = async () => {
     try {
       const response = await apiRequest(
-        'GET',
+        "GET",
         `${S3_API_END_POINT}/cover-image?eventId=${currentEvent?._id}&subEventId=${currentSubEvent?._id}`
       );
-      dispatch(setCoverImg(response.data.url))
-      
-      console.log(response.data.url)
-
+      dispatch(setCoverImg(response.data.url));
+    } catch (error) {
+      console.log("Cover image fetch error", error);
     }
-    catch(error){
-      console.log("cover image tab error",error)
-
-    }
-
-  }
+  };
 
   const processUpload = async () => {
     if (!selectedFile) return;
+
     setUploading(true);
     toast.loading("Uploading image...");
     const cancelSource = axios.CancelToken.source();
@@ -138,12 +117,15 @@ const uploadFile = async (url, file) => {
       const compressed = await compressFile(selectedFile);
       if (!compressed) return;
 
+      const base64Image = await toBase64(compressed);
+
       const urlResponse = await apiRequest(
         "POST",
-        `${S3_API_END_POINT}/get-presigned-url`,
+        `${S3_API_END_POINT}/cover-image/upload`,
         {
           eventId: currentEvent?._id,
           subEventId: currentSubEvent?._id,
+          base64Image,
           files: [
             {
               fileName: compressed.name,
@@ -151,28 +133,33 @@ const uploadFile = async (url, file) => {
               fileSize: compressed.size,
             },
           ],
+          position:position
         },
         accessToken,
         dispatch
       );
 
-      const url = urlResponse?.data?.urls?.[0]?.url;
+      const url =
+        urlResponse?.data?.imageUrl;
+
       if (url) {
         await uploadFile(url, compressed);
         toast.dismiss();
         toast.success("Image uploaded ✅");
-        dispatch(setCoverImg(url))
+
+        dispatch(setCoverImg(url));
         onUploadSuccess?.();
-        handleClose();
-        await setCoverImageByFetching()
-        
+        handleClose(); // ✅ modal now closes
+        await setCoverImageByFetching();
       } else {
+        console.error("❌ URL missing in response", urlResponse?.data);
         setUploadStatus("URL Error ❌");
       }
     } catch (err) {
-      console.error(err);
+      console.error("❌ Upload process failed", err);
       toast.dismiss();
       toast.error("Upload failed ❌");
+      setUploadStatus("Upload Error ❌");
     } finally {
       setUploading(false);
     }
@@ -184,7 +171,7 @@ const uploadFile = async (url, file) => {
     setUploadProgress(0);
     setUploadStatus("");
     setUploading(false);
-    onClose();
+    onClose(); // ✅ ensure parent hides the modal
   };
 
   const getFileSize = (file) => {
@@ -220,6 +207,7 @@ const uploadFile = async (url, file) => {
               <span className="truncate max-w-[80%]">{selectedFile.name}</span>
               <span className="text-gray-500">{getFileSize(selectedFile)}</span>
             </div>
+
             {uploading && (
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
@@ -230,9 +218,11 @@ const uploadFile = async (url, file) => {
                 ></div>
               </div>
             )}
+
             {uploadStatus && (
               <div className="text-xs text-gray-500">{uploadStatus}</div>
             )}
+
             {!uploading && (
               <button
                 onClick={() => setSelectedFile(null)}
@@ -241,6 +231,7 @@ const uploadFile = async (url, file) => {
                 Remove
               </button>
             )}
+
             <button
               onClick={processUpload}
               className="bg-primary text-white py-2 rounded-lg hover:bg-primary-dark transition w-full"

@@ -26,14 +26,21 @@ const eventSchema = new mongoose.Schema(
     eventDeleteDate: { type: Date },
     eventPassword: { type: String },
     eventImage: { type: String },
+    coverImage: { type: String },
+    coverImagePosition: {
+      type: String,
+      enum: ["left", "center", "right", "bottom"],
+      default: "center",
+    },
+
     eventTotalImages: { type: Number },
     eventDescription: { type: String },
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     subevents: [subEventSchema], // Embedding the subevents array
     isImageDownloadEnabled: {
-    type: Boolean,
-    default: false
-  },
+      type: Boolean,
+      default: false
+    },
   },
   { timestamps: true }
 );

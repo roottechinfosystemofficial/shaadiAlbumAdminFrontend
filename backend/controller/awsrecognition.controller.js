@@ -331,46 +331,60 @@ export const listAllKeys = async () => {
 
 };
 
+
 export const getFaceRecognitionHistoryOfUser = async (req, res) => {
-    const { userId } = req.params;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
+  const { userId } = req.params;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
 
-    try {
-        const result = await FaceRecognitionHistory.aggregate([
-            { $match: { user: new mongoose.Types.ObjectId(userId) } },
-            { $sort: { createdAt: -1 } },
-            {
-                $group: {
-                    _id: "$event",
-                    doc: { $first: "$$ROOT" }
-                }
-            },
-            { $replaceRoot: { newRoot: "$doc" } },
-            {
-                $facet: {
-                    data: [{ $skip: skip }, { $limit: limit }],
-                    totalCount: [{ $count: "count" }]
-                }
-            }
-        ]);
+  try {
+    const aggregationPipeline = [
+      { $match: { user: new mongoose.Types.ObjectId(userId) } },
 
+      // First group by event (to reduce dataset before sorting)
+      {
+        $group: {
+          _id: "$event",
+          doc: { $first: "$$ROOT" }
+        }
+      },
 
-        const history = result[0]?.data || [];
-        const total = result[0]?.totalCount[0]?.count || 0;
-        const totalPages = Math.ceil(total / limit);
+      // Replace root with document
+      { $replaceRoot: { newRoot: "$doc" } },
 
-        return res.status(200).json({
-            history,
-            page,
-            limit,
-            total,
-            totalPages
-        });
-    } catch (err) {
-        console.error("❌ Error fetching face recognition history:", err);
-        return res.status(500).json({ message: "Internal Server Error" });
-    }
+      // Now sort the reduced documents
+      { $sort: { createdAt: -1 } },
+
+      // Paginate and count
+      {
+        $facet: {
+          data: [{ $skip: skip }, { $limit: limit }],
+          totalCount: [{ $count: "count" }]
+        }
+      }
+    ];
+
+    // ✅ This ensures disk is used for sorting if memory limit is exceeded
+    const result = await FaceRecognitionHistory.aggregate(aggregationPipeline)
+      .allowDiskUse(true)
+      .exec();
+
+    const history = result[0]?.data || [];
+    const total = result[0]?.totalCount[0]?.count || 0;
+    const totalPages = Math.ceil(total / limit);
+
+    return res.status(200).json({
+      history,
+      page,
+      limit,
+      total,
+      totalPages,
+    });
+
+  } catch (err) {
+    console.error("❌ Error fetching face recognition history:", err);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
 };
 

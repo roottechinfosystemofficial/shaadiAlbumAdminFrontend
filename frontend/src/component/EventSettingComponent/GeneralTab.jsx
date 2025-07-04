@@ -1,30 +1,39 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, Info } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
-import { saveUserSettings } from "../../Redux/thunkfunctions/settings";
+import { saveUserSettings, getSettings } from "../../Redux/thunkfunctions/settings";
 import { setSettings } from "../../Redux/Slices/SettingSlice";
+import WarningPopup from "../ClientSideComponent/Popups/WarningPopup";
+import { getPlanSubscriptionInfo } from "../../Redux/thunkfunctions/plansubscription";
+import { useEffect } from "react";
 // Toggle Switch Component
 const ToggleSwitch = ({ enabled, onToggle }) => (
   <button
     onClick={onToggle}
-    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 ${
-      enabled ? "bg-green-500" : "bg-gray-300"
-    }`}
+    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 ${enabled ? "bg-green-500" : "bg-gray-300"
+      }`}
   >
     <span
-      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${
-        enabled ? "translate-x-6" : "translate-x-1"
-      }`}
+      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${enabled ? "translate-x-6" : "translate-x-1"
+        }`}
     />
   </button>
 );
 
 const GeneralTab = () => {
   const dispatch = useDispatch();
-    const settingState = useSelector((state) => state.settings.settingState);
-  
-    const { accessToken, authUser } = useSelector((state) => state.user);
-  
+  const settingState = useSelector((state) => state.settings.settingState);
+  const subscriptionState = useSelector((state) => state.subscription.subscriptionState)
+  const [warning, setWarning] = useState(false)
+
+
+  const onClosewarning = () => {
+    setWarning(false)
+
+  }
+
+  const { accessToken, authUser } = useSelector((state) => state.user);
+
 
   const [name, setName] = useState("Rahuk");
   const [emailEnabled, setEmailEnabled] = useState(true);
@@ -39,18 +48,36 @@ const GeneralTab = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleToggleWatermark = () => {
 
-      const updatedState={...settingState}
-    
-      updatedState.waterMarkEnabled = !settingState.waterMarkEnabled
-    
+  const fetchInfo = async () => {
+    await dispatch(getSettings({ userId: authUser?._id }))
+    await dispatch(getPlanSubscriptionInfo({ id: authUser?._id }))
+  }
+
+
+  useEffect(() => {
+    fetchInfo()
+  }, [])
+
+  const handleToggleWatermark = () => {
+    if (!subscriptionState.watermarkAccess) {
+      setWarning(true)
+      return;
+
+    }
+
+    const updatedState = {
+      ...settingState,
+      waterMarkEnabled: !settingState?.waterMarkEnabled,
+    };
+
+
     dispatch(
       saveUserSettings({
         userId: authUser._id,
         accessToken,
-        waterMarkEnabled: !settingState.waterMarkEnabled,
-        settingState:updatedState
+        waterMarkEnabled: !settingState?.waterMarkEnabled,
+        settingState: updatedState
 
       })
     );
@@ -188,6 +215,7 @@ const GeneralTab = () => {
           </div>
         </div>
       </div>
+      <WarningPopup message="You are not allowed to toggle water mark setting" onClose={onClosewarning} isOpen={warning} />
     </div>
   );
 };

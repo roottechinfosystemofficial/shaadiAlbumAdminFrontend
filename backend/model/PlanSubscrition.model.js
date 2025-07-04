@@ -5,8 +5,8 @@ const planSubscriptionSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 
     planName:{type: String,
-      enum: ["Plan 1", "Plan 2", "Plan 3","Plan 4","Plan 5"],
-      default: "Plan1",
+      enum: ["Plan 1", "Plan 2", "Plan 3","Plan 4","Plan 5","Plan 6","Free Trial"],
+      default: "Free Trial",
     },
     price: { type: String, required: true },
 
@@ -21,6 +21,7 @@ const planSubscriptionSchema = new mongoose.Schema({
     watermarkAccess: { type: Boolean, default: false },
     albumPhotoSelection: { type: Boolean, default: false },
     imageDownloadControl: { type: Boolean, default: false },
+    
 
 
     startDate: { type: Date, default: Date.now },

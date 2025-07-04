@@ -1,5 +1,5 @@
 import React from "react";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, useNavigate } from "react-router-dom";
 
 import Dashboard from "./pages/Dashboard";
 import LoginPage from "./pages/LoginPage";
@@ -19,6 +19,14 @@ import MainLayout from "./component/MainLayout";
 import PublicOnlyRoute from "./component/PublicOnlyRoute";
 import ProtectedRoute from "./component/ProtectedRoute";
 import { FaceRecognitionHistory } from "./component/FaceRecognitionHistory";
+import SubscriptionPlans from "./component/SubSriptions/SubScriptionPlans";
+import { getPlanSubscriptionInfo } from "./Redux/thunkfunctions/plansubscription";
+import { store } from "./Redux/Store";
+import { useEffect } from "react";
+import { BASEURI } from "./constant";
+import PlanExpiredPopup from "./component/ClientSideComponent/Popups/PlanExpiredModal";
+import SubscriptionDeactivatedModal from "./component/ClientSideComponent/Popups/PlanStatsShowModal";
+import { useDispatch, useSelector } from "react-redux";
 const appRouter = createBrowserRouter([
   {
     path: "/",
@@ -59,7 +67,10 @@ const appRouter = createBrowserRouter([
 
       { path: "*", element: <Notfound /> },
       {
-        path:"history",element:<FaceRecognitionHistory/>
+        path: "history", element: <FaceRecognitionHistory />
+      },
+      {
+        path: "subscription-plan", element: <SubscriptionPlans />
       }
     ],
   },
@@ -70,7 +81,68 @@ const appRouter = createBrowserRouter([
 ]);
 
 const App = () => {
-  return <RouterProvider router={appRouter} />;
+
+  const dispatch = useDispatch();
+  const userId = useSelector((state) => state.user.authUser?._id);
+
+  // ✅ Subscribe to the updated Redux values here
+  const { planExpired, isActive } = useSelector(
+    (state) => state.subscription.subscriptionState
+  );
+
+  const getPlan=async()=>{
+    await dispatch(getPlanSubscriptionInfo({id:userId}))
+  }
+
+  useEffect(()=>{
+    getPlan()
+  },[])
+
+
+
+  useEffect(() => {
+
+    const eventSource = new EventSource(`${BASEURI}/sse-events`);
+
+    eventSource.onopen = (ev) => {
+      console.log("opned event", ev)
+    }
+
+    eventSource.addEventListener("subscription_deactivated", async(event) => {
+      const data = JSON.parse(event.data);
+      await dispatch(getPlanSubscriptionInfo({id:userId}))
+      console.log("Received subscription deactivated", data);
+    });
+
+    eventSource.addEventListener("plan_expired", async(event) => {
+      const data = JSON.parse(event.data);
+      await dispatch(getPlanSubscriptionInfo({id:userId}))
+      console.log("Received subscription deactivated", data);
+    });
+
+
+    eventSource.onerror = (err) => {
+      console.error("SSE error", err);
+      eventSource.close();
+    };
+
+    return () => eventSource.close();
+  }, [userId]);
+
+
+
+  return (
+    <React.Fragment>
+      <PlanExpiredPopup
+        onUpgrade={() => (window.location.href = "/subscription-plan")}
+        isOpen={planExpired}
+      />
+      <SubscriptionDeactivatedModal
+        isOpen={!isActive}
+      />
+      <RouterProvider router={appRouter} />
+    </React.Fragment>
+  );
 };
 
 export default App;

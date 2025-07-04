@@ -9,7 +9,8 @@ import userReducer from "./Slices/UserSlice";
 import eventReducer from "./Slices/EventSlice.jsx";
 import tabReducer from "./Slices/TabSlice.jsx";
 import  s3ImageReducer from "./Slices/S3Images.jsx";
-import settingsReducer from './Slices/SettingSlice.jsx'
+import settingsReducer from './Slices/SettingSlice.jsx';
+import subscriptionReducer from './Slices/planSubscriptionSlice.jsx'
 
 // 🔐 Persist only `authUser` from user slice
 const authUserTransform = createTransform(
@@ -59,7 +60,8 @@ const rootReducer = combineReducers({
   event: eventReducer,
   tab: tabReducer,
   s3Images:s3ImageReducer,
-  settings:settingsReducer
+  settings:settingsReducer,
+  subscription:subscriptionReducer
 });
 
 // 🧊 Create persisted reducer

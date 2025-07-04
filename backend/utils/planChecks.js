@@ -20,6 +20,7 @@ export const checkFaceRecognitionLimit = (subscription) => {
 };
 
 export const updateStorageUsed = async (subscription, bytesToAdd) => {
+  console.log("passing storage",subscription)
   subscription.usedStorageInBytes += bytesToAdd;
   await subscription.save();
 };

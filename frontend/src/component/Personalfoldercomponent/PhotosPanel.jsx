@@ -319,21 +319,21 @@ const PhotosPanel = () => {
         {images.map((img, index) => (
           <MemoizedImageCard
             key={img.originalUrl + index}
-            src={img.thumbnailUrl}
+            src={img.originalUrl}
             alt={`Image ${index + 1}`}
             selected={[...selectedImages].some(
               (i) => i.originalUrl === img.originalUrl
             )}
             onToggleSelect={() => { toggleSelect(img) }}
             onDelete={()=>{onOpenDelete(img)}}
-            waterMarkEnabled={settingState.waterMarkEnabled}
-            watermarkText={settingState.watermarkText}
-            watermarkType={settingState.watermarkType}
-            fontColor={settingState.fontColor}
-            opacity={settingState.opacity}
-            fontSize={settingState.fontSize}
-            fontStyle={settingState.fontStyle}
-            iconImg={settingState.iconImg}
+            // waterMarkEnabled={settingState.waterMarkEnabled}
+            // watermarkText={settingState.watermarkText}
+            // watermarkType={settingState.watermarkType}
+            // fontColor={settingState.fontColor}
+            // opacity={settingState.opacity}
+            // fontSize={settingState.fontSize}
+            // fontStyle={settingState.fontStyle}
+            // iconImg={settingState.iconImg}
           />
         ))}
       </div>

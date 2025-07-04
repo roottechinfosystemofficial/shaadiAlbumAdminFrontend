@@ -363,6 +363,8 @@ export const deleteEventById=async(req,res)=>{
 
 
 
+
+
 export const uploadEventImage = async (req, res) => {
   try {
     const { eventId } = req.params;

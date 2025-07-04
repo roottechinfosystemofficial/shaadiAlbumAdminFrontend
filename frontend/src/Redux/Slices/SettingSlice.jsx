@@ -12,6 +12,7 @@ const initialState = {
     position: "bottom-right",
     iconImg: "",
     waterMarkEnabled: false,
+    iconSize:0
   },
   loading: false,
   error: null,

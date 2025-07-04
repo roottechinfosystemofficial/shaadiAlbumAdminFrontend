@@ -17,7 +17,6 @@ export const useAuthCheck = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { accessToken,authUser } = useSelector((state) => state.user);
-  console.log("authUser",authUser)
 
   
 

@@ -10,6 +10,9 @@ import {
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import dotenv from "dotenv";
+import { getActiveSubscription } from "../utils/planChecks.js";
+import { createSubscription } from "./plansubscription.controller.js";
+import { PlanSubscription } from "../model/PlanSubscrition.model.js";
 dotenv.config();
 
 const s3Client = new S3Client({
@@ -21,8 +24,20 @@ const s3Client = new S3Client({
 });
 export const signup = async (req, res) => {
   try {
-    const { name, businessName, email, password, phone } = req.body;
+    const { name, businessName, email, password, phone,planName,
+      price=0,
+      storageLimitGB=5,
+      faceRecognitionLimit=100,
+      qrDesignLimit="unlimited",
+      eAlbumLimit="unlimited",
+      crmAccess=false,
+      watermarkAccess=true,
+      albumPhotoSelection=false,
+      imageDownloadControl=false,
+      durationInMonths=0.24, } = req.body;
     console.log(req.body);
+
+    
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -41,7 +56,37 @@ export const signup = async (req, res) => {
       password: hashedPassword,
       logo: logoUrl,
     });
+    const startDate = new Date();
+    const endDate = new Date();
 
+    if (durationInMonths < 1) {
+      // Handle fractional months as days
+      const days = Math.round(durationInMonths * 30); // 0.25 * 30 = 7.5 ≈ 7
+      endDate.setDate(endDate.getDate() + days);
+    } else {
+      endDate.setMonth(endDate.getMonth() + durationInMonths);
+    }
+
+    const newSub = await PlanSubscription.create({
+          user: createdUser._id,
+          planName,
+          price,
+          storageLimitGB,
+          faceRecognitionLimit,
+          qrDesignLimit,
+          eAlbumLimit,
+          crmAccess,
+          watermarkAccess,
+          albumPhotoSelection,
+          imageDownloadControl,
+          startDate,
+          endDate,
+        });
+    
+        await User.findByIdAndUpdate(createdUser._id, {
+          $push: { subscriptions: newSub._id },
+          subscriptionEndDate: endDate,
+        });
     return res.json(
       new ApiResponse(201, createdUser, "User created successfully")
     );
@@ -199,8 +244,10 @@ export const changePassword = async (req, res) => {
 };
 export const editProfile = async (req, res) => {
   try {
-    const { name, address } = req.body;
+    const { name, address,email,phoneNo, } = req.body;
     const userId = req.userId;
+      console.log("hitting id",userId)
+
 
     if (!userId) {
       return res
@@ -210,6 +257,8 @@ export const editProfile = async (req, res) => {
     const updateData = {};
     if (name) updateData.name = name;
     if (address) updateData.address = address;
+    if(email) updateData.email=email;
+    if(phoneNo) updateData.phoneNo=phoneNo
 
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
       new: true,
@@ -270,9 +319,7 @@ export const checkAuth = async (req, res) => {
   try {
     const userId = req.userId;
 
-    const user = await User.findById(userId).select(
-      "name email role logo address trialFinished"
-    );
+    const user = await User.findById(userId)
     if (!user) return res.status(404).json({ error: "User not found" });
 
     res.status(200).json(user);
@@ -339,70 +386,156 @@ export const refreshAccessToken = async (req, res) => {
 
 
 
+
+
 export const getDashboardDetails = async (req, res) => {
   try {
     const userId = req.userId;
 
-    // Get total counts
     const currentUser = await User.findById(userId);
-
-
-    console.log("currentUser",currentUser)
-
-    const userEventIds = await Event.find({ user: userId }).distinct('_id');
-
-    // Count of users viewing those events
-    const totalUsers = currentUser.totalUsers
-
-    // Count of events created by the user
-    const totalEvents = await Event.countDocuments({ user: userId });
-
-
-    // Get current user details
     if (!currentUser) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Count events created by this user
-    const userEvents = await Event.find({ user: userId }, "_id"); // Fetch user's events
-    // const userEventsCount = userEvents.length;
+    const totalUsers = currentUser.totalUsers || 0;
 
-    // Count images in S3 for these events
+    const userEvents = await Event.find({ user: userId }, "_id subevents");
+    const totalEvents = userEvents.length;
+
+    const subscription = await getActiveSubscription(userId);
+    const expiryDate = subscription?.endDate ?? "Coming Soon";
+
     let userImageCount = 0;
+
     for (const event of userEvents) {
+      for (const subEvent of event.subevents) {
+        const prefix = `eventimages/${event._id}/${subEvent._id}/Original/`;
+        let continuationToken;
 
-      const prefix = `eventimages/${event._id}/`;
-      let continuationToken;
+        do {
+          const listCommand = new ListObjectsV2Command({
+            Bucket: process.env.BUCKET_NAME,
+            Prefix: prefix,
+            MaxKeys: 1000,
+            ContinuationToken: continuationToken,
+          });
 
-      do {
-        const listCommand = new ListObjectsV2Command({
-          Bucket: process.env.BUCKET_NAME,
-          Prefix: prefix,
-          MaxKeys: 1000,
-          ContinuationToken: continuationToken,
-        });
+          const response = await s3Client.send(listCommand);
+          const imageFiles = (response.Contents || []).filter(item =>
+            item.Key.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+          );
 
-        const response = await s3Client.send(listCommand);
-
-        const imageFiles = (response.Contents || []).filter(item =>
-          item.Key.match(/\.(jpg|jpeg|png|gif|webp)$/i)
-        );
-
-        userImageCount += imageFiles.length;
-
-        continuationToken = response.IsTruncated ? response.NextContinuationToken : null;
-      } while (continuationToken);
+          userImageCount += imageFiles.length;
+          continuationToken = response.IsTruncated ? response.NextContinuationToken : null;
+        } while (continuationToken);
+      }
     }
-    // Return combined result
-    res.status(200).json({
+
+    return res.status(200).json({
       totalUsers,
       totalEvents,
-      // userEventsCount,
       userImageCount,
+      expiryDate,
     });
 
   } catch (error) {
-    console.error("🔴 Dashboard fetch failed:", error.message);
-    res.status(500).json({ error: error.message });
+    console.error("🔴 Dashboard fetch failed:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+
+
+
+
+
+// export const getDashboardDetails = async (req, res) => {
+
+//   try {
+//     const userId = req.userId;
+
+//     // Get total counts
+//     const currentUser = await User.findById(userId);
+
+
+//     console.log("currentUser",currentUser)
+
+//     const userEventIds = await Event.find({ user: userId }).distinct('_id');
+
+//     // Count of users viewing those events
+//     const totalUsers = currentUser.totalUsers
+
+//     // Count of events created by the user
+//     const totalEvents = await Event.countDocuments({ user: userId });
+
+
+//     // Get current user details
+//     if (!currentUser) {
+//       return res.status(404).json({ error: "User not found" });
+//     }
+
+//     // Count events created by this user
+//     const userEvents = await Event.find({ user: userId }, "_id"); // Fetch user's events
+//     // const userEventsCount = userEvents.length;
+//     const subscription=await getActiveSubscription(userId)
+
+//     const expiryDate=subscription?.endDate ?? "Coming Soon";
+//     // Count images in S3 for these events
+//     let userImageCount = 0;
+//     for (const event of userEvents) {
+
+//       const prefix = `eventimages/${event._id}/`;
+//       let continuationToken;
+
+//       do {
+//         const listCommand = new ListObjectsV2Command({
+//           Bucket: process.env.BUCKET_NAME,
+//           Prefix: prefix,
+//           MaxKeys: 1000,
+//           ContinuationToken: continuationToken,
+//         });
+
+//         const response = await s3Client.send(listCommand);
+
+//         const imageFiles = (response.Contents || []).filter(item =>
+//           item.Key.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+//         );
+
+//         userImageCount += imageFiles.length;
+
+//         continuationToken = response.IsTruncated ? response.NextContinuationToken : null;
+//       } while (continuationToken);
+//     }
+//     // Return combined result
+//     res.status(200).json({
+//       totalUsers,
+//       totalEvents,
+//       // userEventsCount,
+//       userImageCount,
+//       expiryDate
+//     });
+
+//   } catch (error) {
+//     console.error("🔴 Dashboard fetch failed:", error.message);
+//     res.status(500).json({ error: error.message });
+//   }
+// };
+
+  export const getAllWebAppusers=async(req,res)=>{
+    try{
+      const allUsers=await User.find();
+      res.status(200).json({
+        allUsers
+
+     });
+    
+
+    }
+    catch(err){
+       res.status(500).json({ error: "Internal Server Error" });
+
+    }
+    
+
+
+  }

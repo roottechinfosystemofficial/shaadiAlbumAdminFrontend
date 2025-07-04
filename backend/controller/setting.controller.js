@@ -15,7 +15,8 @@ export const saveUserSettings = async (req, res) => {
       position,
       iconImg,
       userId,
-      waterMarkEnabled
+      waterMarkEnabled,
+      iconSize
     } = req.body;
 
     const update = {
@@ -27,7 +28,8 @@ export const saveUserSettings = async (req, res) => {
       opacity,
       position,
       iconImg,
-      waterMarkEnabled
+      waterMarkEnabled,
+      iconSize
     };
 
     const setting = await Setting.findOneAndUpdate(

@@ -13,7 +13,9 @@ import { startUserCleanupJob } from "./cronjobs/cleanupOldUsers.js";
 import { listAllKeys } from "./controller/awsrecognition.controller.js";
 import { settingRouter } from "./routes/setting.route.js";
 import planSubscritptionRouter from "./routes/plansubscription.route.js";
-
+import { deActivateSubscription } from "./cronjobs/DeactivateSubscription.js";
+import { superAdminRouter } from "./routes/superadmin.route.js";
+import SSERouter from "./routes/sse.route.js";
 // import imageRouter from "./routes/imageRoutes.js";
 
 dotenv.config();
@@ -29,10 +31,23 @@ app.use(express.urlencoded({ extended: true, limit: "30mb" }));
 // Ensure cookie-parser is placed before routes to parse cookies properly
 app.use(cookieParser());
 
+// const corsOptions = {
+//   origin: process.env.ORIGIN,
+//   credentials: true,
+// };
+
 const corsOptions = {
-  origin: process.env.ORIGIN,
+  origin: function (origin, callback) {
+    const allowedOrigins = [process.env.ORIGIN, "http://localhost:5174"];
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
 };
+
 
 // Use CORS with the defined options
 app.use(cors(corsOptions));
@@ -47,6 +62,8 @@ app.use("/api/v1", flipBookRouter);
 app.use("/api/v1", clientViewUserrouter);
 app.use("/api/v1",settingRouter)
 app.use("/api/v1",planSubscritptionRouter)
+app.use("/api/v1",superAdminRouter)
+app.use("/api/v1",SSERouter)
 
 dbConnect();
 
@@ -58,6 +75,7 @@ app.get("/", (req, res) => {
 // Start Server
 app.listen(PORT, () => {
   startUserCleanupJob()
+  deActivateSubscription()
   console.log(`🚀 Server is running on port ${PORT}`);
 });
 

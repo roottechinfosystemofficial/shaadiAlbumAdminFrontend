@@ -23,7 +23,9 @@ const Navbar = () => {
   const [prevAuthUser, setPrevAuthUser] = useState(null);
   const dispatch = useDispatch();
   const { accessToken } = useSelector((state) => state.user); // ✅ include refreshToken
-
+    const subscriptionState = useSelector((state) => state.subscription.subscriptionState);
+  
+    const isActive=subscriptionState.subscriptions!=null
   const navigate = useNavigate();
   useEffect(() => {
     if (prevAuthUser !== authUser) {
@@ -82,10 +84,10 @@ const Navbar = () => {
               </li>
             </Link>
             {
-              authUser.trialFinished &&
+              !isActive &&
             
 
-            (<Link to="/" onClick={() => setIsMenuOpen(false)}>
+            (<Link to="/subscription-plan" onClick={() => setIsMenuOpen(false)}>
               <li className="flex items-center gap-2 hover:text-primary-dark cursor-pointer transition-colors">
                 <MdPayment size={20}/>
                 Purchase Plan

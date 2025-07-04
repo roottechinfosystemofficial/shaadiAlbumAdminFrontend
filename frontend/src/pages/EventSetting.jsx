@@ -35,6 +35,7 @@ const EventSetting = () => {
   const { currentSubEvent, currentEventId } = useSelector(
     (state) => state.event
   );
+  
 
   return (
     <div className="w-full max-w-7xl mx-auto px-6 py-6 space-y-6">

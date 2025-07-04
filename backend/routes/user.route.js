@@ -10,6 +10,7 @@ import {
   refreshAccessToken,
   selectForgotPasswordOTPProvider,
   signup,
+  getAllWebAppusers,
 } from "../controller/user.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -33,6 +34,8 @@ userRouter.get("/user/checkAuth", verifyJWT, checkAuth);
 
 // Get DashBoard Data API
 userRouter.get("/user/dashboard", verifyJWT, getDashboardDetails);
+
+userRouter.get("/user/getalluser",getAllWebAppusers)
 
 
 export default userRouter;

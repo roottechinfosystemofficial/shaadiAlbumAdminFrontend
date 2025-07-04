@@ -8,6 +8,8 @@ import {
   
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { v4 as uuidv4 } from "uuid";
+
 import dotenv from "dotenv";
 import sharp from "sharp";
 import FlipBook from "../model/FlipBook.model.js";
@@ -392,6 +394,8 @@ const streamToBuffer = async (readableStream) => {
 //   }
 // };
 
+// 
+
 export const getPresignedUrl = async (req, res) => {
   const { files, eventId, subEventId, usageType, flipbookId, userId } = req.body;
 
@@ -421,16 +425,18 @@ export const getPresignedUrl = async (req, res) => {
     const results = await Promise.all(
       files.map(async (file) => {
         const { fileName, fileType, path } = file;
-        const isThumbnail = path?.toLowerCase().includes("thumbnails");
+        const isThumbnail = path?.toLowerCase().includes("thumb");
 
         try {
           const fileExt = fileName.includes(".") ? fileName.substring(fileName.lastIndexOf(".")) : ".jpg";
           const baseName = fileName.substring(0, fileName.lastIndexOf("."));
+          const timestampedFileName = `${timestamp}_${baseName}${fileExt}`;
 
           const folder = usageType === "flipbook" ? "flipbookimages" : "eventimages";
           const middleId = usageType === "flipbook" ? flipbookId : subEventId;
-          const storageFolder = isThumbnail ? "Thumbnails" : "Original";
-          const uniqueKey = `${folder}/${eventId}/${middleId}/${storageFolder}/${timestamp}_${baseName}${fileExt}`;
+          const storageFolder = isThumbnail ? "Thumb" : "Original";
+
+          const uniqueKey = `${folder}/${eventId}/${middleId}/${storageFolder}/${timestampedFileName}`;
 
           const command = new PutObjectCommand({
             Bucket: process.env.BUCKET_NAME,
@@ -440,16 +446,14 @@ export const getPresignedUrl = async (req, res) => {
 
           const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
 
-          // Optional: Run Rekognition detectFaces after upload (skip thumbnails)
+          // Only run face detection on original images
           let faceDetectionStatus = null;
-
           if (!isThumbnail && usageType !== "flipbook") {
             try {
               const getObject = new GetObjectCommand({
                 Bucket: process.env.BUCKET_NAME,
                 Key: uniqueKey,
               });
-
               const { Body } = await s3Client.send(getObject);
               const imageBuffer = await streamToBuffer(Body);
 
@@ -460,17 +464,16 @@ export const getPresignedUrl = async (req, res) => {
 
               const detectResult = await rekognitionClient.send(detectCommand);
               const facesDetected = detectResult.FaceDetails.length;
-
-              faceDetectionStatus = facesDetected === 0
-                ? "❌ No face detected"
-                : `✅ Detected ${facesDetected} face(s)`;
-
+              faceDetectionStatus =
+                facesDetected === 0
+                  ? "❌ No face detected"
+                  : `✅ Detected ${facesDetected} face(s)`;
             } catch (faceErr) {
               faceDetectionStatus = "⚠️ Face detection error";
             }
           }
 
-          return { url, key: uniqueKey, fileName, faceDetectionStatus };
+          return { url, key: uniqueKey, fileName: timestampedFileName, faceDetectionStatus };
         } catch (err) {
           return { fileName, reason: "Internal error generating URL" };
         }
@@ -486,14 +489,14 @@ export const getPresignedUrl = async (req, res) => {
       return res.status(500).json({ error: "Failed to generate any signed URLs", failedFiles });
     }
 
-    // ✅ Update used storage
     await updateStorageUsed(subscription, totalUploadSize);
-
     return res.status(200).json({ urls: signedUrls, failedFiles });
   } catch (err) {
     return res.status(500).json({ error: "Unexpected error during URL generation" });
   }
 };
+
+
 
 
 
@@ -832,6 +835,98 @@ export const getEventImageCount = async (req, res) => {
   }
 };
 
+// export const getEventImages = async (req, res) => {
+//   const {
+//     eventId,
+//     subEventId,
+//     continuationTokenOriginal,
+//     continuationTokenThumbs,
+//   } = req.body;
+
+//   if (!eventId || !subEventId) {
+//     return res.status(400).json({ error: "Missing eventId or subEventId" });
+//   }
+
+//   try {
+//     const basePrefix = `eventimages/${eventId}/${subEventId}/`;
+//     const pageSize = 20;
+
+//     const fetchFolderItems = async (folder, token) => {
+//       const prefix = `${basePrefix}${folder}/`;
+//       const listCommand = new ListObjectsV2Command({
+//         Bucket: process.env.BUCKET_NAME,
+//         Prefix: prefix,
+//         MaxKeys: pageSize,
+//         ContinuationToken: token || undefined,
+//       });
+
+//       const response = await s3Client.send(listCommand);
+
+//       const items = await Promise.all(
+//         (response.Contents || []).map(async (item) => {
+//           const filename = item.Key.split("/").pop();
+//           const getCommand = new GetObjectCommand({
+//             Bucket: process.env.BUCKET_NAME,
+//             Key: item.Key,
+//           });
+//           const url = await getSignedUrl(s3Client, getCommand);
+//           return {
+//             filename,
+//             key: item.Key,
+//             url,
+//           };
+//         })
+//       );
+
+//       return {
+//         items,
+//         nextToken: response.NextContinuationToken || null,
+//       };
+//     };
+
+//     // Fetch both folders
+//     const [originalData, thumbData] = await Promise.all([
+//       fetchFolderItems("Original", continuationTokenOriginal),
+//       fetchFolderItems("Thumbs", continuationTokenThumbs),
+//     ]);
+
+//     // Create maps by filename (case-sensitive now)
+//     const originalMap = {};
+//     originalData.items.forEach((img) => {
+//       originalMap[img.filename] = { url: img.url, key: img.key };
+//     });
+
+//     const thumbMap = {};
+//     thumbData.items.forEach((img) => {
+//       thumbMap[img.filename] = { url: img.url, key: img.key };
+//     });
+
+//     const allFilenames = new Set([
+//       ...Object.keys(originalMap),
+//       ...Object.keys(thumbMap),
+//     ]);
+
+//     const merged = Array.from(allFilenames)
+//       .filter((filename) => originalMap[filename] && thumbMap[filename])
+//       .map((filename) => ({
+//         filename,
+//         originalUrl: originalMap[filename].url,
+//         originalKey: originalMap[filename].key,
+//         thumbnailUrl: thumbMap[filename].url,
+//         thumbnailKey: thumbMap[filename].key,
+//       }));
+
+//     return res.status(200).json({
+//       images: merged,
+//       nextTokenOriginal: originalData.nextToken,
+//       nextTokenThumbs: thumbData.nextToken,
+//     });
+//   } catch (err) {
+//     console.error("Error fetching event images:", err);
+//     res.status(500).json({ error: "Could not retrieve event images" });
+//   }
+// };
+
 export const getEventImages = async (req, res) => {
   const {
     eventId,
@@ -881,13 +976,13 @@ export const getEventImages = async (req, res) => {
       };
     };
 
-    // Fetch both folders
+    // Use correct folders
     const [originalData, thumbData] = await Promise.all([
       fetchFolderItems("Original", continuationTokenOriginal),
-      fetchFolderItems("Thumbs", continuationTokenThumbs),
+      fetchFolderItems("Thumb", continuationTokenThumbs),
     ]);
 
-    // Create maps by filename (case-sensitive now)
+    // Create filename-to-image maps
     const originalMap = {};
     originalData.items.forEach((img) => {
       originalMap[img.filename] = { url: img.url, key: img.key };
@@ -913,6 +1008,10 @@ export const getEventImages = async (req, res) => {
         thumbnailKey: thumbMap[filename].key,
       }));
 
+    console.log(`✅ Found originals: ${originalData.items.length}`);
+    console.log(`✅ Found thumbnails: ${thumbData.items.length}`);
+    console.log(`✅ Merged images: ${merged.length}`);
+
     return res.status(200).json({
       images: merged,
       nextTokenOriginal: originalData.nextToken,
@@ -920,9 +1019,11 @@ export const getEventImages = async (req, res) => {
     });
   } catch (err) {
     console.error("Error fetching event images:", err);
-    res.status(500).json({ error: "Could not retrieve event images" });
+    return res.status(500).json({ error: "Could not retrieve event images" });
   }
 };
+
+
 
 
 export const getFlipbookImages = async (req, res) => {
@@ -1173,5 +1274,80 @@ export const listThumbs = async (req, res) => {
     res.status(500).json({ error: "Failed to list" });
   }
 };
+
+
+export const uploadEventCoverImage = async (req, res) => {
+  try {
+    
+    const { base64Image, fileType = "image/jpeg",eventId,position } = req.body;
+
+    if (!base64Image) {
+      return res.status(400).json({ error: "Missing base64 image" });
+    }
+
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    const extension = fileType.split("/")[1] || "jpg";
+    const key = `events/${eventId}/cover-image-${uuidv4()}.${extension}`;
+
+    // Decode base64 image
+    const base64Data = Buffer.from(
+      base64Image.replace(/^data:image\/\w+;base64,/, ""),
+      "base64"
+    );
+
+    // Upload to S3
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: process.env.BUCKET_NAME,
+        Key: key,
+        Body: base64Data,
+        ContentEncoding: "base64",
+        ContentType: fileType,
+        // No ACL needed; you're using public bucket policy
+      })
+    );
+
+    // Construct public S3 URL
+    const publicUrl = `https://${process.env.BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+
+    // Save the public URL to DB
+    event.coverImage = publicUrl;
+    event.coverImagePosition=position
+    await event.save();
+
+    return res.status(200).json({
+      message: "Image uploaded and accessible",
+      imageUrl: publicUrl
+    });
+  } catch (err) {
+    console.error("Upload eventImage error:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+};
+
+export const getEventCoverImageUrl = async (req, res) => {
+  console.log("hitted client call to endpoint")
+  try {
+      const { eventId, subEventId } = req.query;
+
+
+    const event = await Event.findById(eventId);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+
+    // if (!event.eventImage) {
+    //   return res.status(404).json({ error: "Event image not uploaded yet" });
+    // }
+
+    return res.status(200).json({ url: event.coverImage,position:event.coverImagePosition });
+  } catch (err) {
+    console.error("Get eventImage error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
 
 

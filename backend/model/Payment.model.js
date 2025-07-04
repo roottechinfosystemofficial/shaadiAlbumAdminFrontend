@@ -16,6 +16,8 @@ const paymentSchema = new mongoose.Schema(
       enum: ["PENDING", "COMPLETED", "FAILED"],
       default: "PENDING",
     },
+    paymentMethod: { type: String, default: "UNKNOWN" }, // ✅ add this line
+
     subscriptionId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Subscription",
@@ -26,4 +28,4 @@ const paymentSchema = new mongoose.Schema(
 );
 
 
-module.exports = mongoose.model("Payment", paymentSchema);
+export const Payment = mongoose.model("Payment", paymentSchema);

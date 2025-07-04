@@ -1,7 +1,3 @@
-// ============================
-// Clientview.jsx (Updated)
-// ============================
-
 import React, { useState, useEffect, useRef } from "react";
 import "../css/Clientview.css";
 import { useDispatch, useSelector } from "react-redux";
@@ -9,16 +5,19 @@ import Cookies from "js-cookie";
 import ClientForm from "../component/ClientForm";
 import apiRequest from "../utils/apiRequest";
 import { CLIENTVU_API_END_POINT, S3_API_END_POINT } from "../constant";
-import { setCoverImg } from "../Redux/Slices/CoverImgSlice";
+import { setCoverImg, setPosition } from "../Redux/Slices/CoverImgSlice";
 import { setImagePath } from "../Redux/Slices/S3Images";
-import FaceRecognitionPopup from "../../../App/src/Components/FaceCaptureModal";
 import LoaderModal from "../component/LoadingModal";
 import ErrorModal from "../component/UsersComponent/ErrorModal";
 import ClientPhotosView from "../component/ClientSideComponent/ClientPhotosView";
 import toast from "../utils/toast";
+import { getSettings } from "../Redux/thunkfunctions/settings";
+import FaceRecognitionModal from "../component/ClientSideComponent/Popups/FaceCaptureModal";
 const Clientview = () => {
   const webcamRef = useRef(null);
   const dispatch = useDispatch();
+  const[currentView,setCurrentView]=useState("")
+
 
   const { currentEvent, currentSubEvent } = useSelector((state) => state.event);
   const { accessToken, authUser } = useSelector((state) => state.user);
@@ -49,40 +48,29 @@ const Clientview = () => {
     webcamRef.current.srcObject.getTracks().forEach((track) => track.stop());
   };
 
+  
+     const fetchUserSettings = async () => {
+        await dispatch(getSettings({ userId: authUser?._id }))
+    
+
+      }
+
+      useEffect(()=>{
+            fetchUserSettings()
+          },[])
+      
+
   const handleSubmit = async () => {
     setLoader(true);
-
     try {
       toast.loading("Uploading captured image...");
-
       const res = await fetch(capturedImage);
       const blob = await res.blob();
       const file = new File([blob], "face-scan.png", { type: blob.type });
 
-      // const urlResponse = await apiRequest(
-      //   "POST",
-      //   `${S3_API_END_POINT}/get-presigned-url`,
-      //   {
-      //     eventId: currentEvent._id,
-      //     subEventId: currentSubEvent._id,
-      //     files: [{ fileName: file.name, fileType: file.type, fileSize: file.size }],
-      //   },
-      //   accessToken,
-      //   dispatch
-      // );
-
-      // const presignedUrl = urlResponse?.data?.urls?.[0]?.url;
-      // if (!presignedUrl) throw new Error("No presigned URL");
-
-      // await fetch(presignedUrl, {
-      //   method: "PUT",
-      //   headers: { "Content-Type": file.type },
-      //   body: file,
-      // });
-
       toast.dismiss();
       toast.success("Image uploaded ✅");
-      dispatch(setCoverImg(capturedImage));
+     // dispatch(setCoverImg(capturedImage));
       setIsOpen(false);
       setWhichView("faceScanResults");
     } catch (err) {
@@ -103,11 +91,16 @@ const Clientview = () => {
 
   const getPositionClasses = () => {
     switch (position) {
-      case "left": return "items-center justify-start";
-      case "center": return "items-center justify-center";
-      case "right": return "items-center justify-end";
-      case "bottom": return "items-end justify-center";
-      default: return "items-center justify-start";
+      case "left":
+        return "items-center justify-start text-left px-4";
+      case "center":
+        return "items-center justify-center text-center px-4";
+      case "right":
+        return "items-center justify-end text-right px-4";
+      case "bottom":
+        return "items-end justify-center text-center pb-6 px-4";
+      default:
+        return "items-center justify-center text-center px-4";
     }
   };
 
@@ -119,6 +112,7 @@ const Clientview = () => {
   };
 
   const viewAllHandler = async () => {
+    setCurrentView("All")
     const token = Cookies.get("clientViewToken");
     if (token) {
       try {
@@ -170,6 +164,7 @@ const Clientview = () => {
           `${S3_API_END_POINT}/cover-image?eventId=${currentEvent?._id}&subEventId=${currentSubEvent?._id}`
         );
         dispatch(setCoverImg(res.data.url));
+        dispatch(setPosition(res.data.position));
       } catch (err) {
         console.log("Cover fetch error", err);
       }
@@ -179,15 +174,19 @@ const Clientview = () => {
 
   return (
     <>
-      <div
-        style={{
-          backgroundImage: coverImg
-            ? `url(${coverImg})`
-            : `url("https://picsum.photos/id/1015/800/400")`,
-        }}
-        className="pics__header overflow-hidden relative md:h-[100vh] h-[50vh] bg-gray-800"
-      >
-        <div className={`absolute inset-0 text-white flex p-4 md:p-8 ${getPositionClasses()}`}>
+      <div className="relative w-full md:h-[100vh] h-[60vh] overflow-hidden">
+        <img
+          src={
+            coverImg
+              ? coverImg
+              : "https://picsum.photos/id/1015/800/400"
+          }
+          alt="Cover"
+          className="w-full h-full object-cover"
+        />
+        <div
+          className={`absolute inset-0 bg-black/40 text-white flex ${getPositionClasses()}`}
+        >
           <div className="flex flex-col items-start">
             <p className="text-2xl md:text-3xl uppercase pb-2 md:pb-4 font-extrabold">
               {currentEvent?.eventName}
@@ -205,14 +204,7 @@ const Clientview = () => {
               >
                 Face Scan
               </button>
-              {capturedImage && (
-                <button
-                  onClick={() => setWhichView("faceScanResults")}
-                  className="border-2 border-white py-1 px-3 md:px-4 rounded-md text-sm md:text-base"
-                >
-                  View Face Scan Results
-                </button>
-              )}
+
             </div>
           </div>
         </div>
@@ -220,7 +212,11 @@ const Clientview = () => {
 
       {showForm && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-start justify-center overflow-hidden">
-          <div className={`transition-transform duration-500 ease-in-out transform mt-10 w-full max-w-md ${showFormAnimated ? "translate-y-0" : "-translate-y-full"}`}>
+          <div
+            className={`transition-transform duration-500 ease-in-out transform mt-10 w-full max-w-md ${
+              showFormAnimated ? "translate-y-0" : "-translate-y-full"
+            }`}
+          >
             <ClientForm
               onSubmit={() => {
                 setShowForm(false);
@@ -237,7 +233,6 @@ const Clientview = () => {
         </div>
       )}
 
-      {whichView === "faceScanResults" && capturedImage && (
         <ClientPhotosView
           image={capturedImage}
           eventId={currentEvent?._id}
@@ -246,10 +241,11 @@ const Clientview = () => {
           accessToken={accessToken}
           authUser={authUser}
           s3Keys={s3Keys}
+          currentView={currentView}
         />
-      )}
+      
 
-      <FaceRecognitionPopup
+      <FaceRecognitionModal
         isOpen={isOpen}
         onCancel={handleClose}
         onCapture={handleCapture}
